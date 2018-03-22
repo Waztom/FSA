@@ -126,6 +126,13 @@ arrivals_tbl_BE_counts <- summarize(arrivals_tbl_BE, count = n())
 arrivals_tbl_BE <- mutate(arrivals_tbl_BE, Mass_by_Consignment = Net_Mass * No_of_Consignments)
 ```
 
+#alternatively filtering negative values
+```{r}
+arrivals_tbl_BE_pos <- filter(arrivals_tbl_BE, Net_Mass < 0)
+```
+
+
+
 #plotting
 ```{r}
 qplot (Date, count, data = arrivals_tbl_BE_counts)
