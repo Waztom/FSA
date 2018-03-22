@@ -36,12 +36,12 @@ on.exit(dbDisconnect(con))
 on.exit(dbUnloadDriver(drv))
 ```
 
-# Function to access selected sql database. Enter database == HMRC or comtrade to access the required db and enter df_description for HMRC df example arrivals
+# Call to HMRC sql db. Function requires df_name
 ```{r}
-HMRC_sql_access <- function(df_description){
+HMRC_sql_access <- function(df_name){
 
 # Convert function inputs to strings
-df_description <- as.character(substitute(df_description))
+df_name <- as.character(substitute(df_name))
 
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv,
@@ -50,7 +50,7 @@ con <- dbConnect(drv,
                  user = "trade_read",
                  password = "2fs@9!^43g")
 
-sql_db_query <- paste("SELECT * FROM",df_description,"WHERE smk_comcode ~ '^[0-2]'")
+sql_db_query <- paste("SELECT * FROM",df_name,"WHERE smk_comcode ~ '^[0-2]'")
 print("How about a cuppa?")
 requested_df   <- dbGetQuery(con, sql_db_query)
 
@@ -61,8 +61,9 @@ on.exit(dbDisconnect(con))
 on.exit(dbUnloadDriver(drv))
 ```
 
+# Call to comtrade sql db. Function requires from_period and to_period in yyyymm format
 ```{r}
-comtrade_sql_access <- function(from_period,to_period){
+COM_sql_access <- function(from_period,to_period){
 
 # Convert function inputs to strings
 from_period <- as.character(substitute(from_period))
