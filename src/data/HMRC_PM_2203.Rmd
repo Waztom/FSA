@@ -1,0 +1,129 @@
+---
+title: "HMRC_test"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(maptools)
+library(stringr)
+library(mapproj)
+library(tidyverse)
+library(rgdal)
+library(ggmap)
+library(maps)
+library(mapdata)
+library(mapproj)
+library(rworldmap)
+library(zoo)
+library(e1071)
+library(pscl)
+library(ROCR)
+```
+
+# Open connection for HMRC data (UK's Revenue and Customs Authority)
+```{r}
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv,
+                 dbname = "hmrc",
+                 host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                 user = "trade_read",
+                 password = "2fs@9!^43g")
+on.exit(dbDisconnect(con),add=TRUE)
+on.exit(dbUnloadDriver(drv),add=TRUE)
+(tab <- dbListTables(con))
+```
+
+# Import arrivals data with comcode < 30 
+```{r}
+ptm <- proc.time()
+comcode    <- dbGetQuery(con, "SELECT * from comcode")
+port       <- dbGetQuery(con, "SELECT * from port")
+country    <- dbGetQuery(con, "SELECT * from country")
+arrivals   <- dbGetQuery(con, "SELECT smk_comcode, smk_cod_alpha, smk_period_reference, smk_nett_mass, smk_no_of_consignments, smk_stat_value FROM arrivals WHERE smk_comcode ~ '^[0-2]'")
+(proc.time() - ptm)
+```
+
+# Copy dataframe to have copy with full version of commodity code
+```{r}
+arrivals_copy <- arrivals
+```
+
+# Transform and reduce smk_comcode to two digit parent code 
+```{r}
+arrivals$smk_comcode <- substr(arrivals$smk_comcode, 1,2)
+```
+
+# Filter data to include only food comcode values < 24
+```{r}
+arrivals <- filter(arrivals, smk_comcode < 24)
+```
+
+# Putting arrivals table in a dataframe tbl
+```{r}
+arrivals_tbl<-tbl_df(arrivals)
+```
+
+#remove non-tbl arrivals for simplicity - might want to leave in
+```{r}
+rm(arrivals)
+```
+
+# Transform smk_period_reference to format that can be converted to date and store in new Date column
+# Assumme period references beginning with '099' == 020
+# Add day and convert to date
+#remove period reference column
+```{r}
+arrivals_tbl <- mutate(arrivals_tbl, Date = (substr(arrivals_tbl$smk_period_reference, 2,7)))
+arrivals_tbl$Date <- paste0(arrivals_tbl$Date, "01")
+arrivals_tbl$Date <- ymd(arrivals_tbl$Date)
+arrivals_tbl <- arrivals_tbl[,-3]
+```
+
+#Change names of columns
+```{r}
+names(arrivals_tbl) <- c("Comcode", "Country_of_Dispatch", "Net_Mass", "No_of_Consignments", "Invoice_Price", "Date")
+```
+
+#change order of columns, sort by date and group by country
+```{r}
+arrivals_tbl <- select(arrivals_tbl, "Date", "Country_of_Dispatch", "Comcode", "Net_Mass", "No_of_Consignments", "Invoice_Price")
+arrivals_tbl <- arrange(arrivals_tbl, Date, Comcode) 
+arrivals_tbl$Comcode <- as.numeric(as.character(arrivals_tbl$Comcode))
+```
+
+#remove incomplete cases
+```{r}
+arrivals <- arrivals[complete.cases(arrivals),]
+```
+
+
+#Just selecting arrivals from Belgium
+```{r}
+arrivals_tbl_BE <- filter(arrivals_tbl, Country_of_Dispatch == "BE")
+```
+
+
+#Grouping belgium table by date, then counting number of observations per date
+```{r}
+arrivals_tbl_BE <- group_by(arrivals_tbl_BE, Date)
+arrivals_tbl_BE_counts <- summarize(arrivals_tbl_BE, count = n())
+```
+
+#plotting
+```{r}
+qplot (Date, count, data = arrivals_tbl_BE_counts)
+```
+
+
