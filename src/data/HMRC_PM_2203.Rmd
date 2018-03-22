@@ -105,8 +105,16 @@ arrivals_tbl$Comcode <- as.numeric(as.character(arrivals_tbl$Comcode))
 
 #remove incomplete cases
 ```{r}
-arrivals <- arrivals[complete.cases(arrivals),]
+arrivals_tbl <- arrivals_tbl[complete.cases(arrivals_tbl),]
 ```
+
+#new code which isn't working - can't do or filter with character strings?
+```{r}
+arrivals_tbl_filtered <- filter(arrivals_tbl, Country_of_Dispatch == "DE" | "ES")
+arrivals_tbl_grouped <- group_by(arrivals_tbl_filtered, Date, Country_of_Dispatch)
+arrivals_tbl_summary <- summarize(arrivals_tl_grouped, Business)
+```
+
 
 
 #Just selecting arrivals from Belgium
@@ -128,14 +136,50 @@ arrivals_tbl_BE <- mutate(arrivals_tbl_BE, Mass_by_Consignment = Net_Mass * No_o
 
 #alternatively filtering negative values
 ```{r}
-arrivals_tbl_BE_pos <- filter(arrivals_tbl_BE, Net_Mass < 0)
+arrivals_tbl_BE_pos <- filter(arrivals_tbl_BE, Net_Mass > 0)
+```
+
+
+#removing weird dates e.g. year 9917
+```{r}
+arrivals_tbl_BE_pos_cleaned <- filter(arrivals_tbl_BE_pos, Date <= "2018-01-01")
+```
+
+#just selecting important columns
+```{r}
+arrivals_tbl_BE_pos_cleaned_simple <- select(arrivals_tbl_BE_pos_cleaned, Date, Comcode, Invoice_Price)
+```
+
+#aggregating invoiced ammount
+```{r}
+arrivals_tbl_BE_pos_cleaned_simple_totalinvoice <- group_by(arrivals_tbl_BE_pos_cleaned_simple, Date, Comcode) %>% summarise(Total_Invoiced = sum(Invoice_Price))
 ```
 
 
 
 #plotting
 ```{r}
-qplot (Date, count, data = arrivals_tbl_BE_counts)
+g <- ggplot(arrivals_tbl_BE_pos_cleaned_simple_totalinvoice, aes(x=Date, y=Total_Invoiced))
+g + geom_point(aes(color=Comcode))
 ```
 
+#simplifying plot
+```{r}
+Excluding_08 <- filter(arrivals_tbl_BE_pos_cleaned_simple_totalinvoice, Date > 2008-12-01)
+One_to_Five <- filter(Excluding_08, Comcode <6)
+```
+
+
+#Putting on one plot
+```{r}
+h <- ggplot(One_to_Five, aes(Date, Total_Invoiced))
+h + geom_point(aes(color=Comcode))
+```
+
+
+#5 separate plots
+```{r}
+h <- ggplot(One_to_Five, aes(Date, Total_Invoiced))
+h + geom_point(aes(color = Comcode)) + facet_grid(.~Comcode)
+```
 
