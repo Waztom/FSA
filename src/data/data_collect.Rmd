@@ -1,0 +1,131 @@
+---
+title: "FSA_S2DS_MAR18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load RPostgreSQL
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(maptools)
+library(stringr)
+library(mapproj)
+library(tidyverse)
+library(rgdal)
+library(ggmap)
+library(maps)
+library(mapdata)
+library(mapproj)
+library(rworldmap)
+```
+
+# Open connection for HMRC data (UK's Revenue and Customs Authority)
+```{r}
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv,
+                 dbname = "hmrc",
+                 host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                 user = "trade_read",
+                 password = "2fs@9!^43g")
+on.exit(dbDisconnect(con),add=TRUE)
+on.exit(dbUnloadDriver(drv),add=TRUE)
+(tab <- dbListTables(con))
+```
+
+# Import the data
+```{r}
+comcode    <- dbGetQuery(con, "SELECT * from comcode")
+port       <- dbGetQuery(con, "SELECT * from port")
+country    <- dbGetQuery(con, "SELECT * from country")
+dispatches <- dbGetQuery(con, "SELECT * from dispatches limit 10000")
+arrivals   <- dbGetQuery(con, "SELECT * from arrivals   limit 10000")
+exports    <- dbGetQuery(con, "SELECT * from exports    limit 10000")
+control    <- dbGetQuery(con, "SELECT * from control    limit 10000")
+imports    <- dbGetQuery(con, "SELECT * from imports    limit 10000")
+```
+
+# Open connection for COMTRADE data
+```{r}
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv,
+                 dbname = "comtrade",
+                 host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                 user = "trade_read",
+                 password = "2fs@9!^43g")
+on.exit(dbDisconnect(con),add=TRUE)
+on.exit(dbUnloadDriver(drv),add=TRUE)
+(tab <- dbListTables(con))
+```
+```{r}
+files    <- dbGetQuery(con, "SELECT * from files")
+comtrade <- dbGetQuery(con, "SELECT * from comtrade limit 10000")
+```
+
+# 10 data frames
+* comcode
+* port
+* country
+* dispatches
+* arrivals
+* exports
+* control
+* imports
+* files
+* comtrade
+
+# Make an array with the name of the dataframes
+```{r}
+dflist <- c("comcode","port","country","dispatches","arrivals","exports","control","imports","files","comtrade")
+```
+
+# Let's show the list of variables in dataframes
+```{r}
+for (i in 1:length(dflist)){
+  cat(paste(".......DATAFRAME ",dflist[i]," SUMMARY........","\n"))
+  print(names(get(dflist[i])))
+#  print(sapply(get(dflist[i]),class)) # Uncomment this to get also the class (numerica, integer, character, level...)
+  cat('\n\n')
+}
+```
+
+# Let's show a summary of all the dataframes
+```{r}
+dflist <- c("comcode","port","country","dispatches","arrivals","exports","control","imports","files","comtrade")
+for (i in 1:length(dflist)){
+#  cat('\n')
+  cat(paste(".......DATAFRAME ",dflist[i]," SUMMARY........","\n"))
+  print(summary(get(dflist[i])))
+  cat('\n\n')
+}
+```
+```{r}
+get_map("United Kingdom", zoom = 6) %>% ggmap() +
+  geom_point(data=port, aes(x=long, y=lat))
+```
+```{r}
+vv <- dispatches %>% group_by(smk_cod_alpha) %>% summarize(n=sum(smk_stat_value))
+ggplot(data=vv) +
+  geom_bar(mapping = aes(x=smk_cod_alpha,y=n/1e6),stat='identity') +
+  labs(x = "Country code",y="Total smk_stat_value (millions)") +
+  coord_flip()
+```
+
+```{r}
+short <- comcode %>% filter(str_length(commoditycode)==8) %>% select(-parent) %>% rename(smk_comcode=commoditycode)
+dis   <- dispatches %>% select(smk_comcode,smk_nett_mass)
+merged<- inner_join(short,dis,by='smk_comcode')
+merged2 <- merged %>% filter(substr(smk_comcode,1,2)=='01') %>%
+           group_by(description) %>% summarize(n=sum(smk_nett_mass)) %>%
+           mutate(shortd = substr(description,1,30))
+ggplot(data=merged2)+
+  geom_bar(mapping = aes(x=reorder(shortd,n),y=n),stat='identity') +
+  coord_flip()
+```
+
