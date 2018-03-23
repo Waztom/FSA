@@ -13,18 +13,13 @@ library(dbplyr)
 library(rjson)
 ```
 
-#Load the very basic function
-```{r,echo=TRUE}
-source("get_HMRC_aux_data.R")
-source("get_HMRC_data.R")
-source("get_Comtrade_data.R")
-```
-
 ```{r}
+source("get_HMRC_aux_data.R")
 list1 <- get_HMRC_aux_data()
 ```
 
 ```{r}
+source("get_HMRC_data.R")
 list2 <- get_HMRC_data("arrivals")
 ```
 ```{r}
