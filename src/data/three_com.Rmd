@@ -1,0 +1,71 @@
+---
+title: "Testing a very basic function in R"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_notebook: default
+---
+
+# Default chunk options
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+
+
+#Required libraries
+```{r}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+```
+
+#Get the auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1 <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find the comcodes for
+* Chicken
+* Beef
+* Cucumbers (watch out, beacuse there are _sea cucumbers_!)
+
+![A sea cucumber in all its glory. This creature kills hundreds of people every year.](sea_cucumber.jpg)
+
+```{r}
+cc_chicken      <- comcode[grep('CHICKEN',   toupper(comcode$description)),]
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+cc_cucumber     <- cc_all_cucumber[grep('VEGETABLES',toupper(cc_all_cucumber$description)),]
+cc_beef         <- comcode[grep('BEEF',      toupper(comcode$description)),]
+```
+
+#This is Warren's magic with a little bit of extra work
+```{r}
+source("get_Comtrade_data.R")
+polish_chicken   <- get_Comtrade_data(201601,201601,"default","02071","616") %>%
+  select(-classification,-aggregate_level,-is_leaf_code,-trade_flow_code)
+spanish_cucumber <- get_Comtrade_data(201601,201601,"default","2001","724") %>%
+  select(-classification,-aggregate_level,-is_leaf_code,-trade_flow_code)
+brazilian_beef   <- get_Comtrade_data(201601,201601,"default","16025","76") %>%
+  select(-classification,-aggregate_level,-is_leaf_code,-trade_flow_code)
+```
+#Get the price in usd per kilogram
+```{r}
+polish_chicken   <- polish_chicken   %>% mutate(price_kg_usd = trade_value_usd/netweight_kg)
+spanish_cucumber <- spanish_cucumber %>% mutate(price_kg_usd = trade_value_usd/netweight_kg)
+brazilian_beef   <- brazilian_beef   %>% mutate(price_kg_usd = trade_value_usd/netweight_kg)
+```
+
+#Plot the pdf of the polish chicken in Exports
+```{r}
+ggplot(data=polish_chicken %>% filter(trade_flow=="Exports")) +
+  geom_histogram(aes(price_kg_usd),bins=20)
+```
+
+
+
