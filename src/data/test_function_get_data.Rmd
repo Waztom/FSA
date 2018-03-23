@@ -1,0 +1,31 @@
+---
+title: "Testing a very basic function in R"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+#Required libraries
+```{r}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+```
+
+#Load the very basic function
+```{r,echo=TRUE}
+source("get_data_SQL.R")
+source("get_data_API.R")
+```
+
+#Use the function to get the data via SQL
+```{r}
+dataSQL <- get_data_SQL(data)
+```
+
+#Use the function to get the data via API
+```{r}
+dataAPI <- get_data_API(r="826", p="710,724,757,276", ps="201001,201101,201201,201301", freq="M",maxrec=100000)
+```
+
+
