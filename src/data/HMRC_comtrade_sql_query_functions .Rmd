@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load libraries
 ```{r}
 require("RPostgreSQL")
+library(dplyr)
 ```
 
 # Function to access HMRC addtional info
@@ -25,9 +26,9 @@ con <- dbConnect(drv,
                  password = "2fs@9!^43g")
 
 print("No cuppa")
-comcode    <- dbGetQuery(con, "SELECT * from comcode")
-port       <- dbGetQuery(con, "SELECT * from port")
-country    <- dbGetQuery(con, "SELECT * from country")
+comcode    <- tbl(con, "comcode")
+port       <- tbl(con, "port")
+country    <- tbl(con, "country")
 
 # R does not return multiobjects for return. Will return a list of dataframes that can be accessed via $ call. Example: Call function as HMRC_extra <- HMRC_add_info() To access comcode df use HMRC_extra$comcode 
 return(list(comcode = as.data.frame(comcode), port = as.data.frame(port), country = as.data.frame(country)))
@@ -52,8 +53,9 @@ con <- dbConnect(drv,
                  password = "2fs@9!^43g")
 
 sql_db_query <- paste("SELECT * FROM",df_name,"WHERE smk_comcode ~ '^[0-2]'")
-print("Medium cuppa?")
-requested_df   <- dbGetQuery(con, sql_db_query)
+
+print("Medium cuppa")
+requested_df   <- tbl(con, sql(sql_db_query))
 
 return(requested_df = as.data.frame(requested_df))
 }
@@ -79,9 +81,9 @@ con <- dbConnect(drv,
 
 df_columns <- "classification, period, aggregate_level, is_leaf_code, trade_flow_code, trade_flow, reporter_code, reporter, partner_code, partner, commodity_code, netweight_kg, trade_value_usd"
 
-sql_db_query <- paste("SELECT",df_columns,"FROM comtrade WHERE commodity_code ~ '^[0-2]' AND period >=",from_period,"AND period <=",to_period)
-print("Large cuppa?")
-comtrade   <- dbGetQuery(con, sql_db_query)
+sql_db_query <- paste("SELECT",df_columns,"FROM comtrade WHERE period >=",from_period,"AND period <=",to_period)
+print("LARGE cuppa")
+comtrade   <- tbl(con, sql(sql_db_query))
 
 return(comtrade = as.data.frame(comtrade))
 }

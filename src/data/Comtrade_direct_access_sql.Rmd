@@ -1,0 +1,56 @@
+---
+title: "comtrade_sql_easy"
+date: "23/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+£We first create the connection to the database
+
+```{r}
+
+library(RPostgreSQL)
+library(tidyverse)
+
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv,
+                 dbname = "comtrade",
+                 host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                 user = "trade_read",
+                 password = "2fs@9!^43g")
+
+```
+
+We can use SQL in a chunk of a notebook
+
+```{sql connection=con}
+
+-- note that 1) I am using SQL notation here and 2) there is a connection reference in the definition of this chunk
+select period, count(*) from comtrade group by period
+-- we are not loading these data in a data frame, we are just querying the data
+
+```
+
+We can do the same in R
+
+```{r}
+
+# https://db.rstudio.com/dplyr/
+comtrade_db <- tbl(con, 'comtrade')
+  
+result <- comtrade_db %>% 
+  group_by(period) %>%
+  tally()
+
+# have alook at what result holds
+# what kind of object is it? 
+
+result <- result %>% collect()
+
+# have another look at result
+# what kind of object is it now?
+
+```
