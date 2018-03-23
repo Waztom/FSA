@@ -11,6 +11,7 @@ We first create the connection to the database
 
 library(RPostgreSQL)
 library(tidyverse)
+library(dbplyr)
 
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv,

@@ -10,6 +10,7 @@ output:
 library(RPostgreSQL)
 library(tidyverse)
 library(dbplyr)
+library(rjson)
 ```
 
 #Load the very basic function
