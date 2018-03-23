@@ -1,4 +1,4 @@
-get_data_SQL <- function(result){
+get_data_SQL <- function(){
 
   drv <- dbDriver("PostgreSQL")
 

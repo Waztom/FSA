@@ -21,7 +21,7 @@ source("get_data_API.R")
 
 #Use the function to get the data via SQL
 ```{r}
-dataSQL <- get_data_SQL(data)
+dataSQL <- get_data_SQL()
 ```
 
 #Use the function to get the data via API
