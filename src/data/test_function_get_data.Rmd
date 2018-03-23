@@ -15,18 +15,22 @@ library(rjson)
 
 #Load the very basic function
 ```{r,echo=TRUE}
-source("get_data_SQL.R")
-source("get_data_API.R")
+source("get_HMRC_aux_data.R")
+source("get_HMRC_data.R")
+source("get_Comtrade_data.R")
 ```
 
-#Use the function to get the data via SQL
 ```{r}
-dataSQL <- get_data_SQL()
+list1 <- get_HMRC_aux_data()
 ```
 
-#Use the function to get the data via API
 ```{r}
-dataAPI <- get_data_API(r="826", p="710,724,757,276", ps="201001,201101,201201,201301", freq="M",maxrec=100000)
+list2 <- get_HMRC_data("arrivals")
 ```
+```{r}
+source("get_Comtrade_data.R")
+list3 <- get_Comtrade_data(201601,201601,"is_leaf_code")
+```
+
 
 
