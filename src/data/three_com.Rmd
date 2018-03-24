@@ -19,6 +19,7 @@ library(tidyverse)
 library(dbplyr)
 library(rjson)
 library(DBI)
+library(lubridate)
 ```
 
 #Get the auxiliary data
@@ -28,6 +29,8 @@ list1 <- get_HMRC_aux_data()
 comcode <- data.frame(Reduce(rbind, list1[1]))
 port    <- data.frame(Reduce(rbind, list1[2]))
 country <- data.frame(Reduce(rbind, list1[3]))
+write.csv(comcode,file="comcode.csv")
+write.csv(country,file="country.csv")
 ```
 
 #Find the comcodes for
@@ -45,14 +48,15 @@ cc_beef         <- comcode[grep('BEEF',      toupper(comcode$description)),]
 ```
 
 #This is Warren's magic with a little bit of extra work
+##Is ten minutes too long? Then load the csv files written at the end of this notebook
 ```{r}
 source("get_Comtrade_data.R")
-polish_chicken   <- get_Comtrade_data(201601,201601,"default","02071","616") %>%
-  select(-classification,-aggregate_level,-is_leaf_code,-trade_flow_code)
-spanish_cucumber <- get_Comtrade_data(201601,201601,"default","2001","724") %>%
-  select(-classification,-aggregate_level,-is_leaf_code,-trade_flow_code)
-brazilian_beef   <- get_Comtrade_data(201601,201601,"default","16025","76") %>%
-  select(-classification,-aggregate_level,-is_leaf_code,-trade_flow_code)
+stime <- Sys.time()
+polish_chicken   <- get_Comtrade_data(201001,201601,"default","02071","616")
+spanish_cucumber <- get_Comtrade_data(201001,201601,"default","2001","724")
+brazilian_beef   <- get_Comtrade_data(201001,201601,"default","16025","76")
+etime <- Sys.time()
+(etime-stime)
 ```
 #Get the price in usd per kilogram
 ```{r}
@@ -61,11 +65,174 @@ spanish_cucumber <- spanish_cucumber %>% mutate(price_kg_usd = trade_value_usd/n
 brazilian_beef   <- brazilian_beef   %>% mutate(price_kg_usd = trade_value_usd/netweight_kg)
 ```
 
-#Plot the pdf of the polish chicken in Exports
+#Refurbish the date into something R understand
 ```{r}
-ggplot(data=polish_chicken %>% filter(trade_flow=="Exports")) +
-  geom_histogram(aes(price_kg_usd),bins=20)
+polish_chicken   <- polish_chicken %>%
+                    mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+                    select(-period)
+spanish_cucumber <- spanish_cucumber %>%
+                    mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+                    select(-period)
+brazilian_beef   <- brazilian_beef %>%
+                    mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+                    select(-period)
+```
+
+#Do some plots...
+##Polish chicken
+```{r}
+tmp1 <- polish_chicken %>% filter(reporter=="United Kingdom") %>% 
+                           filter(trade_flow=="Imports")
+ggplot(data=tmp1,aes(x=period_date,y=price_kg_usd,group=commodity_code,color=commodity_code)) + 
+  geom_point() + geom_line() +
+  labs(x="Period",y="Price (usd/kg)",title="Polish chicken into UK") + 
+  theme(legend.position="bottom")
+```
+
+##What about spanish cucumbers?
+```{r}
+tmp2 <- spanish_cucumber %>% filter(reporter=="United Kingdom") %>% 
+                             filter(trade_flow=="Imports")
+ggplot(data=tmp2,aes(x=period_date,y=netweight_kg,group=commodity_code,color=commodity_code)) + 
+  geom_point() + geom_line() +
+  labs(x="Period",y="Price (usd/kg)",title="Spanish cucumbers into UK") + 
+  theme(legend.position="bottom")
+```
+
+##And the brazilian beef?
+```{r}
+tmp3 <- brazilian_beef %>% filter(reporter=="United Kingdom") %>% 
+                           filter(trade_flow=="Imports")
+ggplot(data=tmp3,aes(x=period_date,y=price_kg_usd,group=commodity_code,color=commodity_code)) + 
+  geom_point() + geom_line() +
+  labs(x="Period",y="Price (usd/kg)",title="Brazilian beef into UK") + 
+  theme(legend.position="bottom")
+```
+
+#Overall (mean over countries) results
+##Polish chicken
+```{r}
+tmp11 <- polish_chicken %>% filter(trade_flow=="Imports") %>%
+                           group_by(period_date,commodity_code) %>%
+                           summarize(overall_mean_price = mean(price_kg_usd,na.rm=TRUE))
+ggplot(data=tmp11,aes(x=period_date,y=overall_mean_price,group=commodity_code,color=commodity_code)) + 
+  geom_point() + geom_line() +
+  labs(x="Period",y="Overall mean price (usd/kg)",title="Polish chicken") + 
+  theme(legend.position="bottom")
+```
+
+##Spanish cucumbers
+```{r}
+tmp22 <- spanish_cucumber %>% filter(trade_flow=="Imports") %>%
+                             group_by(period_date,commodity_code) %>%
+                             summarize(overall_mean_price = mean(price_kg_usd,na.rm=TRUE))
+ggplot(data=tmp22,aes(x=period_date,y=overall_mean_price,group=commodity_code,color=commodity_code)) + 
+  geom_point() + geom_line() +
+  labs(x="Period",y="Overall mean price (usd/kg)",title="Spanish cucumber") + 
+  theme(legend.position="bottom")
+```
+
+##Brazilian beef
+```{r}
+tmp33 <- brazilian_beef %>% filter(trade_flow=="Imports") %>%
+                           group_by(period_date,commodity_code) %>%
+                           summarize(overall_mean_price = mean(price_kg_usd,na.rm=TRUE))
+ggplot(data=tmp33,aes(x=period_date,y=overall_mean_price,group=commodity_code,color=commodity_code)) + 
+  geom_point() + geom_line() +
+  labs(x="Period",y="Overall mean price (usd/kg)",title="Brazilian beef") + 
+  theme(legend.position="bottom")
+```
+
+#Let's be bold and plot the UK and overall mean price together
+```{r}
+pp1 <- inner_join(tmp3,tmp33,by=c("period_date","commodity_code")) %>% select(period_date,commodity_code,price_kg_usd,overall_mean_price) %>% gather("scope","price",3:4)
+ggplot(data=pp1) + geom_line(mapping = aes(x=period_date,y=price,
+                                           group=interaction(commodity_code,scope),
+                                           color=commodity_code,linetype=scope)) +
+                   geom_point(mapping = aes(x=period_date,y=price,
+                                           group=interaction(commodity_code,scope),
+                                           color=commodity_code,shape=scope)) +
+                   labs(x="Period",y="UK and overall mean price",title="Brazilian beef")
+```
+
+#Dump the data into csv files
+```{r}
+write.csv(polish_chicken,   file="polish_chicken.csv")
+write.csv(spanish_cucumber, file="spanish_cucumber.csv")
+write.csv(brazilian_beef,   file="brazilian_beef.csv")
 ```
 
 
+#Plot the pdf's
+##Is this a $\beta$ inverted distribution?
+##What are those outliers? Double check the whole thing...
+```{r}
+ggplot(data=polish_chicken %>% filter(trade_flow=="Imports") %>% group_by(commodity_code)) +
+  geom_histogram(aes(price_kg_usd,fill=commodity_code),bins=40) +
+  labs(x="Price in usd per kilo",title="Polish chicken")
+```
 
+```{r}
+ggplot(data=spanish_cucumber %>% filter(trade_flow=="Imports") %>% group_by(commodity_code)) +
+  geom_histogram(aes(price_kg_usd,fill=commodity_code),bins=40)+
+  labs(x="Price in usd per kilo",title="Spanish cucumber")
+```
+```{r}
+ggplot(data=brazilian_beef %>% filter(trade_flow=="Imports") %>% group_by(commodity_code)) +
+  geom_histogram(aes(price_kg_usd,fill=commodity_code),bins=40)+
+  labs(x="Price in usd per kilo",title="Brazilian beef")
+```
+
+#More results: search for outliers
+##Polish chicken
+```{r}
+ggplot(data=polish_chicken %>%
+         filter(trade_flow=="Imports") %>%
+         mutate(year=as.factor(str_sub(period_date,1,4)))) + geom_point(mapping = aes(x=log(netweight_kg),y=log(trade_value_usd),shape=commodity_code,color=year)) +
+    geom_smooth(mapping = aes(x=log(netweight_kg),y=log(trade_value_usd)),method = "loess") +
+  labs(x="log(Weight in kg)",y="log(Trade value in $US)",title="Polish chicken")
+```
+
+##Spanish cucumber
+```{r}
+ggplot(data=spanish_cucumber %>%
+         filter(trade_flow=="Imports") %>%
+         mutate(year=as.factor(str_sub(period_date,1,4)))) +
+  geom_point(mapping = aes(x=log(netweight_kg),y=log(trade_value_usd),shape=commodity_code,color=year))+
+  geom_smooth(mapping = aes(x=log(netweight_kg),y=log(trade_value_usd)),method="loess") +
+    labs(x="log(Weight in kg)",y="log(Trade value in $US)",title="Spanish cucumber")
+```
+
+##Brazilian beef
+```{r}
+ggplot(data=brazilian_beef %>%
+         filter(trade_flow=="Imports") %>%
+         mutate(year=as.factor(str_sub(period_date,1,4)))) +
+  geom_point(mapping = aes(x=log(netweight_kg),y=log(trade_value_usd),shape=commodity_code,color=year)) +
+  geom_smooth(mapping = aes(x=log(netweight_kg),y=log(trade_value_usd)),method="loess") +
+  labs(x="log(Weight in kg)",y="log(Trade value in $US)",title="Brazilian beef")
+```
+
+##Polish chicken
+```{r}
+ggplot(data=polish_chicken %>%
+         filter(trade_flow=="Imports")) +
+  geom_boxplot(mapping = aes(x=period_date,y=price_kg_usd,group=period_date)) +
+  labs(x="Period",y="Price (usd/kg)")
+```
+
+##Spanish cucumber
+```{r}
+ggplot(data=spanish_cucumber %>%
+         filter(trade_flow=="Imports")) +
+  geom_boxplot(mapping = aes(x=period_date,y=price_kg_usd,group=period_date))+
+  labs(x="Period",y="Price (usd/kg)")
+```
+
+##Polish chicken
+```{r}
+ggplot(data=brazilian_beef %>%
+         filter(trade_flow=="Imports")) +
+  geom_boxplot(mapping = aes(x=period_date,y=price_kg_usd,group=period_date))+
+  labs(x="Period",y="Price (usd/kg)")
+```
