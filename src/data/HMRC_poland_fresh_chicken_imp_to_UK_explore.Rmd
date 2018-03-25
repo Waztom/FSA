@@ -1,7 +1,6 @@
 ---
 title: "Polish fresh chicken imports into the UK"
 output:
-  word_document: default
   pdf_document:
     latex_engine: pdflatex
 ---
