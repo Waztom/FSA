@@ -1,7 +1,6 @@
 ---
 title: "Polish frozen chicken imports into the UK"
 output:
-  html_notebook: default
   pdf_document:
     latex_engine: pdflatex
 ---
@@ -39,7 +38,7 @@ HMRC_EU_import_food_data <- get_HMRC_data(arrivals)
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
 ```
 
-#Select Poland fresh chicken import info
+#Select Poland frozen chicken import info
 ```{r}
 HMRC_columns  <- col_names[c(1,4,10,14,15,16)]
 HMRC_country  <- "PL"

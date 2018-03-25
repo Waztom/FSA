@@ -1,7 +1,6 @@
 ---
 title: "Spanish cucumber imports into the UK"
 output:
-  html_notebook: default
   pdf_document:
     latex_engine: pdflatex
 ---
