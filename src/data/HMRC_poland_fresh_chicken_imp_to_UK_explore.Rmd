@@ -21,7 +21,7 @@ library(tidyverse)
 
 #Get the HMRC auxiliary data
 ```{r}
-source("/Users/Warren/S2Ds_FSA/src/data/get_HMRC_aux_data.R")
+source("get_HMRC_aux_data.R")
 list1   <- get_HMRC_aux_data()
 comcode <- data.frame(Reduce(rbind, list1[1]))
 port    <- data.frame(Reduce(rbind, list1[2]))
@@ -35,7 +35,7 @@ cc_all_chicken <- comcode[grep('CHICKEN',  toupper(comcode$description)),]
 
 #Get HMRC import data from EU (arrivals df)
 ```{r}
-source("/Users/Warren/S2Ds_FSA/src/data/get_HMRC_data.R")
+source("get_HMRC_data.R")
 HMRC_EU_import_food_data <- get_HMRC_data(arrivals) 
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
 ```
