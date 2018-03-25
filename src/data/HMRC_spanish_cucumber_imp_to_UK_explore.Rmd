@@ -1,8 +1,6 @@
 ---
 title: "Spanish cucumber imports into the UK"
 output:
-  html_document:
-    df_print: paged
   html_notebook: default
   pdf_document:
     latex_engine: pdflatex
@@ -11,7 +9,6 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
-
 
 #Required libraries
 ```{r}
