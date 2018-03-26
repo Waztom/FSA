@@ -15,6 +15,7 @@ require("RPostgreSQL")
 library(ggplot2)
 library(dplyr)
 library(tidyverse)
+library(lubridate)
 ```
 
 #Get the HMRC auxiliary data
@@ -26,59 +27,68 @@ port    <- data.frame(Reduce(rbind, list1[2]))
 country <- data.frame(Reduce(rbind, list1[3]))
 ```
 
-#Find cucumber comcodes - Thank you Alex for making life nice and easy for us! 
+#Find beef comcodes - Thank you Alex for making life nice and easy for us! 
 ```{r}
-cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+cc_all_beef <- comcode[grep('BEEF',  toupper(comcode$description)),]
 ```
 
-#Get HMRC import data from EU (arrivals df)
+#Get HMRC import data  (imports df - original column headings for comparison)
 ```{r}
-source("get_HMRC_data.R")
-HMRC_EU_import_food_data <- get_HMRC_data(arrivals) 
+source("get_HMRC_data_imports.R")
+HMRC_EU_import_food_data_all <- get_HMRC_data_imports(imports)
+(col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data_all))))
+```
+
+#Get HMRC import data  (imports df - new column headings)
+```{r}
+source("get_HMRC_data_imports.R")
+HMRC_EU_import_food_data <- get_HMRC_data_imports(imports)
+names(HMRC_EU_import_food_data) <- c("Comcode", "Standard_International_Trade_Classification", "Record_Type", "Country_of_Dispatch_Seq", "Country_of_Dispatch", "Country_of_Origin_Seq", "Country_of_Origin", "Date", "Port_Seq", "Port", "Flag_of_Ship_Seq", "Flag_of_Ship", "Country_of_Origin_Impure_Seq", "Country_of_Origin_Impure", "Type_of_Trade", "Container", "Mode_of_Transport", "Inland_Mode_of_Transport", "Location_Seq", "Location_Alpha", "Suite_Indicator", "Procedure_Code",  "CB_Code", "Value", "Quantity_1", "Quantity_2")
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
 ```
 
-#Select Spain cucumber import info
+
+
+#Select Brazillian beef import info
 ```{r}
-HMRC_columns  <- col_names[c(1,4,10,14,15,16)]
-HMRC_country  <- "ES"
-HMRC_comcode  <- "07070005"
+
+HMRC_columns  <- col_names[c(1,5,8,24,25)]
+HMRC_country  <- "BR"
+HMRC_comcode  <- "16025095"
 model_data    <- HMRC_EU_import_food_data %>% 
-                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode) %>%
-                 select(-smk_cod_alpha, -smk_comcode)
+                 select(HMRC_columns) %>%                                                         filter(Country_of_Dispatch == HMRC_country & Comcode ==                                   HMRC_comcode) %>%
+                 select(-Country_of_Dispatch, -Comcode)
 ```
 
-#Clean data: remove any Na values, 0 values and date values == "0000000" 
+#Clean data: Run for consistency, but no NAs, no 0000 dates and no negative values
 ```{r}
-model_data_clean <- model_data %>% na.omit %>% 
-                    filter(smk_nett_mass!=0 & smk_no_of_consignments != 0 &                                 smk_stat_value != 0) %>%                                                  filter(smk_period_reference!="0000000") %>%                                      mutate(abs(smk_nett_mass) & abs(smk_no_of_consignments) &                               abs(smk_stat_value)) %>% 
-                    unique()
+model_data_clean <- model_data %>% na.omit
 ```
 
 #Convert period column to date format
 ```{r}
 model_data_clean <- model_data_clean %>% 
-                    mutate(smk_period_reference = substr(smk_period_reference,                               4,7)) %>% 
-                    mutate(smk_period_reference =                                                            paste0(smk_period_reference,"01")) %>%
-                    mutate(smk_period_reference = as.Date(smk_period_reference,
-                                                          "%y%m%d"))
+                    mutate(Date = paste("01",Date, sep = "/")) %>%
+                    mutate(Date = dmy(Date))
 ```
 
-#Get the cos/kg ($/kg)
+#Get the cost/kg ($/kg)
 ```{r}
 model_data_clean <- model_data_clean %>% 
-                    mutate(cost_per_kg = smk_stat_value / smk_nett_mass)
+                    mutate(Cost_per_Kg = Value / Quantity_1)
 ```
 
 #Aggregate data into periods of months
 ```{r}
-model_data_group <- model_data_clean %>% group_by(smk_period_reference) %>%                          summarise(smk_nett_mass = sum(smk_nett_mass),                                    smk_no_of_consignments  = sum(smk_no_of_consignments),                           smk_stat_value          = sum(smk_stat_value), 
-                    cost_per_kg             = mean(cost_per_kg))
+model_data_group <- model_data_clean %>% group_by(Date) %>%                          
+                                        summarise(Quantity_1 = sum(Quantity_1),                          
+                                                  Value = sum(Value), 
+                                                  Cost_per_Kg = mean(Cost_per_Kg))
 ```
 
-#What does the cost/kg of the cucumber imported into the UK look like over time?
+#What does the cost/kg of the beef imported into the UK from Brazil look like over time?
 ```{r}
-ggplot(model_data_group, aes(smk_period_reference, cost_per_kg)) +
+ggplot(model_data_group, aes(Date, Cost_per_Kg)) +
         geom_point() 
 ```
 
@@ -95,8 +105,6 @@ ggplot(model_data_group, aes(smk_period_reference, smk_nett_mass)) +
         geom_hline(yintercept=1E7, linetype="dashed", color = "red")
 ```
 
-* Imports of cucumber appears to be seasonal and follow an oscillating pattern with exception for several points (Occur Nov - Jan) where there are spikes in 2010 & 2014 and possibly 2009, 2016 & 2017. 
-* Also looking at cost/kg over time, note how cost/kg simmilar in months before and/or after at some of these points in time.   
 
 #Did the number of consignments also increase during the spikes? 
 ```{r}
@@ -105,10 +113,3 @@ ggplot(model_data_group, aes(smk_period_reference, smk_no_of_consignments)) +
         geom_point(colour = "green")
 ```
 
-#Conclusions and questions
-* Possible flag for irregular increased mass cucumbers imported into the UK
-* Possible flag for prices being simmilar before and/or after month of increased mass imported
-* Where do these mysterious cucumbers come from? Comtrade data may help here. 
-* To flag future anomalies can the oscillating and seasonal nett mass of imports of cucumbers from Spain into the UK be modelled?
-* Janis any ideas with modelling continuous data over time - maybe try simple non-linear function using X=period,no. consignments,cost/kg and Y = nett mass cucumbers and try regression? Other model ideas?   
-* Looking ahead, can links be made to determine the source of these extra cucumbers? Possible starting points to to model import/export network with focus on mass balances?
