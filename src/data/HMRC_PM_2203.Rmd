@@ -88,7 +88,7 @@ rm(arrivals)
 arrivals_tbl <- mutate(arrivals_tbl, Date = (substr(arrivals_tbl$smk_period_reference, 2,7)))
 arrivals_tbl$Date <- paste0(arrivals_tbl$Date, "01")
 arrivals_tbl$Date <- ymd(arrivals_tbl$Date)
-arrivals_tbl <- arrivals_tbl[,-3]
+arrivals_tbl <- arrivals_tbl %>% select(-smk_period_referece)
 ```
 
 #Change names of columns
@@ -99,7 +99,7 @@ names(arrivals_tbl) <- c("Comcode", "Country_of_Dispatch", "Net_Mass", "No_of_Co
 #change order of columns, sort by date and group by country
 ```{r}
 arrivals_tbl <- select(arrivals_tbl, "Date", "Country_of_Dispatch", "Comcode", "Net_Mass", "No_of_Consignments", "Invoice_Price")
-arrivals_tbl <- arrange(arrivals_tbl, Date, Comcode) 
+arrivals_tbl <- arrange(arrivals_tbl, Date) 
 arrivals_tbl$Comcode <- as.numeric(as.character(arrivals_tbl$Comcode))
 ```
 
@@ -110,9 +110,9 @@ arrivals_tbl <- arrivals_tbl[complete.cases(arrivals_tbl),]
 
 #new code which isn't working - can't do or filter with character strings?
 ```{r}
-arrivals_tbl_filtered <- filter(arrivals_tbl, Country_of_Dispatch == "DE" | "ES")
+target <- c("ES","DE")
+arrivals_tbl_filtered <- filter(arrivals_tbl, Country_of_Dispatch %in% target)
 arrivals_tbl_grouped <- group_by(arrivals_tbl_filtered, Date, Country_of_Dispatch)
-arrivals_tbl_summary <- summarize(arrivals_tl_grouped, Business)
 ```
 
 

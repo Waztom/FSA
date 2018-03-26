@@ -1,0 +1,142 @@
+---
+title: "Spanish cucumber imports into the UK"
+output:
+  pdf_document:
+    latex_engine: pdflatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+```
+
+#Get the HMRC auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1   <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find beef comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_beef <- comcode[grep('BEEF',  toupper(comcode$description)),]
+```
+
+#Get HMRC import data  (imports df - original column headings for comparison)
+```{r}
+source("get_HMRC_data_imports.R")
+HMRC_EU_import_food_data_all <- get_HMRC_data_imports(imports)
+(col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data_all))))
+```
+
+#Get HMRC import data  (imports df - new column headings)
+```{r}
+source("get_HMRC_data_imports.R")
+HMRC_EU_import_food_data <- get_HMRC_data_imports(imports)
+names(HMRC_EU_import_food_data) <- c("Comcode", "Standard_International_Trade_Classification", "Record_Type", "Country_of_Dispatch_Seq", "Country_of_Dispatch", "Country_of_Origin_Seq", "Country_of_Origin", "Date", "Port_Seq", "Port", "Flag_of_Ship_Seq", "Flag_of_Ship", "Country_of_Origin_Impure_Seq", "Country_of_Origin_Impure", "Type_of_Trade", "Container", "Mode_of_Transport", "Inland_Mode_of_Transport", "Location_Seq", "Location_Alpha", "Suite_Indicator", "Procedure_Code",  "CB_Code", "Value", "Quantity_1", "Quantity_2")
+(col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
+```
+
+
+
+#Select Brazillian beef import info
+```{r}
+
+HMRC_columns  <- col_names[c(1,5,8,24,25)]
+HMRC_country  <- "BR"
+HMRC_comcode  <- "16025095"
+model_data    <- HMRC_EU_import_food_data %>% 
+                 select(HMRC_columns) %>%                                                         filter(Country_of_Dispatch == HMRC_country & Comcode ==                                   HMRC_comcode) %>%
+                 select(-Country_of_Dispatch, -Comcode)
+```
+
+#Clean data: Run for consistency, but no NAs, no 0000 dates and no negative values
+```{r}
+model_data_clean <- model_data %>% na.omit
+```
+
+#Convert period column to date format
+```{r}
+model_data_clean <- model_data_clean %>% 
+                    mutate(Date = paste("01",Date, sep = "/")) %>%
+                    mutate(Date = dmy(Date))
+```
+
+#Get the cost/kg ($/kg)
+```{r}
+model_data_clean <- model_data_clean %>% 
+                    mutate(Cost_per_Kg = Value / Quantity_1)
+```
+
+#Aggregate data into periods of months
+```{r}
+model_data_group <- model_data_clean %>% group_by(Date) %>%                          
+                                        summarise(Quantity_1 = sum(Quantity_1),                          
+                                                  Value = sum(Value), 
+                                                  Cost_per_Kg = mean(Cost_per_Kg))
+```
+
+#What does the cost/kg of the beef imported into the UK from Brazil look like over time?
+```{r}
+ggplot(model_data_group, aes(Date, Cost_per_Kg)) +
+        geom_line(color = "pink", size = 1) + geom_smooth(color="blue", se = FALSE)
+```
+*Price per kilogram grew between 2009 and 2012 and then plateaued. Since 2015 the price/kg has fallen
+
+#What does the nett mass of the beef imported into the UK from Brazil look like over time?
+```{r}
+ggplot(model_data_group, aes(Date, Quantity_1)) +
+        geom_point(colour = "purple") +
+        geom_smooth(color = "turquoise")
+```
+*The quantity imported decreased rapidly between 2009 and 2012. The quantity has continued to decrease since but at a slower rate
+
+#What happened to the value of beef over time? 
+```{r}
+ggplot(model_data_group, aes(Date, Value)) +
+        geom_point(colour = "blue") +
+        geom_smooth(colour = "green", method = "lm")
+```
+*the value of beef imported has decreased ~linearly overtime
+
+#What if we focus on data after 2012?
+```{r}
+model_data_group_post <- model_data_group %>% filter(Date > "2012-01-01")
+```
+
+
+#first cost/kg overtime (with data after 2012)
+```{r}
+ggplot(model_data_group_post, aes(Date, Cost_per_Kg)) +
+        geom_line(color = "pink", size = 1) + geom_smooth(color="blue", se = FALSE)
+```
+*Nothing particularly jumps out apart from a peak at the end of 2014 and a drop at the end of 2015
+
+
+#And quantity overtime focusing on after 2012?
+```{r}
+ggplot(model_data_group_post, aes(Date, Quantity_1)) +
+        geom_point(colour = "purple") +
+        geom_smooth(color = "turquoise")
+```
+*Much more variation pre 2015
+
+
+#What happened to the value of beef over time - since 2012 
+```{r}
+ggplot(model_data_group_post, aes(Date, Value)) +
+        geom_point(colour = "blue") +
+        geom_smooth(colour = "green", method = "lm")
+```
+*Pretty linear trend although more variation observed prior to 2015
+

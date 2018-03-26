@@ -39,6 +39,9 @@ HMRC_EU_import_food_data <- get_HMRC_data(arrivals)
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
 ```
 
+#names(HMRC_EU_import_food_data) <- c("Comcode", "Record_Type", "Country_of_Dispatch_Code", "Country_of_Dispatch", "Type_of_Trade", "Country_of_Origin_code", "Country_of_Origin", "Nature_of_Transaction", "Mode_of_Transport", "Date", "Suite_Indicator", "Standard_International_Trade_Classification", "IP_Comcode", "No_of_Consignments", "Invoice_Price", "Net_Mass", "Supplementary Unit") 
+# to add to change column names but will have to change code below
+
 #Select Poland fresh chicken import info
 ```{r}
 HMRC_columns  <- col_names[c(1,4,10,14,15,16)]
