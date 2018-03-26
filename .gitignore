@@ -5,3 +5,4 @@
 *.RProj
 bash.exe.stackdump
 notebooks/.ipynb_checkpoints/
+.DS_Store
