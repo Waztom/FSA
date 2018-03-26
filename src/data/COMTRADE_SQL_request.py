@@ -45,29 +45,29 @@ def get_commodity_code(comtrade_dictionary, commodity):
     commodity_code = comtrade_dictionary['comcodes'][comtrade_dictionary['comcodes']['text'].str.contains(commodity)]
     if commodity_code.empty:
         print(commodity + ' not found.')
-        return -1
+        return None
     else:
         #take first one if more than one result
         commodity_code = commodity_code.iloc[0]
     print(commodity_code['text'])
     return commodity_code
     
-#def get_commodity_codes(comtrade_dictionary, commodity):
-#    '''
-#    Search the commodity codes and concatenate them into an array
-#    '''
-#    commodity_code = comtrade_dictionary['comcodes'][comtrade_dictionary['comcodes']['text'].str.contains(commodity)]
-#    if commodity_code.empty:
-#        print(commodity + ' not found.')
-#        return -1
-#    elif len(commodity_code['id'])>1:
-#        commodity_codes=commodity_code['id'].values
-#        print(commodity_code['text'])
-#    else:
-#        #Repeat the single occurence in order to have a list for the SQL request
-#        commodity_code =np.repeat(commodity_code['id'].values,2)
-#        print(commodity_code['text'])
-#    return commodity_codes
+def get_commodity_codes(comtrade_dictionary, commodity):
+    '''
+    Search the commodity codes and concatenate them into an array
+    '''
+    commodity_code = comtrade_dictionary['comcodes'][comtrade_dictionary['comcodes']['text'].str.contains(commodity)]
+    if commodity_code.empty:
+        print(commodity + ' not found.')
+        return None
+    elif len(commodity_code['id'])>1:
+        commodity_codes=commodity_code['id'].values
+        print(commodity_code['text'])
+    else:
+        #Repeat the single occurence in order to have a list for the SQL request
+        commodity_code =np.repeat(commodity_code['id'].values,2)
+        print(commodity_code['text'])
+    return commodity_codes
     
 conn = psycopg2.connect(
                  dbname = "comtrade", # could also be "hmrc"
@@ -87,13 +87,17 @@ uk_code = get_reporter_code(comtrade_dict, 'United Kingdom')
 brazil_code = get_partner_code(comtrade_dict, 'Brazil')
 beef = get_commodity_code(comtrade_dict, 'Meat')['id']
 
+if beef is None:
+    print('WARNING: No commodity code found.')
+    sys.exit(1)
+
 t0 = time.perf_counter()
 
 cur.execute("SELECT partner,trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
             "partner_code = %(partner)s "\
             "AND period  BETWEEN 201401 AND 201612"\
-            "AND commodity_code = %(comcode)s"\
-            "AND reporter_code = %(reporter)s", {'partner': brazil_code, 'comcode': beef, 'reporter': uk_code})
+            "AND commodity_code = %(comcodes)s"\
+            "AND reporter_code = %(reporter)s", {'partner': brazil_code, 'comcodes': beef, 'reporter': uk_code})
 
 imports = pd.DataFrame(cur.fetchall(), columns=['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_code'])
 
