@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 20 19:18:02 2018
+
+@author: janis
+"""
+
+import psycopg2
+import pandas as pd
+import time, datetime
+import json
+
+
+def load_comtrade_info():
+    comtrade_dictionary={}
+    json_data=open('lib/classificationHS.json')
+    comtrade_dictionary['comcodes']= pd.DataFrame(json.load(json_data)['results'])
+    json_data.close()
+    json_data=open('lib/partnerAreas.json')
+    comtrade_dictionary['partners']= pd.DataFrame(json.load(json_data)['results'])
+    json_data.close()
+    json_data=open('lib/reporterAreas.json')
+    comtrade_dictionary['reporters']= pd.DataFrame(json.load(json_data)['results'])
+    json_data.close()
+        
+    return comtrade_dictionary
+
+def get_partner_code(comtrade_dictionary, country):
+    '''
+    Search the partner country code
+    '''
+    return comtrade_dictionary['partners']['id'][comtrade_dictionary['partners']['text'].str.contains(country)].iloc[0]
+
+def get_reporter_code(comtrade_dictionary, country):
+    '''
+    Search the reporter country code
+    '''
+    return comtrade_dictionary['reporters']['id'][comtrade_dictionary['reporters']['text'].str.contains(country)].iloc[0]
+    
+def get_commodity_code(comtrade_dictionary, commodity):
+    '''
+    Search the commodity code
+    '''
+    commodity_code = comtrade_dictionary['comcodes'][comtrade_dictionary['comcodes']['text'].str.contains(commodity)]
+    if commodity_code.empty:
+        print(commodity + ' not found.')
+        return -1
+    else:
+        #take first one if more than one result
+        commodity_code = commodity_code.iloc[0]
+    print(commodity_code['text'])
+    return commodity_code
+    
+conn = psycopg2.connect(
+                 dbname = "comtrade", # could also be "hmrc"
+                 host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                 user = "trade_read",
+                 password = "2fs@9!^43g")
+
+cur = conn.cursor()
+
+cur.execute("select COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='comtrade'")
+column_names=cur.fetchall()
+print(column_names)
+
+comtrade_dict = load_comtrade_info()
+uk_code = get_reporter_code(comtrade_dict, 'United Kingdom')
+brazil_code = get_partner_code(comtrade_dict, 'Brazil')
+beef = get_commodity_code(comtrade_dict, 'Meat')['id']
+
+t0 = time.perf_counter()
+
+cur.execute("SELECT partner, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
+            "partner_code = %s "\
+            "AND period  BETWEEN 201401 AND 201612"\
+            "AND commodity_code = %s"\
+            "AND reporter_code = %s", (brazil_code, beef, uk_code))
+
+imports = pd.DataFrame(cur.fetchall(), columns=['partner', 'netweight_kg', 'trade_value_usd', 'period', 'commodity_code'])
+
+t1 = time.perf_counter()
+print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
+
+
