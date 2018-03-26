@@ -61,7 +61,7 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 cur.execute("select COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='comtrade'")
-column_names=cur.fetchall()
+column_names=pd.DataFrame(cur.fetchall())
 print(column_names)
 
 comtrade_dict = load_comtrade_info()
