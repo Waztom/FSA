@@ -10,6 +10,7 @@ import psycopg2
 import pandas as pd
 import time, datetime
 import json
+import sys
 
 
 def load_comtrade_info():
@@ -61,12 +62,12 @@ def get_commodity_codes(comtrade_dictionary, commodity):
         print(commodity + ' not found.')
         return None
     elif len(commodity_code['id'])>1:
-        commodity_codes=commodity_code['id'].values
         print(commodity_code['text'])
+        commodity_codes=commodity_code['id'].values.tolist()
     else:
         #Repeat the single occurence in order to have a list for the SQL request
-        commodity_code =np.repeat(commodity_code['id'].values,2)
         print(commodity_code['text'])
+        commodity_code =np.repeat(commodity_code['id'].values,2).tolist()
     return commodity_codes
     
 conn = psycopg2.connect(
@@ -85,7 +86,9 @@ print()
 comtrade_dict = load_comtrade_info()
 uk_code = get_reporter_code(comtrade_dict, 'United Kingdom')
 brazil_code = get_partner_code(comtrade_dict, 'Brazil')
-beef = get_commodity_code(comtrade_dict, 'Meat')['id']
+#beef = get_commodity_code(comtrade_dict, 'Meat of bovine')['id']
+beef = get_commodity_codes(comtrade_dict, 'Meat of bovine')
+
 
 if beef is None:
     print('WARNING: No commodity code found.')
@@ -96,10 +99,10 @@ t0 = time.perf_counter()
 cur.execute("SELECT partner,trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
             "partner_code = %(partner)s "\
             "AND period  BETWEEN 201401 AND 201612"\
-            "AND commodity_code = %(comcodes)s"\
+            "AND commodity_code = ANY(%(comcodes)s)"\
             "AND reporter_code = %(reporter)s", {'partner': brazil_code, 'comcodes': beef, 'reporter': uk_code})
 
-imports = pd.DataFrame(cur.fetchall(), columns=['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_code'])
+imports = pd.DataFrame(cur.fetchall(), columns=['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes'])
 
 t1 = time.perf_counter()
 print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
