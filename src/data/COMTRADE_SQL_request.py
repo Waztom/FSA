@@ -11,7 +11,10 @@ import pandas as pd
 import time, datetime
 import json
 import sys
+import numpy as np
 
+################################################################
+## Define a function that load the comtrade json files into a dictionary
 
 def load_comtrade_info():
     comtrade_dictionary={}
@@ -26,6 +29,9 @@ def load_comtrade_info():
     json_data.close()
         
     return comtrade_dictionary
+
+################################################################
+## Define three function which lookup comtrade codes in the comtrade dictionary
 
 def get_partner_code(comtrade_dictionary, country):
     '''
@@ -55,7 +61,7 @@ def get_commodity_code(comtrade_dictionary, commodity):
     
 def get_commodity_codes(comtrade_dictionary, commodity):
     '''
-    Search the commodity codes and concatenate them into an array
+    Search the commodity codes and concatenate them into a list
     '''
     commodity_code = comtrade_dictionary['comcodes'][comtrade_dictionary['comcodes']['text'].str.contains(commodity)]
     if commodity_code.empty:
@@ -69,19 +75,25 @@ def get_commodity_codes(comtrade_dictionary, commodity):
         print(commodity_code['text'])
         commodity_code =np.repeat(commodity_code['id'].values,2).tolist()
     return commodity_codes
-    
+
+################################################################
+## Connect to the SQLdatabase
 conn = psycopg2.connect(
                  dbname = "comtrade", # could also be "hmrc"
                  host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
                  user = "trade_read",
                  password = "2fs@9!^43g")
-
 cur = conn.cursor()
 
+################################################################
+## Get the column names and print them out
 cur.execute("select COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='comtrade'")
 column_names=pd.DataFrame(cur.fetchall())
 print(column_names)
 print()
+
+################################################################
+## Lookup the needed comtrade codes for the SQL request
 
 comtrade_dict = load_comtrade_info()
 uk_code = get_reporter_code(comtrade_dict, 'United Kingdom')
@@ -89,11 +101,15 @@ brazil_code = get_partner_code(comtrade_dict, 'Brazil')
 #beef = get_commodity_code(comtrade_dict, 'Meat of bovine')['id']
 beef = get_commodity_codes(comtrade_dict, 'Meat of bovine')
 
-
+# Check if beef was found
 if beef is None:
     print('WARNING: No commodity code found.')
     sys.exit(1)
 
+################################################################
+## Download the comtrade data and put it into a pandas DataFrame
+
+# Start timer to see how long the request takes
 t0 = time.perf_counter()
 
 cur.execute("SELECT partner,trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
