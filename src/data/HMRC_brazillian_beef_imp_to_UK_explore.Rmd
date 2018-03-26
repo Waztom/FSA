@@ -89,27 +89,54 @@ model_data_group <- model_data_clean %>% group_by(Date) %>%
 #What does the cost/kg of the beef imported into the UK from Brazil look like over time?
 ```{r}
 ggplot(model_data_group, aes(Date, Cost_per_Kg)) +
-        geom_point() 
+        geom_line(color = "pink", size = 1) + geom_smooth(color="blue", se = FALSE)
 ```
+*Price per kilogram grew between 2009 and 2012 and then plateaued. Since 2015 the price/kg has fallen
 
-#Very high cost/kg during 2012/2013 - $150/kg seems to be a bit too exorbitant for cucumber! What does the cost/kg look like without the points above $150/kg?
+#What does the nett mass of the beef imported into the UK from Brazil look like over time?
 ```{r}
-ggplot(model_data_group, aes(smk_period_reference, cost_per_kg)) + 
-  geom_point() + geom_line() + ylim(0,2) + geom_smooth()
+ggplot(model_data_group, aes(Date, Quantity_1)) +
+        geom_point(colour = "purple") +
+        geom_smooth(color = "turquoise")
 ```
+*The quantity imported decreased rapidly between 2009 and 2012. The quantity has continued to decrease since but at a slower rate
 
-#What does the nett mass of the cucumber imported into the UK look like over time?
+#What happened to the value of beef over time? 
 ```{r}
-ggplot(model_data_group, aes(smk_period_reference, smk_nett_mass)) +
+ggplot(model_data_group, aes(Date, Value)) +
         geom_point(colour = "blue") +
-        geom_hline(yintercept=1E7, linetype="dashed", color = "red")
+        geom_smooth(colour = "green", method = "lm")
 ```
+*the value of beef imported has decreased ~linearly overtime
 
-
-#Did the number of consignments also increase during the spikes? 
+#What if we focus on data after 2012?
 ```{r}
-ggplot(model_data_group, aes(smk_period_reference, smk_no_of_consignments)) +
-        geom_line(colour = "green") +
-        geom_point(colour = "green")
+model_data_group_post <- model_data_group %>% filter(Date > "2012-01-01")
 ```
+
+
+#first cost/kg overtime (with data after 2012)
+```{r}
+ggplot(model_data_group_post, aes(Date, Cost_per_Kg)) +
+        geom_line(color = "pink", size = 1) + geom_smooth(color="blue", se = FALSE)
+```
+*Nothing particularly jumps out apart from a peak at the end of 2014 and a drop at the end of 2015
+
+
+#And quantity overtime focusing on after 2012?
+```{r}
+ggplot(model_data_group_post, aes(Date, Quantity_1)) +
+        geom_point(colour = "purple") +
+        geom_smooth(color = "turquoise")
+```
+*Much more variation pre 2015
+
+
+#What happened to the value of beef over time - since 2012 
+```{r}
+ggplot(model_data_group_post, aes(Date, Value)) +
+        geom_point(colour = "blue") +
+        geom_smooth(colour = "green", method = "lm")
+```
+*Pretty linear trend although more variation observed prior to 2015
 
