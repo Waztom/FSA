@@ -4,3 +4,4 @@
 .Ruserdata
 *.RProj
 bash.exe.stackdump
+notebooks/.ipynb_checkpoints/
