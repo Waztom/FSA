@@ -101,6 +101,8 @@ nvirginoliveoil_export_params['rg']='2'
 nvirginoliveoil_export=comtrade_request(params=nvirginoliveoil_export_params)
 
 
+import numpy as np
+
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
@@ -149,7 +151,14 @@ width = 0.35# the width of the bars
 oliveoil_imp_array=np.zeros((2,len(oliveoil_import['period'])))
 oliveoil_imp_array[0]=oliveoil_import['period'].values-oliveoil_import['yr'].values*100
 
-np.zeros((2,len(oliveoil_import['period'])))
+nvirgin_bottoms=np.zeros(len(virginoliveoil_import['period']))
+#nvirgin_bottoms=np.zeros(12)
+
+for i in range(len(nvirginoliveoil_import['period'])):
+    print('i='+str(i))
+    p = oliveoil_import['period'].values[i]-oliveoil_import['yr'].values[i]*100-1
+    print(p)
+    nvirgin_bottoms[p] = nvirginoliveoil_import['NetWeight'].values[i]
 
 fig, ax = plt.subplots()
 rects1 = ax.bar(oliveoil_import['period'].values-oliveoil_import['yr'].values*100 - width/2, 
