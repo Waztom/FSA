@@ -52,6 +52,23 @@ def get_commodity_code(comtrade_dictionary, commodity):
     print(commodity_code['text'])
     return commodity_code
     
+#def get_commodity_codes(comtrade_dictionary, commodity):
+#    '''
+#    Search the commodity codes and concatenate them into an array
+#    '''
+#    commodity_code = comtrade_dictionary['comcodes'][comtrade_dictionary['comcodes']['text'].str.contains(commodity)]
+#    if commodity_code.empty:
+#        print(commodity + ' not found.')
+#        return -1
+#    elif len(commodity_code['id'])>1:
+#        commodity_codes=commodity_code['id'].values
+#        print(commodity_code['text'])
+#    else:
+#        #Repeat the single occurence in order to have a list for the SQL request
+#        commodity_code =np.repeat(commodity_code['id'].values,2)
+#        print(commodity_code['text'])
+#    return commodity_codes
+    
 conn = psycopg2.connect(
                  dbname = "comtrade", # could also be "hmrc"
                  host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
@@ -63,6 +80,7 @@ cur = conn.cursor()
 cur.execute("select COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='comtrade'")
 column_names=pd.DataFrame(cur.fetchall())
 print(column_names)
+print()
 
 comtrade_dict = load_comtrade_info()
 uk_code = get_reporter_code(comtrade_dict, 'United Kingdom')
@@ -71,15 +89,15 @@ beef = get_commodity_code(comtrade_dict, 'Meat')['id']
 
 t0 = time.perf_counter()
 
-cur.execute("SELECT partner, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
-            "partner_code = %s "\
+cur.execute("SELECT partner,trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
+            "partner_code = %(partner)s "\
             "AND period  BETWEEN 201401 AND 201612"\
-            "AND commodity_code = %s"\
-            "AND reporter_code = %s", (brazil_code, beef, uk_code))
+            "AND commodity_code = %(comcode)s"\
+            "AND reporter_code = %(reporter)s", {'partner': brazil_code, 'comcode': beef, 'reporter': uk_code})
 
-imports = pd.DataFrame(cur.fetchall(), columns=['partner', 'netweight_kg', 'trade_value_usd', 'period', 'commodity_code'])
+imports = pd.DataFrame(cur.fetchall(), columns=['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_code'])
 
 t1 = time.perf_counter()
 print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
-
+print(imports)
 
