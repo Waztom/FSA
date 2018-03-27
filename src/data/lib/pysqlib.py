@@ -148,14 +148,21 @@ def comtrade_sql_request(reporter_name = 'United Kingdom', partner_name = 'Brazi
     # Start timer to see how long the request takes
     t0 = time.perf_counter()
                 
-#    cur.execute("SELECT partner FROM comtrade WHERE "\
-    print(cur.mogrify("SELECT %(query_columns)s FROM comtrade WHERE "\
+#    query = sql.SQL("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
+#                "partner_code = {partner} "\
+#                "AND period  BETWEEN 201401 AND 201612"\
+#                "AND commodity_code = ANY({comcodes})"\
+#                "AND reporter_code = {reporter}".format(query_columns = sql.SQL(', ').join(sql.Identifier(n) for n in requested_columns), partner = partner_code, comcodes = com_codes, reporter = reporter_code))
+#    print(query.as_string(conn))
+#    cur.execute(query)
+    
+    cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
                 "partner_code = %(partner)s "\
                 "AND period  BETWEEN 201401 AND 201612"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
-                "AND reporter_code = %(reporter)s", {'query_columns': ', '.join(requested_columns), 'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code}))
-#    "AND reporter_code = %(reporter)s", {'query_columns': 'partner', 'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
-    #print(cur.fetchall())
+                "AND reporter_code = %(reporter)s", {'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
+#                "AND reporter_code = %(reporter)s", {'query_columns': 'partner', 'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
+    print(cur.fetchall())
     
     #trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
     trade_data=None
