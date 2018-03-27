@@ -129,10 +129,11 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine
     ## Lookup the needed comtrade codes for the SQL request
     
     comtrade_dict = load_comtrade_info()
+    
     reporter_code = get_reporter_code(comtrade_dict, reporter_name)
     partner_code = get_partner_code(comtrade_dict, partner_name)
     com_codes = get_commodity_codes(comtrade_dict, commodity_name)
-    
+        
     if partner_code is None or reporter_code is None or com_codes is None:
         print('An error occured fetching a comtrade code. Leaving.')
         sys.exit(1)
@@ -153,6 +154,65 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine
                 "AND period  BETWEEN 201401 AND 201612"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
                 "AND reporter_code = %(reporter)s", {'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
+#    print(cur.fetchall())
+    
+    trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
+    t1 = time.perf_counter()
+    print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
+    
+    # Closing the connection
+    cur.close()
+    
+    return trade_data
+
+
+def comtrade_sql_request_all_partners(commodity_name='Meat of bovine', reporter_name = 'United Kingdom', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+    '''
+    SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
+    '''
+    ################################################################
+    ## Connect to the SQLdatabase
+    conn = psycopg2.connect(
+                     dbname = "comtrade", # could also be "hmrc"
+                     host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                     user = "trade_read",
+                     password = "2fs@9!^43g")
+    cur = conn.cursor()
+    
+    ################################################################
+    ## Get the column names and print them out
+    cur.execute("select COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='comtrade'")
+    column_names=pd.DataFrame(cur.fetchall())
+    print(column_names)
+    print()
+    
+    ################################################################
+    ## Lookup the needed comtrade codes for the SQL request
+    
+    comtrade_dict = load_comtrade_info()
+    
+    reporter_code = get_reporter_code(comtrade_dict, reporter_name)
+    com_codes = get_commodity_codes(comtrade_dict, commodity_name)
+        
+    if reporter_code is None or com_codes is None:
+        print('An error occured fetching a comtrade code. Leaving.')
+        sys.exit(1)
+        
+    # Check if com_code was found
+    if com_codes is None:
+        print('WARNING: No commodity code found.')
+        sys.exit(1)
+    
+    ################################################################
+    ## Download the comtrade data and put it into a pandas DataFrame
+    # Start timer to see how long the request takes
+    t0 = time.perf_counter()
+                
+    
+    cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
+                "period  BETWEEN 201401 AND 201612"\
+                "AND commodity_code = ANY(%(comcodes)s)"\
+                "AND reporter_code = %(reporter)s", {'comcodes': com_codes, 'reporter': reporter_code})
 #    print(cur.fetchall())
     
     trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
