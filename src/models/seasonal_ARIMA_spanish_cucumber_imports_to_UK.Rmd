@@ -1,0 +1,125 @@
+---
+title: "ARIMA model Spanish nett mass cucumber imports into the UK"
+output:
+  word_document: default
+  pdf_document:
+    latex_engine: pdflatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(tseries)
+library(forecast)
+```
+
+#Get the HMRC auxiliary data
+```{r}
+source("/Users/Warren/S2DS/src/data/get_HMRC_aux_data.R")
+list1   <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find cucumber comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+```
+
+#Get HMRC import data from EU (arrivals df)
+```{r}
+source("/Users/Warren/S2DS/src/data/get_HMRC_data.R")
+HMRC_EU_import_food_data <- get_HMRC_data(arrivals) 
+(col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
+```
+
+#Select Spain cucumber import info
+```{r}
+HMRC_columns  <- col_names[c(1,4,10,14,15,16)]
+HMRC_country  <- "ES"
+HMRC_comcode  <- "07070005"
+model_data    <- HMRC_EU_import_food_data %>% 
+                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode) %>%
+                 select(-smk_cod_alpha, -smk_comcode)
+```
+
+#Clean data: remove any Na values, 0 values and date values == "0000000" 
+```{r}
+model_data_clean <- model_data %>% na.omit %>% 
+                    filter(smk_nett_mass!=0 & smk_no_of_consignments != 0 &                                 smk_stat_value != 0) %>%                                                  filter(smk_period_reference!="0000000") %>%                                      mutate(abs(smk_nett_mass) & abs(smk_no_of_consignments) &                               abs(smk_stat_value)) %>% 
+                    unique()
+```
+
+#Convert period column to date format
+```{r}
+model_data_clean <- model_data_clean %>% 
+                    mutate(smk_period_reference = substr(smk_period_reference,                               4,7)) %>% 
+                    mutate(smk_period_reference =                                                            paste0(smk_period_reference,"01")) %>%
+                    mutate(smk_period_reference = as.Date(smk_period_reference,
+                                                          "%y%m%d"))
+```
+
+#Get the cos/kg ($/kg)
+```{r}
+model_data_clean <- model_data_clean %>% 
+                    mutate(cost_per_kg = smk_stat_value / smk_nett_mass)
+```
+
+#Aggregate data into periods of months
+```{r}
+model_data_group <- model_data_clean %>% group_by(smk_period_reference) %>%                                 summarise(smk_nett_mass = sum(smk_nett_mass), 
+                    smk_no_of_consignments = sum(smk_no_of_consignments),
+                    smk_stat_value = sum(smk_stat_value), cost_per_kg = mean(cost_per_kg))
+```
+
+#What does the nett mass of the cucumber imported into the UK look like over time?
+```{r}
+ggplot(model_data_group, aes(smk_period_reference, smk_nett_mass)) +
+        geom_point(colour = "blue") +
+        geom_line() +
+        geom_hline(yintercept=1E7, linetype="dashed", color = "red")
+```
+
+#Is it possible to model seasonal imports of cucumbers from Spain into the UK based on previous data? For time series data, auto regressive moving average models (ARIMA) can be used to model and forecast. Very good resource for ARMIA model explanation and  statistics in general https://onlinecourses.science.psu.edu/stat510/node/67 
+
+#ARIMA model for nett mass imports. Exclude outliers 
+```{r}
+ARIMA_model <-  model_data_group %>% na.omit %>% filter(smk_nett_mass<1E7) %>%                          mutate(smk_nett_mass=abs(smk_nett_mass)) %>% filter(smk_period_reference                 > "2009-12-31" & smk_period_reference <"2017-12-31")
+
+data <- ts(ARIMA_model[, c('smk_nett_mass')], start = c(2012-01-01), frequency = 12)
+```
+
+#Check if data stationary 
+```{r}
+plot(diff(data),ylab="Differenced nett mass")
+```
+
+#Create ACF and PACF plots - use to tune parameters in forecast model. Still need to learn more about this and how to tune model using these plots
+```{r}
+par(mfrow = c(1,2))
+acf(ts(diff((data))),main='ACF Nett mass cucumbers')
+pacf(ts(diff((data))),main='PACF Nett mass cucumbers')
+```
+
+#ARIMA model - use auto.fit function from forecast package. Can use arima function and include model order etc and parameter estimates starting points from ACF and PACF plots
+```{r}
+ARIMAfit <- auto.arima(data)
+summary(ARIMAfit)
+```
+
+#Forecast - use model to forecast (h in months,blue line) with 95% confidence (level, grey shade) 
+```{r}
+par(mfrow <- c(1,1))
+pred <- forecast(ARIMAfit, h=24, level =95)
+plot(pred)
+```
+
+

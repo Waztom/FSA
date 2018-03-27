@@ -55,14 +55,25 @@ names(HMRC_EU_import_food_data) <- c("Comcode", "Standard_International_Trade_Cl
 HMRC_columns  <- col_names[c(1,5,8,24,25)]
 HMRC_country  <- "BR"
 HMRC_comcode  <- "16025095"
-model_data    <- HMRC_EU_import_food_data %>% 
+model_data_pretbl    <- HMRC_EU_import_food_data %>% 
                  select(HMRC_columns) %>%                                                         filter(Country_of_Dispatch == HMRC_country & Comcode ==                                   HMRC_comcode) %>%
                  select(-Country_of_Dispatch, -Comcode)
 ```
 
-#Clean data: Run for consistency, but no NAs, no 0000 dates and no negative values
+#Make tbl_df
 ```{r}
-model_data_clean <- model_data %>% na.omit
+model_data <- tbl_df(model_data_pretbl)
+```
+
+
+#Clean data: Run for consistency, but no NAs, no 0000 dates and no negative values CHECK
+```{r}
+model_data_clean <- model_data %>% na.omit 
+
+%>% 
+                    filter(Quantity_1!=0 & Value != 0) %>%                                                    
+                    filter(Date!="0000000") %>%  
+                    mutate(abs(Quantity_1)  &  abs(Value)) %>% unique()
 ```
 
 #Convert period column to date format
@@ -77,6 +88,49 @@ model_data_clean <- model_data_clean %>%
 model_data_clean <- model_data_clean %>% 
                     mutate(Cost_per_Kg = Value / Quantity_1)
 ```
+
+
+#Looking for outliers
+```{r}
+ggplot(model_data_clean) +
+  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date)) 
+ggplot(model_data_clean) +
+  geom_boxplot(mapping = aes(x=Date,y=Quantity_1,group=Date)) 
+ggplot(model_data_clean) +
+  geom_boxplot(mapping = aes(x=Date,y=Value,group=Date)) 
+
+```
+
+#just from 2012 to simplify
+```{r}
+model_data_clean_post <- model_data_clean %>% filter(Date >= "2012-01-01")
+```
+
+#Looking for outliers in post 2012 data
+```{r}
+ggplot(model_data_clean_post) +
+  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date)) 
+ggplot(model_data_clean_post) +
+  geom_boxplot(mapping = aes(x=Date,y=Quantity_1,group=Date)) 
+ggplot(model_data_clean_post) +
+  geom_boxplot(mapping = aes(x=Date,y=Value,group=Date))
+```
+*Some high outliers in 2012
+little variation for some months in recent years
+
+
+#Perhaps the number of imports has decreased?
+```{r}
+model_data_clean_count <-model_data_clean %>% group_by(Date) %>% summarize(Count = n())
+ggplot(model_data_clean_count) + geom_point(aes(Date, Count), colour = "blue") + geom_smooth(aes(Date, Count), colour = "purple")
+```
+
+#Has the average import size decreased?
+```{r}
+model_data_clean_avg <-model_data_clean %>% group_by(Date) %>% summarize(Average_Import_Size = mean(Quantity_1))
+ggplot(model_data_clean_avg) + geom_point(aes(Date, Average_Import_Size), colour = "blue") + geom_smooth(aes(Date, Average_Import_Size), colour = "purple")
+```
+
 
 #Aggregate data into periods of months
 ```{r}
