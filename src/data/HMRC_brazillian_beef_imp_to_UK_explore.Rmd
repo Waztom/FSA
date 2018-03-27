@@ -16,6 +16,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(lubridate)
+library(gridExtra)
 ```
 
 #Get the HMRC auxiliary data
@@ -194,3 +195,38 @@ ggplot(model_data_group_post, aes(Date, Value)) +
 ```
 *Pretty linear trend although more variation observed prior to 2015
 
+#not very much coming through...lets focus on 2016 and 17
+```{r}
+model_data_clean_1617 <- model_data_clean %>% filter(Date >= "2016-01-01")
+```
+
+
+#box plots pre aggregation
+```{r}
+plot_1 <- ggplot(model_data_clean_1617) +
+  geom_boxplot(mapping = aes(x=Date,y=Quantity_1,group=Date), color = "orange") 
+plot_2 <- ggplot(model_data_clean_1617) +
+  geom_boxplot(mapping = aes(x=Date,y=Value,group=Date), color = "purple") 
+plot_3 <- ggplot(model_data_clean_1617) +
+  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date), color = "blue")                  
+grid.arrange(plot_1, plot_2, plot_3)                 
+```
+#Aggregate data into periods of months
+```{r}
+model_data_group_1617 <- model_data_clean_1617 %>% group_by(Date) %>%                          
+                                        summarise(Quantity_1 = sum(Quantity_1),                          
+                                                  Value = sum(Value), 
+                                                  Cost_per_Kg = mean(Cost_per_Kg))
+```
+
+
+#plots of 1617 overtime pre aggregation
+```{r}
+plot_1 <- ggplot(model_data_group_1617, aes(x=Date,y=Quantity_1)) +
+  geom_point(color = "orange") + geom_smooth(color = "orange")
+plot_2 <- ggplot(model_data_group_1617, aes(x=Date,y=Value)) +
+  geom_point(color = "purple") + geom_smooth(color="purple")
+plot_3 <- ggplot(model_data_group_1617, aes(x=Date,y=Cost_per_Kg)) +
+  geom_point(color = "blue") + geom_smooth(color = "blue")                  
+grid.arrange(plot_1, plot_2, plot_3)                 
+```
