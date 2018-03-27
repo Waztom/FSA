@@ -149,7 +149,7 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine
                 "AND period  BETWEEN 201401 AND 201612"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
                 "AND reporter_code = %(reporter)s", {'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
-    print(cur.fetchall())
+#    print(cur.fetchall())
     
     trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
 
