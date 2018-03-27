@@ -47,6 +47,7 @@ def get_partner_code(comtrade_dictionary, country):
         #take first one if more than one result\
         print('Partner:')
         print(country_code)
+        print(' ')
         country_code = country_code['id'].iloc[0]
     return country_code
     
@@ -63,6 +64,7 @@ def get_reporter_code(comtrade_dictionary, country):
         #take first one if more than one result
         print('Reporter:')
         print(country_code)
+        print(' ')
         country_code = country_code['id'].iloc[0]
     return country_code
         
@@ -80,6 +82,7 @@ def get_commodity_code(comtrade_dictionary, commodity):
         commodity_code = commodity_code.iloc[0]
         print('Commodity:')
         print(commodity_code['text'])
+        print(' ')
     return commodity_code
     
 def get_commodity_codes(comtrade_dictionary, commodity):
@@ -98,6 +101,7 @@ def get_commodity_codes(comtrade_dictionary, commodity):
         #Repeat the single occurence in order to have a list for the SQL request
         print('Commodities:')
         print(commodity_code['text'])
+        print(' ')
         commodity_code =np.repeat(commodity_code['id'].values,2).tolist()
     return commodity_codes
 
