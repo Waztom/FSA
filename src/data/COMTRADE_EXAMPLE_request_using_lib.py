@@ -62,6 +62,9 @@ commodity='Meat of bovine'
 # Download all trade data between UK and Brazil for commodities containing 'Meat of bovine' in description
 trade_brazil=pysqlib.comtrade_sql_request(partner_name = partner, commodity_name = commodity)
 
+# Keep only the imports
+trade_brazil = trade_brazil[trade_brazil.trade_flow_code == 1]
+
 print(trade_brazil)
 # Transform the dates into a datetime format
 trade_brazil['period']=pandas.to_datetime(trade_brazil['period'], format='%Y%m')
