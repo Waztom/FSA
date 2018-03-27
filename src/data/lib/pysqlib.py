@@ -101,7 +101,7 @@ def get_commodity_codes(comtrade_dictionary, commodity):
         commodity_code =np.repeat(commodity_code['id'].values,2).tolist()
     return commodity_codes
 
-def comtrade_sql_request(reporter_name = 'United Kingdom', partner_name = 'Brazil', commodity_name='Meat of bovine', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine', reporter_name = 'United Kingdom', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
     SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
     '''
@@ -140,33 +140,19 @@ def comtrade_sql_request(reporter_name = 'United Kingdom', partner_name = 'Brazi
     
     ################################################################
     ## Download the comtrade data and put it into a pandas DataFrame
-    
-    #sql_column_query = sql.SQL(', ').join(sql.Identifier(n) for n in requested_columns)
-    #sql_column_query = ', '.join(requested_columns)
-    
-    #print(sql_column_query)
     # Start timer to see how long the request takes
     t0 = time.perf_counter()
                 
-#    query = sql.SQL("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
-#                "partner_code = {partner} "\
-#                "AND period  BETWEEN 201401 AND 201612"\
-#                "AND commodity_code = ANY({comcodes})"\
-#                "AND reporter_code = {reporter}".format(query_columns = sql.SQL(', ').join(sql.Identifier(n) for n in requested_columns), partner = partner_code, comcodes = com_codes, reporter = reporter_code))
-#    print(query.as_string(conn))
-#    cur.execute(query)
     
     cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
                 "partner_code = %(partner)s "\
                 "AND period  BETWEEN 201401 AND 201612"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
                 "AND reporter_code = %(reporter)s", {'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
-#                "AND reporter_code = %(reporter)s", {'query_columns': 'partner', 'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
     print(cur.fetchall())
     
-    #trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
-    trade_data=None
-    
+    trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
+
     t1 = time.perf_counter()
     print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     return trade_data
