@@ -93,7 +93,12 @@ model_data_clean <- model_data_clean %>%
 #Looking for outliers
 ```{r}
 ggplot(model_data_clean) +
-  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date))
+  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date)) 
+ggplot(model_data_clean) +
+  geom_boxplot(mapping = aes(x=Date,y=Quantity_1,group=Date)) 
+ggplot(model_data_clean) +
+  geom_boxplot(mapping = aes(x=Date,y=Value,group=Date)) 
+
 ```
 
 #just from 2012 to simplify
@@ -104,10 +109,27 @@ model_data_clean_post <- model_data_clean %>% filter(Date >= "2012-01-01")
 #Looking for outliers in post 2012 data
 ```{r}
 ggplot(model_data_clean_post) +
-  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date), color = "purple")
+  geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date)) 
+ggplot(model_data_clean_post) +
+  geom_boxplot(mapping = aes(x=Date,y=Quantity_1,group=Date)) 
+ggplot(model_data_clean_post) +
+  geom_boxplot(mapping = aes(x=Date,y=Value,group=Date))
 ```
 *Some high outliers in 2012
 little variation for some months in recent years
+
+
+#Perhaps the number of imports has decreased?
+```{r}
+model_data_clean_count <-model_data_clean %>% group_by(Date) %>% summarize(Count = n())
+ggplot(model_data_clean_count) + geom_point(aes(Date, Count), colour = "blue") + geom_smooth(aes(Date, Count), colour = "purple")
+```
+
+#Has the average import size decreased?
+```{r}
+model_data_clean_avg <-model_data_clean %>% group_by(Date) %>% summarize(Average_Import_Size = mean(Quantity_1))
+ggplot(model_data_clean_avg) + geom_point(aes(Date, Average_Import_Size), colour = "blue") + geom_smooth(aes(Date, Average_Import_Size), colour = "purple")
+```
 
 
 #Aggregate data into periods of months
