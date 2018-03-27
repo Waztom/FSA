@@ -152,7 +152,10 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine
 #    print(cur.fetchall())
     
     trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
-
     t1 = time.perf_counter()
     print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
+    
+    # Closing the connection
+    cur.close()
+    
     return trade_data
