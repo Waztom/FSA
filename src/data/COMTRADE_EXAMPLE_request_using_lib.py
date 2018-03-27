@@ -11,3 +11,7 @@ os.sys.path.append('lib')
 import pysqlib
 
 trade=pysqlib.comtrade_sql_request()
+
+trade_argentina=pysqlib.comtrade_sql_request(partner_name = 'Argentina', commodity_name='Meat of bovine')
+
+print(trade_argentina)
