@@ -1,0 +1,71 @@
+---
+title: "Testing a very basic function in R"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_notebook: default
+---
+
+# Default chunk options
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+#Required libraries
+```{r}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+library(lubridate)
+library(tibble)
+library(olsrr)
+library(ggplot2)
+library(ggExtra)
+library(gridExtra)
+```
+<!-- #Get the auxiliary data -->
+<!-- ```{r} -->
+<!-- source("get_HMRC_aux_data.R") -->
+<!-- list1 <- get_HMRC_aux_data() -->
+<!-- comcode <- data.frame(Reduce(rbind, list1[1])) -->
+<!-- port    <- data.frame(Reduce(rbind, list1[2])) -->
+<!-- country <- data.frame(Reduce(rbind, list1[3])) -->
+<!-- write.csv(comcode,file="comcode.csv") -->
+<!-- write.csv(country,file="country.csv") -->
+<!-- ``` -->
+
+<!-- #Get the commodity codes -->
+<!-- ```{r} -->
+<!-- cc_chicken      <- comcode[grep('CHICKEN',   toupper(comcode$description)),] -->
+<!-- cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),] -->
+<!-- cc_beef         <- comcode[grep('BEEF',      toupper(comcode$description)),] -->
+<!-- ``` -->
+
+#---Partners codes
+#Poland: 616
+#Spain : 724
+#Brazil: 76
+#UK    : 826
+#---Three commodities codes
+#Chicken:  02071
+#Cucumber: 070700
+#Beef:     160250
+#Now, grab a cup of coffee...
+```{r}
+source("import_export.R")
+stime <- Sys.time()
+partner_id <- 76
+com_id     <- "160250"
+p1     <- import_export(partner_id,com_id)
+partner_id <- 724
+com_id     <- "070700"
+p2     <- import_export(partner_id,com_id)
+partner_id <- 616
+com_id     <- "02071"
+p3     <- import_export(partner_id,com_id)
+etime <- Sys.time()
+(etime-stime)
+```
+
+
