@@ -98,6 +98,13 @@ ggplot(model_data_group, aes(smk_period_reference, smk_nett_mass)) +
 * Imports of cucumber appears to be seasonal and follow an oscillating pattern with exception for several points (Occur Nov - Jan) where there are spikes in 2010 & 2014 and possibly 2009, 2016 & 2017. 
 * Also looking at cost/kg over time, note how cost/kg simmilar in months before and/or after at some of these points in time.   
 
+#What does the total trade value look like over time NB nett mass data not always reliable
+```{r}
+ggplot(model_data_group, aes(smk_period_reference, smk_stat_value)) +
+        geom_point(colour = "purple") +
+        geom_hline(yintercept=0.75E7, linetype="dashed", color = "red")
+```
+
 #Did the number of consignments also increase during the spikes? 
 ```{r}
 ggplot(model_data_group, aes(smk_period_reference, smk_no_of_consignments)) +
