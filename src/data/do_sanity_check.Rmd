@@ -24,23 +24,23 @@ library(ggplot2)
 library(ggExtra)
 library(gridExtra)
 ```
-#Get the auxiliary data
-```{r}
-source("get_HMRC_aux_data.R")
-list1 <- get_HMRC_aux_data()
-comcode <- data.frame(Reduce(rbind, list1[1]))
-port    <- data.frame(Reduce(rbind, list1[2]))
-country <- data.frame(Reduce(rbind, list1[3]))
-write.csv(comcode,file="comcode.csv")
-write.csv(country,file="country.csv")
-```
+<!-- #Get the auxiliary data -->
+<!-- ```{r} -->
+<!-- source("get_HMRC_aux_data.R") -->
+<!-- list1 <- get_HMRC_aux_data() -->
+<!-- comcode <- data.frame(Reduce(rbind, list1[1])) -->
+<!-- port    <- data.frame(Reduce(rbind, list1[2])) -->
+<!-- country <- data.frame(Reduce(rbind, list1[3])) -->
+<!-- write.csv(comcode,file="comcode.csv") -->
+<!-- write.csv(country,file="country.csv") -->
+<!-- ``` -->
 
-#Get the commodity codes
-```{r}
-cc_chicken      <- comcode[grep('CHICKEN',   toupper(comcode$description)),]
-cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
-cc_beef         <- comcode[grep('BEEF',      toupper(comcode$description)),]
-```
+<!-- #Get the commodity codes -->
+<!-- ```{r} -->
+<!-- cc_chicken      <- comcode[grep('CHICKEN',   toupper(comcode$description)),] -->
+<!-- cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),] -->
+<!-- cc_beef         <- comcode[grep('BEEF',      toupper(comcode$description)),] -->
+<!-- ``` -->
 
 #---Partners codes
 #Poland: 616
