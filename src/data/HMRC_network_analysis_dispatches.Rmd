@@ -1,0 +1,121 @@
+---
+title: "Cucumber dispatches from UK in 2015"
+output:
+  pdf_document:
+    latex_engine: pdflatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+```
+
+#Get the HMRC auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1   <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find cucumber comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+```
+
+#Get HMRC dispatch data from EU (dispatches df)
+```{r}
+source("get_HMRC_data.R")
+HMRC_EU_dispatch_food_data <- get_HMRC_data(dispatches) 
+names(HMRC_EU_dispatch_food_data) <- c("Comcode", "Record_Type", "Destination_Country_Code", "Destination_Country", "Type_of_Trade", "Country_of_Origin_code", "Country_of_Origin", "Nature_of_Transaction", "Mode_of_Transport", "Date", "Suite_Indicator", "Standard_International_Trade_Classification", "IP_Comcode", "No_of_Consignments", "Invoice_Price", "Net_Mass", "Supplementary Unit")
+(col_names               <- t(as.data.frame(colnames(HMRC_EU_dispatch_food_data))))
+```
+
+
+#Convert period column to date format
+```{r}
+HMRC_EU_dispatch_food_data_date <- HMRC_EU_dispatch_food_data %>% 
+                                   mutate(Date = substr(Date,4,7)) %>%
+                                   mutate(Date = paste0(Date, "01")) %>%
+                                   mutate(Date = ymd(Date)) %>%
+                                   mutate(Date = year(Date))
+```
+
+
+#Select cucumber dispatched in 2015
+```{r}
+HMRC_columns  <- col_names[c(1,3,4,10,14,15,16)]
+HMRC_year  <- "2015"
+HMRC_comcode  <- "07070005"
+model_data    <- HMRC_EU_dispatch_food_data_date %>% 
+                 select(HMRC_columns) %>%                                                        
+  filter(Date == HMRC_year & Comcode ==HMRC_comcode) %>%
+                 select(-Date, -Comcode)
+```
+
+#Clean data: remove any Na values, 0 values and date values == "0000000" 
+```{r}
+model_data_clean <- model_data %>% na.omit %>% 
+                    filter(Net_Mass!=0 & No_of_Consignments != 0 & Invoice_Price != 0) %>%                          
+                    mutate(abs(Net_Mass) & abs(No_of_Consignments) & abs(Invoice_Price)) %>% 
+                    unique() %>%
+                    select(-6)
+```
+
+#Get the cost/kg ($/kg)
+```{r}
+model_data_clean <- model_data_clean %>% 
+                    mutate(Cost_per_Kg = Invoice_Price / Net_Mass)
+```
+
+#Aggregate data by country
+```{r}
+model_data_group <- model_data_clean %>% group_by(Destination_Country) %>%                
+                                        summarise(Net_Mass = sum(Net_Mass),                                    
+                                                  No_of_Consignments  = sum(No_of_Consignments), 
+                                                  Invoice_Price = sum(Invoice_Price), 
+                                                  Cost_per_Kg = mean(Cost_per_Kg))
+```
+
+#Simplifying table to just columns I need
+```{r}
+model_data_group_simple <- model_data_group %>% 
+                          mutate(Origin_Country = "UK") %>%
+                          select(Origin_Country, Destination_Country)
+```
+
+
+
+
+```{r}
+g <- graph.edgelist(as.matrix(model_data_group_simple), directed = TRUE)
+```
+
+
+#plotting
+```{r}
+plot(g)
+```
+
+
+#adding weights to edges
+```{r}
+E(g)$weight <- model_data_group$Invoice_Price
+V(g)$color <- "lightblue"
+V(g)$size <- 20
+plot(g)
+
+```
+
