@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 #Required libraries
-```{r}
+```{r,message=FALSE,warning=FALSE}
 library(RPostgreSQL)
 library(tidyverse)
 library(dbplyr)
@@ -32,26 +32,27 @@ list1 <- get_HMRC_aux_data()
 comcode <- data.frame(Reduce(rbind, list1[1]))
 port    <- data.frame(Reduce(rbind, list1[2]))
 country <- data.frame(Reduce(rbind, list1[3]))
-eu_list <- c("BE","BG","CZ","DK","DE","EE","IE","EL","ES","FR","HR","IT","CY","LV","LT","LU","HU","MT","NL","AT","PL","PT","RO","SI","SK","FI","SE","UK")
+eu_list <- c("BE","BG","CZ","DK","DE","EE","IE","EL","ES","FR","HR","IT",
+             "CY","LV","LT","LU","HU","MT","NL","AT","PL","PT","RO","SI","SK","FI","SE","UK")
 ```
 
 #Use this line to search for commodity codes using a keyword
 ```{r}
-(comname      <- comcode[grep('CHICKEN',   toupper(comcode$description)),])
+(comname      <- comcode[grep('CHICKEN',   toupper(comcode$description)),c(1,3)])
 ```
 
-#---Partners codes
-#Poland: 616
-#Spain : 724
-#Brazil: 76
-#UK    : 826
-#---Three commodities codes
-#Chicken:  02071
-#Cucumber: 070700
-#Beef:     160250
+#Partners codes
+###Poland: 616
+###Spain : 724
+###Brazil: 76
+###UK    : 826
 
-#Set the partner country and the commodity.
-#Leave the rest to the code: no worries about *arrivals* or *imports*
+#Three commodities codes
+###Chicken:  02071
+###Cucumber: 070700
+###Beef:     160250
+
+#Set the partner country and the commodity: Leave the rest to the code: no worries about *arrivals* or *imports*
 ```{r}
 #Define commodity and partner country
 com_id  <- "160250"
@@ -61,7 +62,7 @@ part_id <- 76
 ```
 
 
-1. GET COMTRADE DATA
+#GET COMTRADE DATA
 ```{r}
 source("get_Comtrade_data.R")
 #Comtrade SQL request
@@ -71,7 +72,7 @@ etime <- Sys.time()
 print(etime-stime)
 ```
 
-1.1 Tidy Comtrade data
+##Tidy Comtrade data
 ```{r}
 #Group by commodity code for the same good if necessary (different cuts for chicken...)
 print(unique(df1$commodity_code))
@@ -90,12 +91,12 @@ comtrade_imports_into_uk <- df2 %>%
   filter(trade_flow=="Imports")
 ```
 
-1.2 Get partner country alpha from the code
+##Get partner country alpha from the code
 ```{r}
 cname <- country[country$countryname==unique(df1$partner),2]
 ```
 
-2. GET HMRC DATA
+#GET HMRC DATA
 ```{r}
 source("get_HMRC_data.R")
 source("get_HMRC_data_imports.R")
@@ -109,10 +110,10 @@ HMRC_import_food_data <- get_HMRC_data_imports(imports)
 }
 etime <- Sys.time()
 print(etime-stime)
-(col_names               <- t(as.data.frame(colnames(HMRC_import_food_data))))
+#(col_names               <- t(as.data.frame(colnames(HMRC_import_food_data))))
 ```
 
-2.1 Tidy the data depending on EU/non-EU (arrivals/imports)
+##Tidy the data depending on EU/non-EU (arrivals/imports)
 ```{r}
 if(cname %in% eu_list){
 #Filter the data for the selected commodity_code
@@ -158,7 +159,7 @@ tmp2 <- tmp2 %>% mutate(trade_value_usd = trade_value_spd * 1.41) %>% select(-tr
 }
 ```
 
-2.2 Keep going... No matter the HMRC table, the data is in *tmp2*
+##Keep going... No matter the HMRC table, the data is in *tmp2*
 ```{r}
 #Group by commodity code for the same good if necessary (different cuts for chicken...)
 print(unique(tmp2$commodity_code))
@@ -176,8 +177,8 @@ tmp5 <- tmp4 %>% filter(trade_value_usd > 0 & net_weight_kg > 0)
 HMRC_imports_into_uk <- tmp5 %>% filter(partner_id ==cname)
 ```
 
-3. Do the plots comparing both databases
-3.1 Net weight in kg
+#Do the plots comparing both databases
+##Net weight in kg
 ```{r}
 ggplot(NULL) + geom_line(data=HMRC_imports_into_uk,
                          mapping = aes(x=period_date,y=net_weight_kg/1e6)) +
@@ -186,7 +187,7 @@ ggplot(NULL) + geom_line(data=HMRC_imports_into_uk,
   labs(x="Period",y="Net weight (thousand of tons)")
 ```
 
-3.2 Relative error
+##Relative error
 ```{r}
 comb <- inner_join(comtrade_imports_into_uk,HMRC_imports_into_uk,by="period_date")
 weight <- comb %>% select(starts_with("net_weight_kg"),period_date) %>%
