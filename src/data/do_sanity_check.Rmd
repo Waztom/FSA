@@ -34,23 +34,24 @@ country <- data.frame(Reduce(rbind, list1[3]))
 write.csv(comcode,file="comcode.csv")
 write.csv(country,file="country.csv")
 ```
+
+#Get the commodity codes
 ```{r}
 cc_chicken      <- comcode[grep('CHICKEN',   toupper(comcode$description)),]
 cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
 cc_beef         <- comcode[grep('BEEF',      toupper(comcode$description)),]
 ```
-#This is Warren's magic with a little bit of extra work
-##Is ten minutes too long? Then load the csv files written at the end of this notebook
-#---Partners
+
+#---Partners codes
 #Poland: 616
 #Spain : 724
 #Brazil: 76
 #UK    : 826
-#---Three commodities
+#---Three commodities codes
 #Chicken:  02071
 #Cucumber: 070700
 #Beef:     160250
-
+#Now, grab a cup of coffee...
 ```{r}
 source("import_export.R")
 stime <- Sys.time()
@@ -66,6 +67,5 @@ p3     <- import_export(partner_id,com_id)
 etime <- Sys.time()
 (etime-stime)
 ```
-
 
 
