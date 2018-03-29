@@ -72,9 +72,8 @@ nodes <- nodes %>% rowid_to_column("id")
 #Create edges table 
 ```{r}
 edges <-  world_cucumber_data_graph %>% left_join(nodes, by = c("reporter" = "label"))%>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
-          
-colnames(edges)[colnames(edges)=="trade_value_usd"] <- "weight"
-edges <- mutate(edges, width = sqrt(weight/100000))
+
+edges <- mutate(edges, width = sqrt(trade_value_usd/100000))
 edges <- select(edges, from, to, width)
 
 ```
@@ -87,3 +86,10 @@ visNetwork(nodes, edges) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
 
 ```
+
+
+
+
+
+
+
