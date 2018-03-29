@@ -100,7 +100,7 @@ model_data_group_simple <- model_data_group %>%
 
 
 ```{r}
-g <- graph.edgelist(as.matrix(model_data_group_simple), directed = TRUE)
+g <- graph_from_data_frame(model_data_group_simple, directed = TRUE)
 ```
 
 
@@ -117,5 +117,43 @@ V(g)$color <- "lightblue"
 V(g)$size <- 20
 plot(g)
 
+```
+
+#test
+```{r}
+model_data_group_origin <- model_data_group %>% 
+                          mutate(Origin_Country = "UK") %>%
+                          select(Origin_Country, Destination_Country, Invoice_Price, Net_Mass, Cost_per_Kg)
+```
+
+
+```{r}
+h <- graph_from_data_frame(model_data_group_origin, directed = TRUE)
+plot(h)
+```
+```{r}
+E(h)$weight <- model_data_group_origin$Invoice_Price
+V(h)$color <- "lightblue"
+V(h)$size <- 20
+
+plot(h,
+     vertex.color = "lightblue",
+     vertex.size = 20,
+     edge.width= sqrt(model_data_group_origin$Cost_per_Kg),
+     edge.color = "black",
+     edge.arrow.size=0.01,
+     layout = layout_nicely)
+
+
+
+```
+
+```{r}
+plot(h,
+     vertex.color = "lightblue",
+     vertex.size = 20,
+     edge.arrow.size= model_data_group_origin$Cost_per_Kg,
+     edge.color = "black",
+     layout = layout_nicely)
 ```
 
