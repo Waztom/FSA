@@ -16,6 +16,7 @@ library(dplyr)
 library(tidyverse)
 library(igraph)
 library(visNetwork)
+library(tidygraph)
 ```
 
 #Get the auxiliary data
@@ -90,3 +91,83 @@ visNetwork(nodes, edges) %>%
   visEdges(arrows = "from") %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
 ```
+
+#Analysis of network
+#create tbl_graph from tidygraph package. Find out how many nodes and edges we have
+```{r}
+g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE) 
+print(g)
+
+```
+
+#How many edges does the UK have? ID for UK is 107
+```{r}
+incident(g, "107", mode=c("all"))
+incident(g, "107", mode=c("in"))
+incident(g, "107", mode=c("out"))
+```
+
+*25 of the 110 edges are connected to the UK. 13 are inwards, 12 are outwards
+
+#Who are the UK's outbound neighbors?
+```{r}
+UK_out_neighbors <- nodes[neighbors(g, "107", mode = c("out")),]
+print(UK_out_neighbors)
+```
+#Who are the UK's inbound neighbors?
+```{r}
+UK_in_neighbors <- nodes[neighbors(g, "107", mode = c("in")),]
+print(UK_in_neighbors)
+```
+
+#Who exports to the most countries?
+```{r}
+nodes[max(degree(g, mode="out")),]
+
+```
+
+
+#Which country has the highest betweenness - on lots of shortest paths
+```{r}
+nodes[which.max(betweenness(g, directed=TRUE)),]
+```
+
+#how many connections does Spain have?
+```{r}
+degree(g, "95", mode = c("all"))
+```
+#Who are the Spain's outbound neighbors?
+```{r}
+Spain_out_neighbors <- nodes[neighbors(g, "95", mode = c("out")),]
+print(Spain_out_neighbors)
+```
+
+#Who are the Spain's inbound neighbors?
+```{r}
+Spain_in_neighbors <- nodes[neighbors(g, "95", mode = c("in")),]
+print(Spain_in_neighbors)
+```
+
+#trying out some functions including 'cliques
+```{r}
+#degree - number of connections
+degree(g)
+#eigen_centrality - measure of how well connected
+eigen_centrality(g)
+#edge density - measure of density of the overall structure - % of edges out of all possible
+edge_density(g)
+#mean distance - average path length
+mean_distance(g)
+#triangles - how many triangles are each vertex part of?
+count_triangles(g)
+#how many triangles is the Uk part of
+count_triangles(g, vids = "107")
+#transitivity - probablility that adjacent nodes are connected
+transitivity(g)
+
+#Are there any cliques?
+largest_cliques(g)
+#who is in this clique -I can only get this to work manually, can you get it to work? 
+nodes[c(95,72,42,54,7,31,30,43,92),]
+```
+*The largest clique is made up of Eurpean countries
