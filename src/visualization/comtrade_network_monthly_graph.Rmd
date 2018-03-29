@@ -19,19 +19,19 @@ library(igraph)
 
 #Get the auxiliary data
 ```{r}
-source("/Users/Warren/S2DS/src/data/get_HMRC_aux_data.R")
+source("get_HMRC_aux_data.R")
 list1 <- get_HMRC_aux_data()
 comcode <- data.frame(Reduce(rbind, list1[1]))
 port    <- data.frame(Reduce(rbind, list1[2]))
 country <- data.frame(Reduce(rbind, list1[3]))
 ```
 
-#Find fresh chicken comcodes - Thank you Alex for making life nice and easy for us! 
+#Find fresh cucumber comcodes - Thank you Alex for making life nice and easy for us! 
 ```{r}
 cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
 ```
 
-#Access comtrade database - look for cucumber info for Spain
+#Access comtrade database - look for cucumber info for world
 ```{r}
 source("get_Comtrade_data_network_graph.R")
 world_cucumber_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
@@ -42,6 +42,7 @@ world_cucumber_data   <- get_Comtrade_data_network_graph(201001,201601,"default"
 world_cucumber_data_csv   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
 ```
 
+##NB if you are not accessing .csv then need to change world_cucumber_data_csv to world_cucmber_data. No need to change anywhere else. 
 #Prepare data
 ```{r}
 world_cucumber_data_graph <- world_cucumber_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
