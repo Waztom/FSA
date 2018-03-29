@@ -15,6 +15,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(igraph)
+library(visNetwork)
 ```
 
 #Get the auxiliary data
