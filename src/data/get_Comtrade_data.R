@@ -20,7 +20,7 @@ sql_db_query <- paste(
   " FROM comtrade WHERE commodity_code ~ '^",comcode,"' AND period >=",
   from_period," AND period <=",to_period," AND partner_code=",country,sep="")
 
-#print(sql_db_query)
+print(sql_db_query)
 
 #print("Large cuppa?")
 comtrade   <- dbGetQuery(con, sql_db_query)

@@ -38,16 +38,19 @@ eu_list <- c("BE","BG","CZ","DK","DE","EE","IE","EL","ES","FR","HR","IT",
 
 #Use this line to search for commodity codes using a keyword
 ```{r}
-comname <- comcode[grep('BEEF',   toupper(comcode$description)),c(1,3)]
+comname <- comcode[grep('POULTRY',   toupper(comcode$description)),c(1,3)]
 (comname <- comname %>% filter(as.numeric(str_sub(commoditycode,1,2))<25))
 ```
 
 #Partners codes
-###Poland  : 616
-###Spain   : 724
-###Brazil  : 76
-###UK      : 826
-###Ireland : 372
+###Poland      : 616
+###Spain       : 724
+###Brazil      : 76
+###UK          : 826
+###Ireland     : 372
+###France      : 251
+###Germany     : 276
+###Netherlands : 528
 
 #Three commodities codes
 ###Chicken      : 02071
@@ -58,8 +61,8 @@ comname <- comcode[grep('BEEF',   toupper(comcode$description)),c(1,3)]
 #Set the partner country and the commodity: Leave the rest to the code: no worries about *arrivals* or *imports*
 ```{r}
 #Define commodity and partner country
-com_id          <- "0201"
-part_id         <- 76
+com_id          <- "0105"
+part_id         <- 251
 Comtrade_parent <- TRUE
 HMRC_parent     <- TRUE
 #What am I searching for commodity-wise
@@ -112,14 +115,17 @@ cname <- country[country$countryname==unique(df1$partner),2]
 if( HMRC_parent == FALSE){
   com_id2 <- paste(com_id,"$",sep='')
 }else{
-  com_id2 <- com_id
+  com_id2 <- paste(com_id,'[\\d|\\d\\d|\\d\\d\\d|\\d\\d\\d\\d]',sep='')
 }
 source("get_HMRC_data2.R")
 source("get_HMRC_data_imports2.R")
+source("get_HMRC_data.R")
+source("get_HMRC_data_imports.R")
 stime <- Sys.time()
 if(cname %in% eu_list){
   print('It belongs to EU')
 HMRC_import_food_data <- get_HMRC_data2(arrivals,com_id2)
+#HMRC_import_food_data <- get_HMRC_data(arrivals)
 }else{
   print('It does not belong to EU')
 HMRC_import_food_data <- get_HMRC_data_imports2(imports,com_id2)
