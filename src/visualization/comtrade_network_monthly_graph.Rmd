@@ -33,7 +33,7 @@ cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
 
 #Access comtrade database - look for cucumber info for Spain
 ```{r}
-source("/Users/Warren/Desktop/S2DS_FSA_Warren/get_Comtrade_data_network_graph.R")
+source("get_Comtrade_data_network_graph.R")
 world_cucumber_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
 ```
 
