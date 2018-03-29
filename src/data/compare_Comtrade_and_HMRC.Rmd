@@ -71,9 +71,9 @@ HMRC_parent     <- TRUE
 ```{r}
 #Is the commodity code a parent?
 if( Comtrade_parent == FALSE){
-com_id1 <- paste(com_id,"$",sep='')
+  com_id1 <- paste(com_id,"$",sep='')
 }else{
-  com_id1 <- com_id
+  com_id1 <- paste(com_id,'[\\d|\\d\\d|\\d\\d\\d|\\d\\d\\d\\d]',sep='')
 }
 source("get_Comtrade_data.R")
 #Comtrade SQL request
