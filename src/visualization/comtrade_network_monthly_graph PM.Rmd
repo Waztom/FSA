@@ -56,15 +56,10 @@ time_end <- "2016-01-01"
 world_cucumber_data_graph <- world_cucumber_data_graph %>% filter(period < time_end & period >= time_start) 
 ```
 
-#cut out world and EU-27
-```{r}
-world_cucumber_data_graph_exlworldEU <- world_cucumber_data_graph %>% filter(partner != "World") %>% filter(reporter != "EU-27")
-```
-
 #Create nodes 
 ```{r}
-imports_from <- world_cucumber_data_graph_exlworldEU %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
-imports_to <- world_cucumber_data_graph_exlworldEU %>% select(partner) %>% rename(label = partner) %>% distinct(label)
+imports_from <- world_cucumber_data_graph %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
+imports_to <- world_cucumber_data_graph %>% select(partner) %>% rename(label = partner) %>% distinct(label)
 
 #Combine to form one list of country nodes
 nodes <- full_join(imports_from,imports_to, by = 'label')
@@ -76,9 +71,9 @@ nodes <- nodes %>% rowid_to_column("id")
 
 #Create edges table 
 ```{r}
-edges <-  world_cucumber_data_graph_exlworldEU %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
-          
-edges <- mutate(edges, width = sqrt(trade_value_usd/10000))
+edges <-  world_cucumber_data_graph %>% left_join(nodes, by = c("reporter" = "label"))%>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
+
+edges <- mutate(edges, width = sqrt(trade_value_usd/100000))
 edges <- select(edges, from, to, width)
 
 ```
@@ -89,4 +84,12 @@ visNetwork(nodes, edges) %>%
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10) %>%
   visEdges(arrows = "from") %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
+
 ```
+
+
+
+
+
+
+
