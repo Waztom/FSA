@@ -38,25 +38,30 @@ eu_list <- c("BE","BG","CZ","DK","DE","EE","IE","EL","ES","FR","HR","IT",
 
 #Use this line to search for commodity codes using a keyword
 ```{r}
-(comname      <- comcode[grep('CHICKEN',   toupper(comcode$description)),c(1,3)])
+comname <- comcode[grep('BEEF',   toupper(comcode$description)),c(1,3)]
+(comname <- comname %>% filter(as.numeric(str_sub(commoditycode,1,2))<25))
 ```
 
 #Partners codes
-###Poland: 616
-###Spain : 724
-###Brazil: 76
-###UK    : 826
+###Poland  : 616
+###Spain   : 724
+###Brazil  : 76
+###UK      : 826
+###Ireland : 372
 
 #Three commodities codes
-###Chicken:  02071
-###Cucumber: 070700
-###Beef:     160250
+###Chicken      : 02071
+###Cucumber     : 070700
+###Beef         : 160250
+###Live Poultry : 0105
 
 #Set the partner country and the commodity: Leave the rest to the code: no worries about *arrivals* or *imports*
 ```{r}
 #Define commodity and partner country
-com_id  <- "160250"
-part_id <- 76
+com_id          <- "0201"
+part_id         <- 76
+Comtrade_parent <- FALSE
+HMRC_parent     <- TRUE
 #What am I searching for commodity-wise
 (comcode[str_detect(comcode$commoditycode,paste('^',com_id,sep='')),3])
 ```
@@ -64,10 +69,16 @@ part_id <- 76
 
 #GET COMTRADE DATA
 ```{r}
+#Is the commodity code a parent?
+if( Comtrade_parent == FALSE){
+com_id1 <- paste(com_id,"$",sep='')
+}else{
+  com_id1 <- com_id
+}
 source("get_Comtrade_data.R")
 #Comtrade SQL request
 stime <- Sys.time()
-df1   <- get_Comtrade_data(201401,201601,"default",com_id,as.character(part_id))
+df1   <- get_Comtrade_data(201401,201601,"default",com_id1,as.character(part_id))
 etime <- Sys.time()
 print(etime-stime)
 ```
@@ -98,15 +109,20 @@ cname <- country[country$countryname==unique(df1$partner),2]
 
 #GET HMRC DATA
 ```{r}
-source("get_HMRC_data.R")
-source("get_HMRC_data_imports.R")
+if( HMRC_parent == FALSE){
+  com_id2 <- paste(com_id,"$",sep='')
+}else{
+  com_id2 <- com_id
+}
+source("get_HMRC_data2.R")
+source("get_HMRC_data_imports2.R")
 stime <- Sys.time()
 if(cname %in% eu_list){
   print('It belongs to EU')
-HMRC_import_food_data <- get_HMRC_data(arrivals)
+HMRC_import_food_data <- get_HMRC_data2(arrivals,com_id2)
 }else{
   print('It does not belong to EU')
-HMRC_import_food_data <- get_HMRC_data_imports(imports)
+HMRC_import_food_data <- get_HMRC_data_imports2(imports,com_id2)
 }
 etime <- Sys.time()
 print(etime-stime)
@@ -118,13 +134,11 @@ print(etime-stime)
 if(cname %in% eu_list){
 #Filter the data for the selected commodity_code
 tmp  <- HMRC_import_food_data
-#tmp1 <- tmp %>% filter(str_sub(smk_comcode,1,str_length(com_id)) == com_id)
-tmp2 <- tmp[str_detect(tmp$smk_comcode,paste('^',com_id,sep='')),]
 #Remove crazy year
 current_year <- 2018
-tmp2 <- tmp2 %>% filter(as.numeric(smk_period_reference)<100*(current_year+1))
+tmp1 <- tmp %>% filter(as.numeric(smk_period_reference)<100*(current_year+1))
 #Ignore some variables
-tmp2 <- tmp2 %>%
+tmp2 <- tmp1 %>%
 select(-smk_coo_seq,-smk_coo_alpha) %>%
 select(-smk_nature_of_transaction,-smk_mode_of_transport,-smk_no_of_consignments) %>%
 select(-smk_suite_indicator,-smk_sitc,-smk_ip_comcode) %>% select(-smk_supp_unit,-smk_trade_ind,-smk_record_type)
@@ -147,9 +161,8 @@ tmp <- tmp %>% rename(partner_id      = "cod_alpha")
 tmp <- tmp %>% rename(period_tmp      = "account_date")
 tmp <- tmp %>% rename(trade_value_spd = "value")
 tmp <- tmp %>% rename(netweight_kg    = "quantity_1")
-#Filter the data for the selected commodity_code
-tmp2 <- tmp[str_detect(tmp$commodity_code,paste('^',com_id,sep='')),]
-tmp2 <- tmp2 %>% mutate(period = paste(str_sub(period_tmp,4,7),str_sub(period_tmp,1,2),sep='')) %>% select(-period_tmp)
+#Fix the period variable format
+tmp2 <- tmp %>% mutate(period = paste(str_sub(period_tmp,4,7),str_sub(period_tmp,1,2),sep='')) %>% select(-period_tmp)
 tmp2$partner_id <- gsub('GB', 'UK', tmp2$partner_id)
 #Remove crazy year
 current_year <- 2018
