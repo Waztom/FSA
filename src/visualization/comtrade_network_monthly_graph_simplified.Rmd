@@ -99,8 +99,8 @@ visNetwork(nodes, edges) %>%
 #shows 1st degree children and parents
   visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
   visInteraction(navigationButtons = TRUE)
-#I want to remove interactions between children
-#I want to colour code depending on whether its an import or export
+#HELP: I want to remove interactions between children
+#HELP: I want to colour code depending on whether its an import or export
 ```
 
 #Analysis of network
@@ -186,7 +186,7 @@ nodes[c(47,19,37,17,53),]
 
 ```{r}
 undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
-communities <- edge.betweenness.community(h) 
+communities <- edge.betweenness.community(undirected_network) 
 sizes(communities)
 grouping <- membership(communities)
 h <- set_vertex_attr(undirected_network, "color", value = c("yellow", "blue", "red", "lightblue", "green", "purple")[grouping])
@@ -200,9 +200,9 @@ visNetwork(nodes_groups, edges) %>%
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
   visEdges(arrows = "to",
            color=list(inherit=TRUE)) %>%
-  visNodes(font=list(size=20), shadow = TRUE) %>%
+  visNodes(font=list(size=40), shadow = TRUE) %>%
 #shows 1st degree children and parents
-  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=2, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
   visInteraction(navigationButtons = TRUE) %>%
   visGroups(groupname = "1", color = "orange") %>%
   visGroups(groupname = "2", color = "lightblue") %>%
@@ -213,7 +213,38 @@ visNetwork(nodes_groups, edges) %>%
 ```
 
 
+#looking into net importers and producers
+```{r}
+total_imports<- world_cucumber_data_graph_exlworldEU_simple %>% group_by (partner) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = partner)
+
+total_exports <- world_cucumber_data_graph_exlworldEU_simple %>% group_by (reporter) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = reporter)
 
 
+nodes_nets <- nodes_groups %>% left_join(total_imports, by = "label") %>% left_join(total_exports, by = "label")
 
+nodes_nets_clean <- nodes_nets %>% replace_na(list(total_import=0, total_export=0))
+nodes_nets_summary <- nodes_nets_clean %>% group_by (id, label, group) %>% mutate(net = total_export - total_import)
+nodes_nets_summary_abs <- nodes_nets_summary %>% mutate(value = abs(net))
+
+nodes_nets_summary_shape <- nodes_nets_summary_abs %>% mutate(shape = ifelse(net <0, "dot", ifelse(net >0, "square")))
+
+```
+
+
+#new visual with node size depending on import/export
+```{r}
+visNetwork(nodes_nets_summary_shape, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visEdges(arrows = "to",
+           color=list(inherit=TRUE)) %>%
+  visNodes(font=list(size=40), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=2, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visGroups(groupname = "1", color = "orange") %>%
+  visGroups(groupname = "2", color = "lightblue") %>%
+  visGroups(groupname = "3", color = "pink") %>%
+  visGroups(groupname = "4", color = "grey") %>%
+  visGroups(groupname = "5", color = "lightgreen") %>%
+  visGroups(groupname = "6", color = "purple") 
+```
 
