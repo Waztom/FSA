@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import itertools
 
 
 from matplotlib.transforms import offset_copy
@@ -48,7 +49,10 @@ font_size=10
 
 #matplotlib.rcParams.update(pgf_with_pdflatex)
 
- 
+import holoviews as hv
+hv.extension('bokeh')
+
+
 trade = pd.read_pickle('../../data/cucumber_network_2015.pickle')
 
 trade_all = trade.unstack()
@@ -77,37 +81,51 @@ for importer in trade.keys():
 #nx.draw(G, with_labels=True, node_color='skyblue', node_size=1500, edge_color=df['value'], width=10.0, edge_cmap=plt.cm.Blues)
 
 #Remove disconnected nodes                
-G.remove_nodes_from(list(nx.isolates(G)))
+#G.remove_nodes_from(list(nx.isolates(G)))
 
 
 edges = G.edges()
+
+
+#pos = nx.nx_agraph.graphviz_layout(G, prog='twopi')
+pos = nx.nx_agraph.graphviz_layout(G, prog='neato')
+
+steps=2
+
+closest = nx.single_source_shortest_path_length(G ,source='United Kingdom',cutoff=steps)
+
+print(closest)
+
+nodes = list(G.nodes())
+
+nodes_to_remove = list(itertools.filterfalse(lambda x: x in list(closest.keys()), nodes))
+
+G.remove_nodes_from(nodes_to_remove)
+#pos = nx.nx_agraph.graphviz_layout(G, prog='neato')
 
 #weights = [((G[u][v]['weight']-trade_med)/trade_sum) for u,v in edges]
 weights = [G[u][v]['weight'] for u,v in edges]
 weights = scale(weights, axis=0, with_mean=True, with_std=True, copy=True)
 
+net_graph = hv.Graph.from_networkx(G, nx.layout.spring_layout, iterations=50) #.redim.range(**padding)
+net_graph
 
-f, ax = plt.subplots(1,figsize=(2*13.7, 2*9), dpi=600)
-plt.subplots_adjust(left=0.12, right=0.96, top=0.95, bottom=0.15)
-ax.set_title('Cumcumber importer networkn to United Kingdom')
-
-#pos = nx.nx_agraph.graphviz_layout(G, prog='twopi')
-pos = nx.nx_agraph.graphviz_layout(G, prog='neato')
-
-#pos['United Kingdom'] = np.array([0, 0])
-#nx.draw(G, pos, with_labels=True, node_color='skyblue', width=weights, font_size=10, node_size=2, edge_cmap=plt.cm.Blues)
-#nx.draw(G, pos, with_labels=True, node_color='skyblue', width=0.1, font_size=10, node_size=5, edge_cmap=plt.cm.Blues)
-nx.draw_networkx_edges(G, pos, width=weights, #0.5
-                                edge_color=weights, #'grey',
-                                alpha=0.6,
-                                edge_cmap=cc.m_bkr)
-
-nx.draw_networkx_nodes(G, pos,  with_labels=True, font_size=5, node_color='skyblue', node_size=20, edge_cmap=plt.cm.Blues) 
-#                                node_size=nodesizes,
-#                                linewidth=edgewidths,
-#                                node_color=edgecolors)
-nx.draw_networkx_labels(G, pos) # , labels=pos)
-
-#plt.colorbar()
-plt.axis('off')
-plt.savefig('big_net.pdf', dpi=600)
+#
+#f, ax = plt.subplots(1,figsize=(2*13.7, 2*9), dpi=600)
+#plt.subplots_adjust(left=0.12, right=0.96, top=0.95, bottom=0.15)
+#ax.set_title('Cumcumber importer network to United Kingdom')
+#
+#nx.draw_networkx_edges(G, pos, width=weights, #0.5
+#                                edge_color=weights, #'grey',
+#                                alpha=0.8*(1-weights),
+#                                edge_cmap=cc.m_bkr)
+#
+#nx.draw_networkx_nodes(G, pos,  with_labels=True, font_size=5, node_color='skyblue', node_size=20, edge_cmap=plt.cm.Blues) 
+##                                node_size=nodesizes,
+##                                linewidth=edgewidths,
+##                                node_color=edgecolors)
+#nx.draw_networkx_labels(G, pos) # , labels=pos)
+#
+#
+#plt.axis('off')
+#plt.savefig('figures/cucumber_'+str(steps)+'closest2UK.pdf', dpi=600)
