@@ -215,14 +215,14 @@ visNetwork(nodes_groups, edges) %>%
 
 #looking into net importers and producers
 ```{r}
-total_imports<- world_cucumber_data_graph_exlworldEU_simple %>% group_by (partner) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = partner)
+total_exports<- world_cucumber_data_graph_exlworldEU_simple %>% group_by (partner) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = partner)
 
-total_exports <- world_cucumber_data_graph_exlworldEU_simple %>% group_by (reporter) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = reporter)
+total_imports <- world_cucumber_data_graph_exlworldEU_simple %>% group_by (reporter) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = reporter)
 
 
-nodes_nets <- nodes_groups %>% left_join(total_imports, by = "label") %>% left_join(total_exports, by = "label")
+nodes_nets <- nodes_groups %>% left_join(total_exports, by = "label") %>% left_join(total_imports, by = "label")
 
-nodes_nets_clean <- nodes_nets %>% replace_na(list(total_import=0, total_export=0))
+nodes_nets_clean <- nodes_nets %>% replace_na(list(total_export=0, total_import=0))
 nodes_nets_summary <- nodes_nets_clean %>% group_by (id, label, group) %>% mutate(net = total_export - total_import)
 nodes_nets_summary_abs <- nodes_nets_summary %>% mutate(value = abs(net))
 
@@ -233,18 +233,24 @@ nodes_nets_summary_shape <- nodes_nets_summary_abs %>% mutate(shape = ifelse(net
 
 #new visual with node size depending on import/export
 ```{r}
-visNetwork(nodes_nets_summary_shape, edges) %>% 
+Network <- visNetwork(nodes_nets_summary_shape, edges) %>% 
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
   visEdges(arrows = "to",
            color=list(inherit=TRUE)) %>%
   visNodes(font=list(size=40), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
-  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=2, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
   visInteraction(navigationButtons = TRUE) %>%
   visGroups(groupname = "1", color = "orange") %>%
   visGroups(groupname = "2", color = "lightblue") %>%
   visGroups(groupname = "3", color = "pink") %>%
   visGroups(groupname = "4", color = "grey") %>%
   visGroups(groupname = "5", color = "lightgreen") %>%
-  visGroups(groupname = "6", color = "purple") 
-```
+  visGroups(groupname = "6", color = "purple") %>%
+  visLegend(addNodes = list(
+  list(label = "Net Importer", shape = "dot"),
+  list(label = "Net Exporter", shape = "square")
+ ),
+ useGroups = FALSE)
 
+  visSave(Network, file = "Phoebe_network.html")
+```
