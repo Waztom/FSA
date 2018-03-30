@@ -1,0 +1,91 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+library(stringr)
+library(ggExtra)
+library(gridExtra)
+library(network)
+library(tidygraph)
+library(ggraph)
+library(igraph)
+```
+
+#Import the data processed with Python
+```{r}
+df <- read.csv("/home/alex/fsa_s2ds/FSA/src/data/RASFF.csv",header=TRUE, stringsAsFactors = FALSE)
+df <- df %>% select(-X)
+df$partner <- gsub('the ','',df$partner)
+notifier <- df %>% group_by(notifier) %>% summarize(value = n())
+partner  <- df %>% group_by(partner)  %>% summarize(value = n())
+```
+
+#What country notifies the most?
+```{r}
+ggplot(notifier) + geom_bar(aes(x=reorder(notifier,value),y=value),stat="identity")  +
+  coord_flip() +
+  labs(x="Notifier country",y="Number",title="Who notifies the most?")
+```
+
+#What country receives more notifications?
+```{r}
+ggplot(partner) + geom_bar(aes(x=reorder(partner,value),y=value),stat="identity")  +
+  coord_flip() +
+  labs(x="Notified country",y="Number",title="Who gets notified the most?")
+```
+
+#Now, let's do some networks and graphs...
+```{r}
+sources <-      df %>% distinct(notifier) %>% rename(label = notifier)
+destinations <- df %>% distinct(partner)  %>% rename(label = partner)
+```
+
+```{r}
+nodes <- full_join(sources,destinations,by="label")
+nodes <- nodes %>% rowid_to_column("id")
+```
+
+```{r}
+per_route <- df %>% group_by(notifier,partner) %>% summarise(weight = n()) %>%  ungroup()
+(max(per_route$weight))
+```
+
+```{r}
+edges <- per_route %>% left_join(nodes,by=c("notifier" = "label")) %>% rename(from = id)
+edges <- edges     %>% left_join(nodes,by=c("partner"  = "label")) %>% rename(to   = id)
+```
+
+```{r}
+edges <- select(edges,from,to,weight)
+```
+
+```{r}
+routes_network <- network(edges,vertex.attr = nodes, matrix.type="edgelist",ignore.eval=FALSE)
+routes_network
+```
+
+
+
+
+
+
+```{r}
+library(visNetwork)
+library(networkD3)
+```
+
+```{r}
+edges <- mutate(edges, width = weight)
+visNetwork(nodes, edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>% 
+  visEdges(arrows = "middle")
+```
