@@ -49,7 +49,7 @@ font_size=10
 #matplotlib.rcParams.update(pgf_with_pdflatex)
 
  
-trade = pd.read_pickle('cucumber_network_2015.pickle')
+trade = pd.read_pickle('../../data/cucumber_network_2015.pickle')
 
 trade_all = trade.unstack()
 trade_quantile = trade_all.quantile(q=0.5)
@@ -93,6 +93,9 @@ ax.set_title('Cumcumber importer networkn to United Kingdom')
 
 #pos = nx.nx_agraph.graphviz_layout(G, prog='twopi')
 pos = nx.nx_agraph.graphviz_layout(G, prog='neato')
+
+path = nx.single_source_shortest_path_length(G ,source=pos[0],cutoff=3)
+
 #pos['United Kingdom'] = np.array([0, 0])
 #nx.draw(G, pos, with_labels=True, node_color='skyblue', width=weights, font_size=10, node_size=2, edge_cmap=plt.cm.Blues)
 #nx.draw(G, pos, with_labels=True, node_color='skyblue', width=0.1, font_size=10, node_size=5, edge_cmap=plt.cm.Blues)

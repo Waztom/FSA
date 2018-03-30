@@ -105,7 +105,7 @@ def get_commodity_codes(comtrade_dictionary, commodity):
         commodity_code =np.repeat(commodity_code['id'].values,2).tolist()
     return commodity_codes
 
-def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine', reporter_name = 'United Kingdom', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine', reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
     SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
     '''
@@ -166,7 +166,7 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_name='Meat of bovine
     return trade_data
 
 
-def comtrade_sql_request_all_partners(commodity_name='Meat of bovine', reporter_name = 'United Kingdom', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
     SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
     '''
@@ -192,16 +192,15 @@ def comtrade_sql_request_all_partners(commodity_name='Meat of bovine', reporter_
     comtrade_dict = load_comtrade_info()
     
     reporter_code = get_reporter_code(comtrade_dict, reporter_name)
-    com_codes = get_commodity_codes(comtrade_dict, commodity_name)
         
     if reporter_code is None or com_codes is None:
         print('An error occured fetching a comtrade code. Leaving.')
-        sys.exit(1)
+        return None
         
     # Check if com_code was found
     if com_codes is None:
         print('WARNING: No commodity code found.')
-        sys.exit(1)
+        return None
     
     ################################################################
     ## Download the comtrade data and put it into a pandas DataFrame
