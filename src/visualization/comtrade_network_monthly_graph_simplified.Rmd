@@ -1,0 +1,219 @@
+---
+title: "Global network cucumber graph test"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(ggraph)
+```
+
+#Get the auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1 <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find fresh cucumber comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+```
+
+#Access comtrade database - look for cucumber info for world
+```{r}
+source("get_Comtrade_data_network_graph.R")
+#world_cucumber_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_cucumber_data_csv   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
+```
+
+##NB if you are not accessing .csv then need to change world_cucumber_data_csv to world_cucmber_data. No need to change anywhere else. 
+#Prepare data
+```{r}
+world_cucumber_data_graph <- world_cucumber_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+```
+
+#Select time line in month
+```{r}
+time_start <- "2015-12-01"
+time_end <- "2016-01-01"
+world_cucumber_data_graph <- world_cucumber_data_graph %>% filter(period < time_end & period >= time_start) 
+```
+
+#cut out world, EU-27, Other Europe, nes and Areas nes
+```{r}
+world_cucumber_data_graph_exlworldEU <- world_cucumber_data_graph %>% filter(partner != "World") %>% filter(reporter != "EU-27") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Areas, nes")
+```
+
+#cut out trade with value less than 3rd quantile value
+```{r}
+world_cucumber_data_graph_exlworldEU_simple <- world_cucumber_data_graph_exlworldEU %>% filter(trade_value_usd > 93100)
+```
+
+
+#Create nodes 
+```{r}
+imports_from <- world_cucumber_data_graph_exlworldEU_simple %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
+imports_to <- world_cucumber_data_graph_exlworldEU_simple %>% select(partner) %>% rename(label = partner) %>% distinct(label)
+
+#Combine to form one list of country nodes
+nodes <- full_join(imports_from,imports_to, by = 'label')
+nodes <- arrange(nodes,label)
+
+#Add ID column. 
+nodes <- nodes %>% rowid_to_column("id")
+```
+
+#Create edges table 
+```{r}
+edges <-  world_cucumber_data_graph_exlworldEU_simple %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
+          
+edges <- mutate(edges, width =  log(trade_value_usd/1000))
+edges <- select(edges, from, to, width)
+
+```
+
+#Create network graph
+```{r}
+visNetwork(nodes, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visEdges(arrows = "to") %>%
+#shows 1st degree children and parents
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visInteraction(navigationButtons = TRUE)
+#I want to remove interactions between children
+#I want to colour code depending on whether its an import or export
+```
+
+#Analysis of network
+#create tbl_graph from tidygraph package. Find out how many nodes and edges we have
+```{r}
+g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE) 
+print(g)
+
+```
+
+#How many edges does the UK have? ID for UK is 107
+```{r}
+incident(g, "53", mode=c("all"))
+incident(g, "53", mode=c("in"))
+incident(g, "53", mode=c("out"))
+```
+
+*7/100 countries are connected to the UK
+
+
+#Who are the UK's outbound neighbors?
+```{r}
+UK_out_neighbors <- nodes[neighbors(g, "53", mode = c("out")),]
+print(UK_out_neighbors)
+```
+#Who are the UK's inbound neighbors?
+```{r}
+UK_in_neighbors <- nodes[neighbors(g, "53", mode = c("in")),]
+print(UK_in_neighbors)
+```
+
+#Who exports to the most countries?
+```{r}
+nodes[max(degree(g, mode="out")),]
+
+```
+
+
+#Which country has the highest betweenness - on lots of shortest paths
+```{r}
+nodes[which.max(betweenness(g, directed=TRUE)),]
+```
+
+#how many connections does Spain have?
+```{r}
+degree(g, "47", mode = c("all"))
+```
+#Who are the Spain's outbound neighbors?
+```{r}
+Spain_out_neighbors <- nodes[neighbors(g, "47", mode = c("out")),]
+print(Spain_out_neighbors)
+```
+
+#Who are the Spain's inbound neighbors?
+```{r}
+Spain_in_neighbors <- nodes[neighbors(g, "47", mode = c("in")),]
+print(Spain_in_neighbors)
+```
+
+#trying out some functions including 'cliques
+```{r}
+#degree - number of connections
+degree(g)
+#eigen_centrality - measure of how well connected
+eigen_centrality(g)
+#edge density - measure of density of the overall structure - % of edges out of all possible
+edge_density(g)
+#mean distance - average path length
+mean_distance(g)
+#triangles - how many triangles are each vertex part of?
+count_triangles(g)
+#how many triangles is the Uk part of
+count_triangles(g, vids = "107")
+#transitivity - probablility that adjacent nodes are connected
+transitivity(g)
+#Are there any cliques?
+largest_cliques(g)
+#who is in this clique -I can only get this to work manually, can you get it to work? 
+nodes[c(47,19,37,17,53),]
+```
+*The largest clique is made up of Eurpean countries
+
+
+```{r}
+undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
+communities <- edge.betweenness.community(h) 
+sizes(communities)
+grouping <- membership(communities)
+h <- set_vertex_attr(undirected_network, "color", value = c("yellow", "blue", "red", "lightblue", "green", "purple")[grouping])
+plot(h)
+```
+#Create network graph with grouping
+```{r}
+nodes_groups <- nodes %>% mutate (group = grouping)
+                                
+visNetwork(nodes_groups, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visEdges(arrows = "to",
+           color=list(inherit=TRUE)) %>%
+  visNodes(font=list(size=20), shadow = TRUE) %>%
+#shows 1st degree children and parents
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visGroups(groupname = "1", color = "orange") %>%
+  visGroups(groupname = "2", color = "lightblue") %>%
+  visGroups(groupname = "3", color = "pink") %>%
+  visGroups(groupname = "4", color = "grey") %>%
+  visGroups(groupname = "5", color = "lightgreen") %>%
+  visGroups(groupname = "6", color = "purple") 
+```
+
+
+
+
+
+
