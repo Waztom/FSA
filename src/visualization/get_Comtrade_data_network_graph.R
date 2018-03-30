@@ -1,4 +1,4 @@
-get_Comtrade_data <- function(from_period,to_period,df_columns,comcode,country){
+get_Comtrade_data_network_graph <- function(from_period,to_period,df_columns,comcode){
 
 # Convert function inputs to strings
 from_period <- as.character(substitute(from_period))
@@ -12,15 +12,14 @@ con <- dbConnect(drv,
                  password = "2fs@9!^43g")
 
 if(df_columns == "default"){
-   df_columns <- "period, trade_flow, reporter_code, reporter, partner_code, partner, commodity_code, netweight_kg, trade_value_usd"
+   df_columns <- "period, trade_flow, reporter_code, reporter, partner, partner_code, commodity_code, trade_value_usd"
 }
 
 sql_db_query <- paste(
-  "SELECT ",df_columns,
-  " FROM comtrade WHERE commodity_code ~ '^",comcode,"' AND period >=",
-  from_period," AND period <=",to_period," AND partner_code=",country,sep="")
+  "SELECT ",df_columns," FROM comtrade WHERE period >=",
+  from_period," AND period <=",to_period," AND commodity_code LIKE '",comcode,sep = "","%'")
 
-print(sql_db_query)
+#print(sql_db_query)
 
 #print("Large cuppa?")
 comtrade   <- dbGetQuery(con, sql_db_query)

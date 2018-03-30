@@ -1,0 +1,95 @@
+---
+title: "Global network cucumber graph test"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+```
+
+#Get the auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1 <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find fresh cucumber comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+```
+
+#Access comtrade database - look for cucumber info for world
+```{r}
+source("get_Comtrade_data_network_graph.R")
+world_cucumber_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_cucumber_data_csv   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
+```
+
+##NB if you are not accessing .csv then need to change world_cucumber_data_csv to world_cucmber_data. No need to change anywhere else. 
+#Prepare data
+```{r}
+world_cucumber_data_graph <- world_cucumber_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+```
+
+#Select time line in month
+```{r}
+time_start <- "2015-12-01"
+time_end <- "2016-01-01"
+world_cucumber_data_graph <- world_cucumber_data_graph %>% filter(period < time_end & period >= time_start) 
+```
+
+#Create nodes 
+```{r}
+imports_from <- world_cucumber_data_graph %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
+imports_to <- world_cucumber_data_graph %>% select(partner) %>% rename(label = partner) %>% distinct(label)
+
+#Combine to form one list of country nodes
+nodes <- full_join(imports_from,imports_to, by = 'label')
+nodes <- arrange(nodes,label)
+
+#Add ID column. 
+nodes <- nodes %>% rowid_to_column("id")
+```
+
+#Create edges table 
+```{r}
+edges <-  world_cucumber_data_graph %>% left_join(nodes, by = c("reporter" = "label"))%>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
+
+edges <- mutate(edges, width = sqrt(trade_value_usd/100000))
+edges <- select(edges, from, to, width)
+
+```
+
+#Create network graph
+```{r}
+visNetwork(nodes, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10) %>%
+  visEdges(arrows = "from") %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
+
+```
+
+
+
+
+
+
+

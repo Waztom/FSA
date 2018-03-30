@@ -42,9 +42,11 @@ HMRC_EU_import_food_data <- get_HMRC_data(arrivals)
 ```{r}
 HMRC_columns  <- col_names[c(1,4,10,14,15,16)]
 HMRC_country  <- "ES"
-HMRC_comcode  <- "07070005"
+HMRC_comcode_1  <- "07070005"
+HMRC_comcode_2 <- "07070090"
+
 model_data    <- HMRC_EU_import_food_data %>% 
-                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode) %>%
+                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode_1 | smk_comcode == HMRC_comcode_2) %>%
                  select(-smk_cod_alpha, -smk_comcode)
 ```
 
@@ -85,7 +87,7 @@ ggplot(model_data_group, aes(smk_period_reference, cost_per_kg)) +
 #Very high cost/kg during 2012/2013 - $150/kg seems to be a bit too exorbitant for cucumber! What does the cost/kg look like without the points above $150/kg?
 ```{r}
 ggplot(model_data_group, aes(smk_period_reference, cost_per_kg)) + 
-  geom_point() + geom_line() + ylim(0,2) + geom_smooth()
+  geom_point() + geom_line() + ylim(0,3) + geom_smooth()
 ```
 
 #What does the nett mass of the cucumber imported into the UK look like over time?
@@ -98,11 +100,21 @@ ggplot(model_data_group, aes(smk_period_reference, smk_nett_mass)) +
 * Imports of cucumber appears to be seasonal and follow an oscillating pattern with exception for several points (Occur Nov - Jan) where there are spikes in 2010 & 2014 and possibly 2009, 2016 & 2017. 
 * Also looking at cost/kg over time, note how cost/kg simmilar in months before and/or after at some of these points in time.   
 
+#What does the total trade value look like over time NB nett mass data not always reliable
+```{r}
+ggplot(model_data_group, aes(smk_period_reference, smk_stat_value)) +
+        geom_point(colour = "purple") +
+        geom_hline(yintercept=0.75E7, linetype="dashed", color = "red") +
+        xlab("Date") +
+        ylab("Trade value / £") +
+        ggtitle("Cucumber commodity code: 07070005 + 07070090")
+```
+
 #Did the number of consignments also increase during the spikes? 
 ```{r}
 ggplot(model_data_group, aes(smk_period_reference, smk_no_of_consignments)) +
         geom_line(colour = "green") +
-        geom_point(colour = "green")
+        geom_point(colour = "green") 
 ```
 
 #Conclusions and questions

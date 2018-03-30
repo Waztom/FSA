@@ -11,7 +11,7 @@ con <- dbConnect(drv,
                  password = "2fs@9!^43g")
 
 sql_db_query <- paste("SELECT * FROM",df_name,"WHERE smk_comcode ~ '^[0-2]'")
-print("Medium cuppa?")
+#print("Medium cuppa?")
 requested_df   <- dbGetQuery(con, sql_db_query)
 
 return(requested_df = as.data.frame(requested_df))
