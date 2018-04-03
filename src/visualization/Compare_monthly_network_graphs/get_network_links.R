@@ -1,3 +1,5 @@
+#Function to collect links that are linked to starting node
+
 get_network_links <- function(trade.flow,starting_node,trade_threshold,df){
   
   df$partner  <- as.character(df$partner)
