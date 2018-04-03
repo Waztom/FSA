@@ -52,10 +52,10 @@ def get_origin(post):
             i = i.split(' and ')
             tmp2.append(i)
         tmp = tmp2
+        tmp = [j for i in tmp for j in i]
     except:
         tmp = None
 
-    tmp = [j for i in tmp for j in i]
 
     return tmp
 
