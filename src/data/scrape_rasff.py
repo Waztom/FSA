@@ -15,7 +15,7 @@ driver = webdriver.Firefox()
 
 entry = []
 
-pages = range(0,10)
+pages = range(0,2)
 
 for i in pages:
         
@@ -38,4 +38,15 @@ for i in pages:
 
 driver.quit()
 
-print(len(entry))
+print(entry[10])
+
+daten = []
+cnoti = []
+subje = []
+categ = []
+typec = []
+for i in entry:
+	daten.append(entry[2])
+
+print(daten)	
+
