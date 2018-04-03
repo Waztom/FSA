@@ -13,6 +13,7 @@ import pandas as pd
 
     
 urlbase = "https://webgate.ec.europa.eu/rasff-window/portal/?event=notificationsList&StartRow="
+column_names=['Classification', 'Date of case', 'Reference', 'Notifying country', 'Subject', 'Product Category', 'Type', 'Risk decision']
 
 try:
     driver = webdriver.Firefox()
@@ -40,24 +41,29 @@ for i in range(number_of_pages_to_scan):
 
 driver.quit()
 
+print('Retrieved '+str(len(pages_list))+' pages. Start parsing...')
+
 for page in pages_list:
     parsed_html = BeautifulSoup(page,'html.parser')
 
-#    text = []
-#    for link in parsed_html.find_all('td'):
-#        text.append(link.get_text().strip())
-#
-#    for i in range(0,100):
-#        entry.append(text[10*i:10*i+9])
     
     for row in parsed_html.find_all('tr'):
         entry = pd.Series()
         for cell in row.find_all('td'):
             entry = entry.append(pd.Series(cell.get_text().strip()), ignore_index=True)
         rasff_table = rasff_table.append(entry, ignore_index=True)
-        
 
-print('Entry length:',len(entry))
+# Remove first and last columns which are uuseless
+rasff_table= rasff_table.drop([0, 9], axis=1)
+ 
+# Remove first line which contains only NaNs
+rasff_table= rasff_table.drop([0], axis=0)
+
+rasff_table.columns = column_names
+
+# Dumping table into a pickle
+rasff_table.to_pickle('../../data/raw/rassf_dump.pickle')
+
+print('Entry length:'+str(rasff_table.describe()))
 
 
-#pd_entry.to_pickle('../../data/raw/rassf_dump.pickle')
