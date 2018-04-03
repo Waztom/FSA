@@ -1,0 +1,133 @@
+---
+title: "Summary_of_monthly_network_grahs"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+```
+
+#Access comtrade database - look for cucumber info for world
+```{r}
+#source("get_Comtrade_data_network_graph.R")
+#world_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_data   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
+```
+
+#Loop to get features from each months network graph
+```{r}
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+period_list               <- list()
+eigen_list                <- list()
+sum_degree_list           <- list()
+edge_density_list         <- list()
+average_path_length_list  <- list()
+transitivity_list         <- list()
+net_list                  <- list()
+
+world_monthly_data <- get_Comtrade_monthly_data(world_data)
+
+for (i in world_monthly_data){
+  month_nett_trade  <- get_nett_trade(i)
+  month_quantiles   <- quantile(i$trade_value_usd)
+  trade_threshold   <- month_quantiles[4]
+  month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
+  nodes             <- get_nodes(trade.flow,month_links)
+  edges             <- get_edges(trade.flow,nodes,month_links)
+  
+  #Combine to form one list of country nodes
+  nodes <- nodes %>% left_join(.,month_nett_trade, by='label')
+  nodes <- arrange(nodes,label) 
+  
+  #Assign attributes and sizes/color to nodes
+  nodes$color <-  ifelse(nodes$nett_trade > 0, "red","blue")
+  nodes$size  <-  (abs(nodes$nett_trade) - min(nodes$nett_trade)) /                             (max(nodes$nett_trade) - min(nodes$nett_trade))*50
+  
+  #create tbl_graph from tidygraph package
+  g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+  
+  #Abstarct features from network graph
+  month               <- unique(i$period)
+  eigen               <- eigen_centrality(g)
+  eigen_centrality    <- eigen$value
+  sum_degree          <- sum(degree(g))
+  edge_density        <- edge_density(g)
+  average_path_length <- mean_distance(g)
+  transitivity        <- transitivity(g)
+
+  period_list               <- list.append(period_list, month)
+  eigen_list                <- list.append(eigen_list, eigen_centrality)
+  sum_degree_list           <- list.append(sum_degree_list, sum_degree)
+  edge_density_list         <- list.append(edge_density_list, edge_density)
+  average_path_length_list  <- list.append(average_path_length_list,average_path_length)
+  transitivity_list         <- list.append(transitivity_list, transitivity)
+ 
+  #Plot for analysis
+  net <- visNetwork(nodes, edges, main = as.character(paste0(trade.flow," ",month))) %>% 
+  visIgraphLayout(randomSeed = 10, layout = "layout_in_circle") %>%
+  visEdges(arrows = "to") %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
+  
+  net_list <- list.append(net_list, net)
+  
+}
+
+#Combine lists into dataframe
+abstraction_summary <- do.call(rbind, Map(data.frame, period=period_list, eigen_centrality=eigen_list, sum_degree = sum_degree_list, edge_density = edge_density_list, average_path_length = average_path_length_list, transitivity = transitivity_list))
+
+#Convert period to date type
+abstraction_summary <- abstraction_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Plot summary
+eigen_centrality_plot <- ggplot(abstraction_summary, aes(x=period, y = eigen_centrality)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Eigen centrality")
+
+sum_degree_plot <- ggplot(abstraction_summary, aes(x=period, y = sum_degree)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Sum degree")
+
+edge_density_plot <- ggplot(abstraction_summary, aes(x=period, y = edge_density)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Edge density")
+
+average_path_length_plot <- ggplot(abstraction_summary, aes(x=period, y =                 average_path_length)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Average path length")
+
+transivity_plot <- ggplot(abstraction_summary, aes(x=period, y = transitivity)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Transitivity")
+
+grid.arrange(eigen_centrality_plot, sum_degree_plot, edge_density_plot,average_path_length_plot, transivity_plot, ncol=2)
+
+```
+
+
+
