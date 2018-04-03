@@ -57,20 +57,39 @@ ctype = []
 
 k = 0
 
+<<<<<<< HEAD
 for i in entry:
 #	if re.match('food',entry[k][7]):
 	print(entry[k][7],entry[k][7].find('food'))
 	if str(entry[k][7]).find('food') > -1:
+=======
+#for i in entry:
+#	if re.match('food',entry[k][7]):
+#		daten.append(entry[k][2])
+#		cnoti.append(entry[k][4])
+#		subje.append(entry[k][5])
+#		categ.append(entry[k][6])
+#		corig.append(get_origin(entry[k][5]))
+#		k = k + 1
+#
+#print('Notifier list:',len(cnoti))
+
+for k in range(len(entry)):
+	if re.match('food',entry[k][7]):
+>>>>>>> d530c065879d92e56da8b8dbdbe3eb96b754ca02
 		daten.append(entry[k][2])
 		cnoti.append(entry[k][4])
 		subje.append(entry[k][5])
 		categ.append(entry[k][6])
 		ctype.append(entry[k][7])
 		corig.append(get_origin(entry[k][5]))
-		k = k + 1
 
 print('Notifier list:',len(cnoti))
+<<<<<<< HEAD
 print(ctype)
+=======
+
+>>>>>>> d530c065879d92e56da8b8dbdbe3eb96b754ca02
 #
 #for i in range(0,k):
 #	print(i,k,cnoti[i],corig[i])
