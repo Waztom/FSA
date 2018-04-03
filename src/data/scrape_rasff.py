@@ -1,5 +1,5 @@
 #import pandas as pd
-#import re
+import re
 #import time
 #import selenium
 from selenium import webdriver
@@ -40,15 +40,23 @@ for i in pages:
 
 driver.quit()
 
-print(entry[10])
+print(len(entry))
+
 
 daten = []
 cnoti = []
 subje = []
 categ = []
-typec = []
+k = 0
 for i in entry:
-	daten.append(entry[2])
-
-print(daten)	
+	print(entry[k][7])
+	if re.match('food',entry[k][7]):
+		daten.append(entry[k][2])
+		cnoti.append(entry[k][4])
+		subje.append(entry[k][5])
+		categ.append(entry[k][6])
+		k = k + 1
+#
+print(daten)
+print(len(daten))	
 
