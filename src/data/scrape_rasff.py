@@ -7,7 +7,7 @@ from selenium import webdriver
 #from selenium.webdriver.common.by import By
 #from selenium.webdriver.support.ui import WebDriverWait
 #from selenium.webdriver.support import expected_conditions as EC
-
+from rasff_util import get_origin
 from bs4 import BeautifulSoup
 
     
@@ -20,7 +20,7 @@ except:
 
 entry = []
 
-pages = range(0,2)
+pages = range(0,1)
 
 for i in pages:
         
@@ -40,26 +40,41 @@ for i in pages:
 	for i in range(0,100):
 		entry.append(text[10*i:10*i+9])
 
-
 driver.quit()
 
-print(len(entry))
-
+print('Entry length:',len(entry))
 
 daten = []
 cnoti = []
 subje = []
 categ = []
+corig = []
+
 k = 0
+
 for i in entry:
-	print(entry[k][7])
 	if re.match('food',entry[k][7]):
 		daten.append(entry[k][2])
 		cnoti.append(entry[k][4])
 		subje.append(entry[k][5])
 		categ.append(entry[k][6])
+		corig.append(get_origin(entry[k][5]))
 		k = k + 1
+
+print('Notifier list:',len(cnoti))
 #
-print(daten)
-print(len(daten))	
+#for i in range(0,k):
+#	print(i,k,cnoti[i],corig[i])
+#
+#
+#notify = []
+#origin = []
+#for i in range(0,len(cnoti)):
+#        for k in range(0,len(corig[i])):
+#                notify.append(cnoti[i])
+#                origin.append(corig[i][k])
+
+
+
+
 
