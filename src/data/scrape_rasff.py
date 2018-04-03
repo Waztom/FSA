@@ -9,22 +9,33 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 
-url = "https://webgate.ec.europa.eu/rasff-window/portal/?event=notificationsList&StartRow=1"
+urlbase = "https://webgate.ec.europa.eu/rasff-window/portal/?event=notificationsList&StartRow="
 
 driver = webdriver.Firefox()
-driver.get(url)
 
 entry = []
 
-html = driver.page_source
-parsed_html = BeautifulSoup(html,'html.parser')
+pages = range(0,10)
 
-text = []
-for link in parsed_html.find_all('td'):
-	text.append(link.get_text().strip())
+for i in pages:
+        
+	count = i*100+1
+	url = urlbase + str(count)
+	driver.get(url)
 
-for i in range(0,100):
-	entry.append(text[10*i:10*i+9])
+	print('Page: ',i)
+
+	html = driver.page_source
+	parsed_html = BeautifulSoup(html,'html.parser')
+
+	text = []
+	for link in parsed_html.find_all('td'):
+		text.append(link.get_text().strip())
+
+	for i in range(0,100):
+		entry.append(text[10*i:10*i+9])
 
 
 driver.quit()
+
+print(len(entry))
