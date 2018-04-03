@@ -1,4 +1,4 @@
-#import pandas as pd
+import pandas as pd
 import re
 #import time
 #import selenium
@@ -20,7 +20,7 @@ except:
 
 entry = []
 
-pages = range(0,1)
+pages = range(0,60)
 
 for i in pages:
         
@@ -42,10 +42,6 @@ for i in pages:
 
 driver.quit()
 
-print(text)
-
-sys.exit()
-
 print('Entry length:',len(entry))
 
 daten = []
@@ -55,28 +51,9 @@ categ = []
 corig = []
 ctype = []
 
-k = 0
 
-<<<<<<< HEAD
-for i in entry:
-#	if re.match('food',entry[k][7]):
-	print(entry[k][7],entry[k][7].find('food'))
-	if str(entry[k][7]).find('food') > -1:
-=======
-#for i in entry:
-#	if re.match('food',entry[k][7]):
-#		daten.append(entry[k][2])
-#		cnoti.append(entry[k][4])
-#		subje.append(entry[k][5])
-#		categ.append(entry[k][6])
-#		corig.append(get_origin(entry[k][5]))
-#		k = k + 1
-#
-#print('Notifier list:',len(cnoti))
-
-for k in range(len(entry)):
+for k in range(0,len(entry)):
 	if re.match('food',entry[k][7]):
->>>>>>> d530c065879d92e56da8b8dbdbe3eb96b754ca02
 		daten.append(entry[k][2])
 		cnoti.append(entry[k][4])
 		subje.append(entry[k][5])
@@ -84,25 +61,27 @@ for k in range(len(entry)):
 		ctype.append(entry[k][7])
 		corig.append(get_origin(entry[k][5]))
 
-print('Notifier list:',len(cnoti))
-<<<<<<< HEAD
-print(ctype)
-=======
+#print('Notifier list:',len(cnoti))
 
->>>>>>> d530c065879d92e56da8b8dbdbe3eb96b754ca02
-#
-#for i in range(0,k):
-#	print(i,k,cnoti[i],corig[i])
-#
-#
-#notify = []
-#origin = []
-#for i in range(0,len(cnoti)):
-#        for k in range(0,len(corig[i])):
-#                notify.append(cnoti[i])
-#                origin.append(corig[i][k])
+for i in range(0,len(cnoti)):
+	print(i,cnoti[i],corig[i])
 
 
+#sys.exit()
 
+notify = []
+origin = []
+date   = []
 
+for i in range(0,len(cnoti)):
+	if corig[i] != None:  #Pain in the ass: although rarely, sometimes they type 'in' instead of 'from'
+		for k in range(0,len(corig[i])):
+			notify.append(cnoti[i])
+			date.append(daten[i])
+			origin.append(corig[i][k])
 
+#print(len(notify))
+
+df = pd.DataFrame({'date' : date, 'notifier' : notify, 'partner' : origin})
+df.head()
+df.to_csv('RASFF.csv')
