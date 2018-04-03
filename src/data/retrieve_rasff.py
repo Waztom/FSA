@@ -1,13 +1,12 @@
-#import pandas as pd
-import re
-#import time
-#import selenium
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 27 11:46:43 2018
+
+@author: janis and alex
+"""
+
 from selenium import webdriver
-#from selenium.webdriver.common.keys import Keys
-#from selenium.webdriver.common.by import By
-#from selenium.webdriver.support.ui import WebDriverWait
-#from selenium.webdriver.support import expected_conditions as EC
-#from rasff_util import get_origin
 from bs4 import BeautifulSoup
 import pandas as pd
 
