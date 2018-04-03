@@ -13,7 +13,10 @@ from bs4 import BeautifulSoup
     
 urlbase = "https://webgate.ec.europa.eu/rasff-window/portal/?event=notificationsList&StartRow="
 
-driver = webdriver.Firefox()
+try:
+    driver = webdriver.Firefox()
+except:
+    driver = webdriver.Chrome()
 
 entry = []
 
