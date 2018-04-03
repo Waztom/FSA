@@ -60,6 +60,9 @@ rasff_table= rasff_table.drop([0], axis=0)
 
 rasff_table.columns = column_names
 
+# Transform Date of case strings into date objects
+rasff_table['Date of case'] = pd.to_datetime(rasff_table['Date of case'], format="%d/%m/%Y")
+
 # Dumping table into a pickle
 rasff_table.to_pickle('../../data/raw/rassf_dump.pickle')
 
