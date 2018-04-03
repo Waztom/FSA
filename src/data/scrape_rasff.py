@@ -52,16 +52,27 @@ corig = []
 
 k = 0
 
-for i in entry:
+#for i in entry:
+#	if re.match('food',entry[k][7]):
+#		daten.append(entry[k][2])
+#		cnoti.append(entry[k][4])
+#		subje.append(entry[k][5])
+#		categ.append(entry[k][6])
+#		corig.append(get_origin(entry[k][5]))
+#		k = k + 1
+#
+#print('Notifier list:',len(cnoti))
+
+for k in range(len(entry)):
 	if re.match('food',entry[k][7]):
 		daten.append(entry[k][2])
 		cnoti.append(entry[k][4])
 		subje.append(entry[k][5])
 		categ.append(entry[k][6])
 		corig.append(get_origin(entry[k][5]))
-		k = k + 1
 
 print('Notifier list:',len(cnoti))
+
 #
 #for i in range(0,k):
 #	print(i,k,cnoti[i],corig[i])
