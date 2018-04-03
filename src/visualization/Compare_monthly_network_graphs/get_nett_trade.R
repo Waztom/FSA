@@ -1,3 +1,4 @@
+#Better to simplify and only include reporting Imports and exports?
 get_nett_trade <- function(df){
   
   df <- df %>% filter(trade_flow != "Re-imports" & trade_flow != "Re-exports" & reporter != "World" & reporter != "EU-27" & partner != "World" & partner != "EU-27")
