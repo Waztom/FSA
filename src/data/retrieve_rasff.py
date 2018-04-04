@@ -55,8 +55,8 @@ for page in pages_list:
 # Remove first and last columns which are uuseless
 rasff_table= rasff_table.drop([0, 9], axis=1)
  
-# Remove first line which contains only NaNs
-rasff_table= rasff_table.drop([0], axis=0)
+# Remove lines where the commodity type is undefined (usually the row is empty anyway)
+rasff_table[~rasff_table.Type.isnull()]
 
 rasff_table.columns = column_names
 
