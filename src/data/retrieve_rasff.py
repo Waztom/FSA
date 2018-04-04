@@ -22,7 +22,7 @@ except:
 entry = []
 rasff_table = pd.DataFrame()
 
-number_of_pages_to_scan = 3
+number_of_pages_to_scan = 100
 pages_list=[]
 
 
@@ -32,7 +32,7 @@ for i in range(number_of_pages_to_scan):
     url = urlbase + str(count)
     driver.get(url)
 
-    print('Page: ',i)
+    print('Page: '+str(i)+'/'+str(number_of_pages_to_scan))
 
     html = driver.page_source
     
@@ -54,11 +54,13 @@ for page in pages_list:
 
 # Remove first and last columns which are uuseless
 rasff_table= rasff_table.drop([0, 9], axis=1)
+
+#Define the column names
+rasff_table.columns = column_names
  
 # Remove lines where the commodity type is undefined (usually the row is empty anyway)
-rasff_table[~rasff_table.Type.isnull()]
+rasff_table = rasff_table[~rasff_table.Type.isnull()]
 
-rasff_table.columns = column_names
 
 # Transform Date of case strings into date objects
 rasff_table['Date of case'] = pd.to_datetime(rasff_table['Date of case'], format="%d/%m/%Y")
