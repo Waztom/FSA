@@ -12,7 +12,7 @@ import pandas as pd
 
     
 urlbase = "https://webgate.ec.europa.eu/rasff-window/portal/?event=notificationsList&StartRow="
-column_names=['Classification', 'Date of case', 'Reference', 'Notifying country', 'Subject', 'Product Category', 'Type', 'Risk decision']
+column_names=['classification', 'date_of_case', 'reference', 'notifying_country', 'subject', 'product_category', 'type', 'risk_decision']
 
 try:
     driver = webdriver.Firefox()
@@ -59,11 +59,11 @@ rasff_table= rasff_table.drop([0, 9], axis=1)
 rasff_table.columns = column_names
  
 # Remove lines where the commodity type is undefined (usually the row is empty anyway)
-rasff_table = rasff_table[~rasff_table.Type.isnull()]
+rasff_table = rasff_table[~rasff_table.type.isnull()]
 
 
 # Transform Date of case strings into date objects
-rasff_table['Date of case'] = pd.to_datetime(rasff_table['Date of case'], format="%d/%m/%Y")
+rasff_table['date_of_case'] = pd.to_datetime(rasff_table['date_of_case'], format="%d/%m/%Y")
 
 # Dumping table into a pickle
 rasff_table.to_pickle('../../data/raw/rassf_dump.pickle')
