@@ -24,12 +24,18 @@ library(stringr)
 ```
 
 ```{r}
-source("get_Comtrade_data_all.R")
-df <- get_Comtrade_data_all(201401,201601,"default","070700")
+read_file = FALSE
 ```
 
+
 ```{r}
+if(read_file==TRUE){
+source("get_Comtrade_data_all.R")
+df <- get_Comtrade_data_all(201401,201601,"default","070700")
 write.csv(df,'Comtrade_all.csv')
+}else{
+df <- read.csv(file="Comtrade_all.csv",header=TRUE)  
+}
 ```
 
 ```{r}
@@ -51,13 +57,13 @@ im1 <- Imports %>% select(period_date,partner,reporter,netweight_kg,trade_value_
 ex1 <- Exports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd)
 merged <- inner_join(im1,ex1,by=c("period_date","partner","reporter")) %>%
           rename(imp_weight = "netweight_kg.x",ex_weight = "netweight_kg.y") %>%
-          rename(imp_value = "trade_value_usd.x",ex_value = "trade_value_usd.y")
+          rename(imp_value = "trade_value_usd.x",ex_value = "trade_value_usd.y") %>%
+          mutate(Month = month(period_date),  Year = year(period_date)) 
 ```
-
 
 ```{r}
 ggplot(merged) +
-  geom_point(aes(x=log(imp_weight),y=log(ex_weight),color=period_date),size=1) + 
+  geom_point(aes(x=log(imp_value/imp_weight),y=log(ex_value/ex_weight),color=Month),size=1) + 
     scale_colour_gradientn(colours=rainbow(4))
 ```
 

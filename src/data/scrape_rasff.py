@@ -20,7 +20,7 @@ except:
 
 entry = []
 
-pages = range(0,60)
+pages = range(0,101)
 
 for i in pages:
         
@@ -72,12 +72,13 @@ for i in range(0,len(cnoti)):
 notify = []
 origin = []
 date   = []
-
+subjec = []
 for i in range(0,len(cnoti)):
 	if corig[i] != None:  #Pain in the ass: although rarely, sometimes they type 'in' instead of 'from'
 		for k in range(0,len(corig[i])):
 			notify.append(cnoti[i])
 			date.append(daten[i])
+			subjec.append(subje[i])
 			origin.append(corig[i][k])
 
 #print(len(notify))

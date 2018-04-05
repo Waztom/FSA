@@ -49,7 +49,9 @@ merging <- inner_join(uk_is_importer %>% select(-reporter,-period),
 p <- ggplot(merging,aes(x=period_date)) + geom_line(aes(y = i2e_weight)) + geom_point(aes(y = i2e_weight)) +
   labs(x="Period",y="A_to_B_imports / B_to_A_exports ratio",title="A=United Kingdom, B=XXXX")
 
-return(p)
+pl <- list(merging,p)
+
+return(pl)
 
 }
 
