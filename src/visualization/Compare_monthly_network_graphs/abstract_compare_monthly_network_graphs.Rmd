@@ -63,12 +63,8 @@ for (i in world_monthly_data){
   month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
   
   #Get nodes and edges
-  nodes             <- get_nodes(trade.flow,month_links)
+  nodes             <- get_nodes(trade.flow,month_links,month_nett_trade)
   edges             <- get_edges(trade.flow,nodes,month_links)
-  
-  #Combine to form one list of country nodes
-  nodes <- nodes %>% left_join(.,month_nett_trade, by='label')
-  nodes <- arrange(nodes,label) 
   
   #Assign attributes and sizes/color to nodes
   nodes$color <-  ifelse(nodes$nett_trade > 0, "red","blue")
