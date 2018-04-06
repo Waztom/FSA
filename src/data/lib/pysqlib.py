@@ -194,7 +194,7 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
     reporter_code = get_reporter_code(comtrade_dict, reporter_name)
         
     if reporter_code is None or com_codes is None:
-        print('An error occured fetching a comtrade code. Leaving.')
+        print('An error occured fetching a comtrade code.')
         return None
         
     # Check if com_code was found
