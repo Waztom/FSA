@@ -9,8 +9,10 @@ get_edges <- function(trade.flow,nodes,df){
     edges <-  df %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(from = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(to = id) 
     }
 
-  edges <- mutate(edges, width = sqrt(trade_value_usd/200000)) 
-  edges <- select(edges, from, to, width)
+  edges <- mutate(edges, width_trade_value = sqrt(trade_value_usd/200000))
+  edges <- mutate(edges, width_netweight_kg = sqrt(netweight_kg/500000))
+  edges <- na.omit(edges)
+  edges <- select(edges, from, to, width_trade_value,width_netweight_kg)
   return(edges)
 
 }
