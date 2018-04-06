@@ -87,20 +87,14 @@ grid.arrange(p1, p3, ncol=2)
 ```
 
 
-i <- 1
-while(...) {
-    l[[i]] <- new_element
-    i <- i + 1
-}
-
-
 ```{r}
+origin_country <- unique(si$origin)
 mylist <- list() #create an empty list
 i <- 1
 for (cur_count in origin_country) {
 n1 <- si %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
 n2 <- si %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
-#  vec <- character(3) #preallocate a numeric vector
+  vec <- character(3) #preallocate a numeric vector
     vec[1] <- as.character(cur_count)
     vec[2] <- n1
     vec[3] <- n2
@@ -113,7 +107,14 @@ net_flux <- net_flux %>% transform(X2 = as.numeric(X2)) %>% rename(total_export 
 net_flux <- net_flux %>% transform(X3 = as.numeric(X3)) %>% rename(total_import = X3)
 net_flux <- net_flux %>% mutate(ratio = (total_import-total_export)/(total_import + total_export))
 net_flux <- net_flux %>% rename(node = X1)
-ggplot(net_flux) + geom_point(aes(x=ratio,y=ratio))
+p1 <- ggplot(NULL) + geom_point(data = net_flux,aes(x=total_import/1e6,y=ratio),alpha=0.5) + 
+               geom_point(data = net_flux %>% filter(node=="Spain"),         aes(x=total_import/1e6,y=ratio),color="red",     size=5) +
+               geom_point(data = net_flux %>% filter(node=="Netherlands"),   aes(x=total_import/1e6,y=ratio),color="blue",    size=5) +
+               geom_point(data = net_flux %>% filter(node=="United Kingdom"),aes(x=total_import/1e6,y=ratio),color="magenta", size=5) +
+               labs(x="Total imports (thousands of tons)",y="Producer                        Distributor                        Consumer",
+                    title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
+                    subtitle = "Legend: Spain (red), Netherlands (blue), United Kingdom (magenta)")
+p1
 ```
 <!-- #Get net trade data: -->
 <!-- ###Net trade weight (nwei) = Imports - Export -->
