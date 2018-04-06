@@ -61,23 +61,25 @@ Exports <- df2 %>% filter(trade_flow == "Exports") %>% select(-trade_flow)
 
 #Checking stuff... Are the anomalies already here?
 ```{r}
-si <- Imports %>% select(period,reporter,partner,trade_value_usd) %>% filter(period==201501) %>%
+si <- Imports %>% select(period,reporter,partner,trade_value_usd) %>%
                   mutate(origin = as.character(partner)) %>% mutate(destin = as.character(reporter)) %>% select(-reporter,-partner)
-se <- Exports %>% select(period,reporter,partner,trade_value_usd) %>% filter(period==201501) %>%
+se <- Exports %>% select(period,reporter,partner,trade_value_usd) %>%
                   mutate(origin = as.character(reporter)) %>% mutate(destin = as.character(partner)) %>% select(-reporter,-partner)
 ```
 
 #Check uniqueness: other than 1 means problems
 ```{r}
-scsi <- si %>% group_by(origin,destin) %>% summarize(nn=n()) %>% filter(nn != 1)
-scse <- se %>% group_by(origin,destin) %>% summarize(nn=n()) %>% filter(nn != 1)
+scsi <- si %>% group_by(origin,destin,period) %>% summarize(nn=n()) %>% filter(nn != 1)
+scse <- se %>% group_by(origin,destin,period) %>% summarize(nn=n()) %>% filter(nn != 1)
 ```
 
 ```{r}
 check <- full_join(si,se,by=c("origin","destin","period"))
 check[is.na(check)] <- 0
 mytitle <- "Trade value Jan. 2014 to Jan. 2016"
-check <- check %>% rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) %>% mutate(ratio = from_imports/from_exports) 
+check <- check %>% 
+  rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) %>% 
+  mutate(ratio = from_imports/from_exports) 
 p1 <- ggplot(check) + geom_point(aes(x=from_imports,y=from_exports)) +
         geom_abline(slope=1, intercept=0,color="red") +
         labs(x="From imports",y="From exports",title=mytitle)
@@ -85,15 +87,31 @@ p3 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports)
       labs(x="From imports",y="From exports",title=paste(mytitle," (log scale)"))
 grid.arrange(p1, p3, ncol=2)
 ```
-
+#Average over the time span
+```{r}
+si2 <- si %>% group_by(origin,destin) %>% summarize(trade_value_usd = mean(trade_value_usd))
+se2 <- se %>% group_by(origin,destin) %>% summarize(trade_value_usd = mean(trade_value_usd))
+check <- full_join(si2,se2,by=c("origin","destin"))
+check[is.na(check)] <- 0
+mytitle <- "Trade value average"
+check <- check %>% 
+  rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) %>% 
+  mutate(ratio = from_imports/from_exports) 
+p11 <- ggplot(check) + geom_point(aes(x=from_imports,y=from_exports)) +
+        geom_abline(slope=1, intercept=0,color="red") +
+        labs(x="From imports",y="From exports",title=mytitle)
+p33 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports))) +geom_abline(slope=1, intercept=0,color="red") +
+      labs(x="From imports",y="From exports",title=paste(mytitle," (log scale)"))
+grid.arrange(p1, p3, p11, p33,ncol=2,nrow=2)
+```
 
 ```{r}
 origin_country <- unique(si$origin)
 mylist <- list() #create an empty list
 i <- 1
 for (cur_count in origin_country) {
-n1 <- si %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
-n2 <- si %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
+n1 <- si %>% filter(period == 201401) %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
+n2 <- si %>% filter(period == 201401) %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
   vec <- character(3) #preallocate a numeric vector
     vec[1] <- as.character(cur_count)
     vec[2] <- n1
@@ -115,6 +133,7 @@ p1 <- ggplot(NULL) + geom_point(data = net_flux,aes(x=total_import/1e6,y=ratio),
                     title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
                     subtitle = "Legend: Spain (red), Netherlands (blue), United Kingdom (magenta)")
 p1
+distributors <- net_flux %>% filter(abs(ratio) < 0.3)
 ```
 <!-- #Get net trade data: -->
 <!-- ###Net trade weight (nwei) = Imports - Export -->
