@@ -12,7 +12,7 @@ con <- dbConnect(drv,
                  password = "2fs@9!^43g")
 
 if(df_columns == "default"){
-   df_columns <- "period, trade_flow, reporter_code, reporter, partner, partner_code, commodity_code, trade_value_usd"
+   df_columns <- "period, trade_flow, reporter_code, reporter, partner, partner_code, commodity_code, netweight_kg, trade_value_usd"
 }
 
 sql_db_query <- paste(

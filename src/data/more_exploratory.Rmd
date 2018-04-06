@@ -1,0 +1,69 @@
+---
+title: "K-means"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_notebook: default
+---
+
+# Default chunk options
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+#Required libraries
+```{r}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+library(lubridate)
+library(tibble)
+library(ggplot2)
+library(stringr)
+```
+
+```{r}
+read_file = FALSE
+```
+
+
+```{r}
+if(read_file==TRUE){
+source("get_Comtrade_data_all.R")
+df <- get_Comtrade_data_all(201401,201601,"default","070700")
+write.csv(df,'Comtrade_all.csv')
+}else{
+df <- read.csv(file="Comtrade_all.csv",header=TRUE)  
+}
+```
+
+```{r}
+df <- df[complete.cases(df),]
+```
+
+```{r}
+df2 <- df %>% filter(partner!="World")
+df2 <- df2 %>% mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+               mutate(year        = as.integer(str_sub(period,1,4))) %>%
+               mutate(month       = as.integer(str_sub(period,5,6))) %>%
+               mutate(price_usd_kg= trade_value_usd/netweight_kg)
+Imports <- df2 %>% filter(trade_flow == "Imports") %>% select(-trade_flow)
+Exports <- df2 %>% filter(trade_flow == "Exports") %>% select(-trade_flow)
+```
+
+```{r}
+im1 <- Imports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd)
+ex1 <- Exports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd)
+merged <- inner_join(im1,ex1,by=c("period_date","partner","reporter")) %>%
+          rename(imp_weight = "netweight_kg.x",ex_weight = "netweight_kg.y") %>%
+          rename(imp_value = "trade_value_usd.x",ex_value = "trade_value_usd.y") %>%
+          mutate(Month = month(period_date),  Year = year(period_date)) 
+```
+
+```{r}
+ggplot(merged) +
+  geom_point(aes(x=log(imp_value/imp_weight),y=log(ex_value/ex_weight),color=Month),size=1) + 
+    scale_colour_gradientn(colours=rainbow(4))
+```
+

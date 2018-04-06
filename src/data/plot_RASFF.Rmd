@@ -1,6 +1,9 @@
 ---
 title: "Untitled"
-output: html_document
+output:
+  html_document: default
+  pdf_document:
+        latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -38,10 +41,21 @@ ggplot(notifier) + geom_bar(aes(x=reorder(notifier,value),y=value),stat="identit
 
 #What country receives more notifications?
 ```{r}
-ggplot(partner) + geom_bar(aes(x=reorder(partner,value),y=value),stat="identity")  +
+ggplot(partner %>% filter(value>25)) +
+  geom_bar(aes(x=reorder(partner,value),y=value),stat="identity")  +
   coord_flip() +
   labs(x="Notified country",y="Number",title="Who gets notified the most?")
 ```
+
+```{r}
+t1 <- notifier %>% rename(tmp = notifier)
+t2 <- partner  %>% rename(tmp = partner)
+ratio <- inner_join(t1,t2, by="tmp") %>% mutate(ratio = value.x/value.y)
+ggplot(ratio) + geom_histogram(aes(x=reorder(tmp,ratio),y=ratio),stat="identity") +
+  coord_flip()+
+  labs(x="Country",y="Ratio",title="Notify/Be-notified ratio")
+```
+
 
 #Now, let's do some networks and graphs...
 ```{r}
@@ -58,6 +72,11 @@ nodes <- nodes %>% rowid_to_column("id")
 per_route <- df %>% group_by(notifier,partner) %>% summarise(weight = n()) %>%  ungroup()
 (max(per_route$weight))
 ```
+
+#```{r}
+#per_route <- per_route %>% filter(weight > 5)
+#```
+
 
 ```{r}
 edges <- per_route %>% left_join(nodes,by=c("notifier" = "label")) %>% rename(from = id)
@@ -84,7 +103,7 @@ library(networkD3)
 ```
 
 ```{r}
-edges <- mutate(edges, width = weight)
+edges <- mutate(edges, width = sqrt(weight))
 visNetwork(nodes, edges) %>% 
   visIgraphLayout(layout = "layout_with_fr") %>% 
   visEdges(arrows = "middle")

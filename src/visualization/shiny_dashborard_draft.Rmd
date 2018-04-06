@@ -1,6 +1,6 @@
 ---
-title: "Summary_of_monthly_network_grahs"
-date: "27/03/2018"
+title: "Shiny_app_V1"
+date: "03/04/2018"
 output: html_document
 ---
 
@@ -8,8 +8,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Required libraries
-```{r}
+```{r} 
+palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3","#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+
+library(shiny)
 require("RPostgreSQL")
 library(ggplot2)
 library(dplyr)
@@ -21,18 +23,11 @@ library(rlist)
 library(gridExtra)
 ```
 
-#Access comtrade database - look for cucumber info for world
-```{r}
-#source("get_Comtrade_data_network_graph.R")
-#world_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
-```
-
 #Access comtrade database saved as csv file
 ```{r}
 world_data   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
 ```
 
-#Loop to get features from each months network graph
 ```{r}
 trade.flow    <- "Imports"
 starting_node <- "United Kingdom"
@@ -63,8 +58,12 @@ for (i in world_monthly_data){
   month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
   
   #Get nodes and edges
-  nodes             <- get_nodes(trade.flow,month_links,month_nett_trade)
+  nodes             <- get_nodes(trade.flow,month_links)
   edges             <- get_edges(trade.flow,nodes,month_links)
+  
+  #Combine to form one list of country nodes
+  nodes <- nodes %>% left_join(.,month_nett_trade, by='label')
+  nodes <- arrange(nodes,label) 
   
   #Assign attributes and sizes/color to nodes
   nodes$color <-  ifelse(nodes$nett_trade > 0, "red","blue")
@@ -82,7 +81,7 @@ for (i in world_monthly_data){
   average_path_length <- mean_distance(g)
   transitivity        <- transitivity(g)
 
-  #Appedn features to respective lists
+  #Append features to respective lists
   period_list               <- list.append(period_list, month)
   eigen_list                <- list.append(eigen_list, eigen_centrality)
   sum_degree_list           <- list.append(sum_degree_list, sum_degree)
@@ -101,41 +100,47 @@ for (i in world_monthly_data){
   
 }
 
+#Convert graph list to dataframe 
 #Combine lists into dataframe
 abstraction_summary <- do.call(rbind, Map(data.frame, period=period_list, eigen_centrality=eigen_list, sum_degree = sum_degree_list, edge_density = edge_density_list, average_path_length = average_path_length_list, transitivity = transitivity_list))
 
 #Convert period to date type
 abstraction_summary <- abstraction_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
-
-#Plot feature summary over time
-eigen_centrality_plot <- ggplot(abstraction_summary, aes(x=period, y = eigen_centrality)) + 
-  geom_line() + 
-  geom_point() +
-  ylab("Eigen centrality")
-
-sum_degree_plot <- ggplot(abstraction_summary, aes(x=period, y = sum_degree)) + 
-  geom_line() + 
-  geom_point() +
-  ylab("Sum degree")
-
-edge_density_plot <- ggplot(abstraction_summary, aes(x=period, y = edge_density)) + 
-  geom_line() + 
-  geom_point() +
-  ylab("Edge density")
-
-average_path_length_plot <- ggplot(abstraction_summary, aes(x=period, y =                 average_path_length)) + 
-  geom_line() + 
-  geom_point() +
-  ylab("Average path length")
-
-transivity_plot <- ggplot(abstraction_summary, aes(x=period, y = transitivity)) + 
-  geom_line() + 
-  geom_point() +
-  ylab("Transitivity")
-
-grid.arrange(eigen_centrality_plot, sum_degree_plot, edge_density_plot,average_path_length_plot, transivity_plot, ncol=2)
-
 ```
 
 
+#Shiny user interface
+```{r}
+ui <- fluidPage(
+  titlePanel('Network graph visualisation tool'),
+  headerPanel('Date selection'),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput(inputId = "Month",
+                  label =  "Choose a date",
+                  min = as.Date(min(abstraction_summary$period),"%Y-%m-%d"),
+                  max = as.Date(max(abstraction_summary$period),"%Y-%m-%d"),
+                  value=as.Date(max(abstraction_summary$period),"%Y-%m-%d"),
+                  timeFormat="%Y-%m")
+  ),
+  mainPanel(
+    plotOutput(outputId = 'Month_network_plot')
+  )
+))
+```
 
+```{r}
+ server <- shinyServer(function(input, output) {
+   output$Month_network_plot <- renderPlot({
+      month <- round(as.numeric(input$Month)/as.numeric(max(abstraction_summary$period-min(abstraction_summary$period))))
+      (net_list[[month]])
+
+    
+
+        })
+ })
+```
+
+```{r}
+shinyApp(ui = ui, server = server)
+```
