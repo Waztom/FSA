@@ -1,0 +1,172 @@
+---
+title: "Global network cucumber graph test"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(ggraph)
+library(rgl)
+library(knitr)
+```
+
+#Get the auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1 <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+
+#Find fresh cucumber comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_cucumber_data_csv   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
+```
+. 
+#Prepare data
+```{r}
+world_cucumber_data_graph <- world_cucumber_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+```
+
+#Select time line in month
+```{r}
+time_start <- "2015-12-01"
+time_end <- "2016-01-01"
+world_cucumber_data_graph <- world_cucumber_data_graph %>% filter(period < time_end & period >= time_start) 
+```
+
+#cut out world, EU-27, Other Europe, nes and Areas nes
+```{r}
+world_cucumber_data_graph_exlworldEU <- world_cucumber_data_graph %>% filter(partner != "World") %>% filter(reporter != "EU-27") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Areas, nes")
+```
+
+#cut out trade with value less than 3rd quantile value
+```{r}
+world_cucumber_data_graph_exlworldEU_simple <- world_cucumber_data_graph_exlworldEU %>% filter(trade_value_usd > 93100)
+```
+
+#Create nodes 
+```{r}
+imports_from <- world_cucumber_data_graph_exlworldEU_simple %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
+imports_to <- world_cucumber_data_graph_exlworldEU_simple %>% select(partner) %>% rename(label = partner) %>% distinct(label)
+
+#Combine to form one list of country nodes
+nodes <- full_join(imports_from,imports_to, by = 'label')
+nodes <- arrange(nodes,label)
+
+#Add ID column. 
+nodes <- nodes %>% rowid_to_column("id")
+```
+
+#Create edges table 
+```{r}
+edges <-  world_cucumber_data_graph_exlworldEU_simple %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
+          
+edges <- select(edges, from, to, trade_value_usd)
+
+```
+
+`
+#Analysis of network
+#create tbl_graph from tidygraph package. Find out how many nodes and edges we have
+```{r}
+g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE) 
+print(g)
+```
+
+#creating attributes
+```{r}
+#creating various network values
+degree(g) ->degree_val
+eigen_centrality(g) -> eigen_val
+count_triangles(g) -> tri_no
+betweenness(g) -> bet_val
+
+#working out assignment to communities
+undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
+communities <- edge.betweenness.community(undirected_network) 
+grouping <- membership(communities)
+
+```
+
+
+#creating total exports and imports for each country
+```{r}
+total_exports<- world_cucumber_data_graph_exlworldEU_simple %>% group_by (partner) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = partner)
+
+total_imports <- world_cucumber_data_graph_exlworldEU_simple %>% group_by (reporter) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = reporter)
+```
+
+
+#bringing it all together
+```{r}
+nodes_networkatr <- 
+  nodes %>% mutate(degree = degree_val, 
+                   eigencentrality = eigen_val$vector, 
+                   triangles = tri_no, 
+                   betweeness = bet_val, 
+                   community = grouping) %>% 
+                  left_join(total_imports, by = "label") %>% 
+                  left_join(total_exports, by = "label") %>% 
+                  replace_na(list(total_export=0, total_import=0))%>% 
+                  mutate(imp_exp_net = total_export - total_import) %>%
+                  mutate(imp_exp_net_reg = imp_exp_net/500000) %>%
+                  mutate(normalised_imp_exp_net = (total_export - total_import)/total_import)
+#get rid of infinities
+nodes_networkatr$normalised_imp_exp_net[is.infinite(nodes_networkatr$normalised_imp_exp_net)] <- 0
+```
+
+
+#trying out kmeans - import vs betweenness
+```{r}
+nodes_2D_imports <- nodes_networkatr %>% select(total_import, betweeness)
+kmObj1 <- kmeans(nodes_2D_imports, centers = 4)
+ggplot(nodes_2D_imports, aes(total_import, betweeness)) +
+        geom_point(colour = kmObj1$cluster, size = 3) 
+```
+#trying out kmeans - net vs betweenness
+```{r}
+nodes_2D_net <- nodes_networkatr %>% select(imp_exp_net, betweeness)
+kmObj2 <- kmeans(nodes_2D_net, centers = 4)
+ggplot(nodes_2D_net, aes(imp_exp_net, betweeness)) +
+        geom_point(colour = kmObj2$cluster, size = 3) 
+```
+
+
+#with regulated net
+```{r}
+nodes_2D_net_reg <- nodes_networkatr %>% select(imp_exp_net_reg, betweeness)
+set.seed(1)
+kmObj3 <- kmeans(nodes_2D_net_reg, centers = 4)
+ggplot(nodes_2D_net_reg, aes(x=imp_exp_net_reg, y=betweeness, colour=as.factor(kmObj3$cluster))) + geom_point(size = 3) + labs(x="Net Imports/500000", y="Betweenness", col="Clusters") + scale_color_manual(labels = c("Low activity", "Importers", "Exporters", "Distributers"), values = c("purple", "lightblue", "grey", "orange"))
+
+```
+
+#with normalised net
+```{r}
+nodes_2D_net_norm <- nodes_networkatr %>% select(normalised_imp_exp_net, betweeness)
+kmObj3 <- kmeans(nodes_2D_net_norm, centers = 4)
+ggplot(nodes_2D_net_norm, aes(normalised_imp_exp_net, betweeness)) +
+        geom_point(colour = kmObj3$cluster, size = 3) 
+```
+
+

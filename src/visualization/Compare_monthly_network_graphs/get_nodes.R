@@ -1,4 +1,4 @@
-get_nodes <- function(trade.flow,month_links){
+get_nodes <- function(trade.flow,month_links,month_nett_trade){
   
   if (trade.flow == "Imports"){
     #Create nodes
@@ -17,9 +17,12 @@ get_nodes <- function(trade.flow,month_links){
     nodes               <-  full_join(exports_from, exports_to, by = 'label')
   }
     
-    #Add ID column. 
-    nodes <- nodes %>% rowid_to_column("id")
-    return(nodes) 
+  #Combine to form one list of country nodes
+  nodes <- nodes %>% left_join(.,month_nett_trade, by='label')
+  nodes <- arrange(nodes,nett_trade)
+  #Add ID column. 
+  nodes <- nodes %>% rowid_to_column("id")
+  return(nodes) 
   }
   
 
