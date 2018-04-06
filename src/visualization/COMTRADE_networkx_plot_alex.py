@@ -70,7 +70,7 @@ for importer in trade.keys():
         if not np.isnan(trade.get_value(partner, importer)):
             if trade.get_value(partner, importer) > trade_quantile:
                 print(partner+ ' -> '+importer+' : '+str(trade.get_value(partner, importer)))
-                G.add_edge(partner, importer, weight= trade.get_value(partner, importer), alpha=0.4)
+                G.add_edge(partner, importer, weight= trade.get_value(partner, importer))
 #            else:
 #                print(partner+ ' -> '+importer+' : '+str(trade.get_value(partner, importer)))
 #                G.add_edge(partner, importer, weight= trade.get_value(partner, importer), alpha=0.2)
@@ -79,35 +79,40 @@ for importer in trade.keys():
 #Remove disconnected nodes                
 G.remove_nodes_from(list(nx.isolates(G)))
 
-
 edges = G.edges()
-
-#weights = [((G[u][v]['weight']-trade_med)/trade_sum) for u,v in edges]
-weights = [G[u][v]['weight'] for u,v in edges]
-weights = scale(weights, axis=0, with_mean=True, with_std=True, copy=True)
-
-
-f, ax = plt.subplots(1,figsize=(2*13.7, 2*9), dpi=600)
-plt.subplots_adjust(left=0.12, right=0.96, top=0.95, bottom=0.15)
-ax.set_title('Cumcumber importer networkn to United Kingdom')
-
-#pos = nx.nx_agraph.graphviz_layout(G, prog='twopi')
-pos = nx.nx_agraph.graphviz_layout(G, prog='neato')
-
-#pos['United Kingdom'] = np.array([0, 0])
-#nx.draw(G, pos, with_labels=True, node_color='skyblue', width=weights, font_size=10, node_size=2, edge_cmap=plt.cm.Blues)
-#nx.draw(G, pos, with_labels=True, node_color='skyblue', width=0.1, font_size=10, node_size=5, edge_cmap=plt.cm.Blues)
-nx.draw_networkx_edges(G, pos, width=weights, #0.5
-                                edge_color=weights, #'grey',
-                                alpha=0.6,
-                                edge_cmap=cc.m_bkr)
-
-nx.draw_networkx_nodes(G, pos,  with_labels=True, font_size=5, node_color='skyblue', node_size=20, edge_cmap=plt.cm.Blues) 
-#                                node_size=nodesizes,
-#                                linewidth=edgewidths,
-#                                node_color=edgecolors)
-nx.draw_networkx_labels(G, pos) # , labels=pos)
-
+#
+##weights = [((G[u][v]['weight']-trade_med)/trade_sum) for u,v in edges]
+#weights = [G[u][v]['weight'] for u,v in edges]
+#weights = scale(weights, axis=0, with_mean=True, with_std=True, copy=True)
+#
+#
+#f, ax = plt.subplots(1,figsize=(2*13.7, 2*9), dpi=600)
+#plt.subplots_adjust(left=0.12, right=0.96, top=0.95, bottom=0.15)
+#ax.set_title('Cumcumber importer networkn to United Kingdom')
+#
+##pos = nx.nx_agraph.graphviz_layout(G, prog='twopi')
+######pos = nx.nx_agraph.graphviz_layout(G, prog='neato')
+pos = nx.random_layout(G)
+nx.draw_networkx_nodes(G, pos)
+#
+##pos['United Kingdom'] = np.array([0, 0])
+##nx.draw(G, pos, with_labels=True, node_color='skyblue', width=weights, font_size=10, node_size=2, edge_cmap=plt.cm.Blues)
+##nx.draw(G, pos, with_labels=True, node_color='skyblue', width=0.1, font_size=10, node_size=5, edge_cmap=plt.cm.Blues)
+#nx.draw_networkx_edges(G, pos, width=weights, #0.5
+#                                edge_color=weights, #'grey',
+#                                #alpha=0.6,
+#                                #edge_cmap=plt.cm.Blues
+#				)
+#
+#nx.draw_networkx_nodes(G, pos,  with_labels=True, font_size=5, node_color='skyblue', node_size=20,
+##edge_cmap=plt.cm.Blues
+#) 
+##                                node_size=nodesizes,
+##                                linewidth=edgewidths,
+##                                node_color=edgecolors)
+#nx.draw_networkx_labels(G, pos) # , labels=pos)
+#
 #plt.colorbar()
+#plt.show()
 plt.axis('off')
-plt.savefig('big_net.pdf', dpi=600)
+plt.savefig('big_shit.pdf', dpi=600)
