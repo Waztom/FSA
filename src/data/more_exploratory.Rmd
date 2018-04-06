@@ -59,145 +59,195 @@ Imports <- df2 %>% filter(trade_flow == "Imports") %>% select(-trade_flow)
 Exports <- df2 %>% filter(trade_flow == "Exports") %>% select(-trade_flow)
 ```
 
-#Get net trade data:
-###Net trade weight (nwei) = Imports - Export
-###Normalized net trade weight:    $\text{nval} =\frac{\text{Imports} - \text{Export}}{\text{Imports} + \text{Export}}$
-###Possible cases:
-####$\left|\text{nval}\right| \approx 0$: A distributor
-####$\text{nval} \approx +1$: A consumer
-####$\text{nval} \approx -1$: A producer
+#Checking stuff... Are the anomalies already here?
 ```{r}
-im1 <- Imports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd)
-ex1 <- Exports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd)
-merged <- inner_join(im1,ex1,by=c("period_date","partner","reporter")) %>%
-          rename(imp_weight = "netweight_kg.x",exp_weight = "netweight_kg.y") %>%
-          rename(imp_value = "trade_value_usd.x",exp_value = "trade_value_usd.y") %>%
-          mutate(Month = month(period_date),  Year = year(period_date)) %>%
-          mutate(nwei   = imp_weight - exp_weight) %>%
-          mutate(nval   = imp_value  - exp_value) %>%
-          mutate(n_nwei = nwei/(imp_weight + exp_weight)) %>%
-          mutate(n_nval = nval/(imp_value  + exp_value))
+si <- Imports %>% select(period,reporter,partner,trade_value_usd) %>% filter(period==201501) %>%
+                  mutate(origin = as.character(partner)) %>% mutate(destin = as.character(reporter)) %>% select(-reporter,-partner)
+se <- Exports %>% select(period,reporter,partner,trade_value_usd) %>% filter(period==201501) %>%
+                  mutate(origin = as.character(reporter)) %>% mutate(destin = as.character(partner)) %>% select(-reporter,-partner)
+```
+
+#Check uniqueness: other than 1 means problems
+```{r}
+scsi <- si %>% group_by(origin,destin) %>% summarize(nn=n()) %>% filter(nn != 1)
+scse <- se %>% group_by(origin,destin) %>% summarize(nn=n()) %>% filter(nn != 1)
 ```
 
 ```{r}
-guy <- "United Kingdom"
-oneguy <- merged %>% filter(reporter == guy) %>% filter()
-p1 <- ggplot(NULL) + geom_point(data=merged,aes(x=n_nwei,y=n_nval),size=1,alpha=0.1) +
-               geom_point(data=oneguy,aes(x=n_nwei,y=n_nval),size=1,color="red") + 
-               labs(x="Normalized net trade by weight",y="Normalized net trade value", title=guy)
-p2 <- ggplot(NULL) + geom_histogram(data=oneguy,aes(x=n_nwei,y=..ncount..)) +
-               labs(x="Normalized net trade weight",y="Count",title=guy)
-grid.arrange(p1, p2, ncol=2)
+check <- full_join(si,se,by=c("origin","destin","period"))
+check[is.na(check)] <- 0
+mytitle <- "Trade value Jan. 2014 to Jan. 2016"
+check <- check %>% rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) %>% mutate(ratio = from_imports/from_exports) 
+p1 <- ggplot(check) + geom_point(aes(x=from_imports,y=from_exports)) +
+        geom_abline(slope=1, intercept=0,color="red") +
+        labs(x="From imports",y="From exports",title=mytitle)
+p3 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports))) +geom_abline(slope=1, intercept=0,color="red") +
+      labs(x="From imports",y="From exports",title=paste(mytitle," (log scale)"))
+grid.arrange(p1, p3, ncol=2)
 ```
 
-```{r}
-guy <- "Spain"
-oneguy <- merged %>% filter(reporter == guy) %>% filter()
-p1 <- ggplot(NULL) + geom_point(data=merged,aes(x=n_nwei,y=n_nval),size=1,alpha=0.1) +
-               geom_point(data=oneguy,aes(x=n_nwei,y=n_nval),size=1,color="red") + 
-               labs(x="Normalized net trade by weight",y="Normalized net trade value", title=guy)
-p2 <- ggplot(NULL) + geom_histogram(data=oneguy,aes(x=n_nwei,y=..ncount..)) +
-               labs(x="Normalized net trade weight",y="Count",title=guy)
-grid.arrange(p1, p2, ncol=2)
-```
+
+i <- 1
+while(...) {
+    l[[i]] <- new_element
+    i <- i + 1
+}
+
 
 ```{r}
-guy <- "Netherlands"
-oneguy <- merged %>% filter(reporter == guy) %>% filter()
-p1 <- ggplot(NULL) + geom_point(data=merged,aes(x=n_nwei,y=n_nval),size=1,alpha=0.1) +
-               geom_point(data=oneguy,aes(x=n_nwei,y=n_nval),size=1,color="red") + 
-               labs(x="Normalized net trade by weight",y="Normalized net trade value", title=guy)
-p2 <- ggplot(NULL) + geom_histogram(data=oneguy,aes(x=n_nwei,y=..ncount..)) +
-               labs(x="Normalized net trade weight",y="Count",title=guy)
-grid.arrange(p1, p2, ncol=2)
+mylist <- list() #create an empty list
+i <- 1
+for (cur_count in origin_country) {
+n1 <- si %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
+n2 <- si %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
+#  vec <- character(3) #preallocate a numeric vector
+    vec[1] <- as.character(cur_count)
+    vec[2] <- n1
+    vec[3] <- n2
+  mylist[[i]] <- vec #put all vectors in the list
+  i <- i + 1
+}
+net_flux <- do.call("rbind",mylist)
+net_flux <- data.frame(matrix(unlist(net_flux), nrow=i-1, byrow=F),stringsAsFactors=FALSE)
+net_flux <- net_flux %>% transform(X2 = as.numeric(X2)) %>% rename(total_export = X2)
+net_flux <- net_flux %>% transform(X3 = as.numeric(X3)) %>% rename(total_import = X3)
+net_flux <- net_flux %>% mutate(ratio = (total_import-total_export)/(total_import + total_export))
+net_flux <- net_flux %>% rename(node = X1)
+ggplot(net_flux) + geom_point(aes(x=ratio,y=ratio))
 ```
+<!-- #Get net trade data: -->
+<!-- ###Net trade weight (nwei) = Imports - Export -->
+<!-- ###Normalized net trade weight:    $\text{nval} =\frac{\text{Imports} - \text{Export}}{\text{Imports} + \text{Export}}$ -->
+<!-- ###Possible cases: -->
+<!-- ####$\left|\text{nval}\right| \approx 0$: A distributor -->
+<!-- ####$\text{nval} \approx +1$: A consumer -->
+<!-- ####$\text{nval} \approx -1$: A producer -->
+<!-- ```{r} -->
+<!-- im1 <- Imports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd) -->
+<!-- ex1 <- Exports %>% select(period_date,partner,reporter,netweight_kg,trade_value_usd) -->
+<!-- merged <- inner_join(im1,ex1,by=c("period_date","partner","reporter")) %>% -->
+<!--           rename(imp_weight = "netweight_kg.x",exp_weight = "netweight_kg.y") %>% -->
+<!--           rename(imp_value = "trade_value_usd.x",exp_value = "trade_value_usd.y") %>% -->
+<!--           mutate(Month = month(period_date),  Year = year(period_date)) %>% -->
+<!--           mutate(nwei   = imp_weight - exp_weight) %>% -->
+<!--           mutate(nval   = imp_value  - exp_value) %>% -->
+<!--           mutate(n_nwei = nwei/(imp_weight + exp_weight)) %>% -->
+<!--           mutate(n_nval = nval/(imp_value  + exp_value)) -->
+<!-- ``` -->
 
-#What happens here?
-##How can be a net importer based on weight and exporter based on value????
-##Or viceversa...
-```{r}
-san_che <- merged %>% select(period_date,reporter,partner,nwei,nval) %>% filter(nwei*nval<0) %>%
-           mutate(ratio = nwei/nval)
-ggplot(san_che) + geom_histogram(aes(x=log(abs(ratio))),bins=100)
-definitively_weird <- san_che %>% filter(abs(ratio)>100)
-```
+<!-- ```{r} -->
+<!-- guy <- "United Kingdom" -->
+<!-- oneguy <- merged %>% filter(reporter == guy) %>% filter() -->
+<!-- p1 <- ggplot(NULL) + geom_point(data=merged,aes(x=n_nwei,y=n_nval),size=1,alpha=0.1) + -->
+<!--                geom_point(data=oneguy,aes(x=n_nwei,y=n_nval),size=1,color="red") +  -->
+<!--                labs(x="Normalized net trade by weight",y="Normalized net trade value", title=guy) -->
+<!-- p2 <- ggplot(NULL) + geom_histogram(data=oneguy,aes(x=n_nwei,y=..ncount..)) + -->
+<!--                labs(x="Normalized net trade weight",y="Count",title=guy) -->
+<!-- grid.arrange(p1, p2, ncol=2) -->
+<!-- ``` -->
 
-#Should I use `nval' or `nwei'???
-```{r}
-flux <- merged %>% select(period_date,partner,reporter,nwei,nval)
-flux <- flux %>%
-  mutate(origin = ifelse(nval < 0,as.character(reporter),as.character(partner))) %>%
-  mutate(destin = ifelse(nval > 0,as.character(reporter),as.character(partner))) %>%
-  select(-partner,-reporter)
-```
+<!-- ```{r} -->
+<!-- guy <- "Spain" -->
+<!-- oneguy <- merged %>% filter(reporter == guy) %>% filter() -->
+<!-- p1 <- ggplot(NULL) + geom_point(data=merged,aes(x=n_nwei,y=n_nval),size=1,alpha=0.1) + -->
+<!--                geom_point(data=oneguy,aes(x=n_nwei,y=n_nval),size=1,color="red") +  -->
+<!--                labs(x="Normalized net trade by weight",y="Normalized net trade value", title=guy) -->
+<!-- p2 <- ggplot(NULL) + geom_histogram(data=oneguy,aes(x=n_nwei,y=..ncount..)) + -->
+<!--                labs(x="Normalized net trade weight",y="Count",title=guy) -->
+<!-- grid.arrange(p1, p2, ncol=2) -->
+<!-- ``` -->
 
-#Get data for the network
-```{r}
-netdf <- flux %>% filter(period_date == "2014-01-01") %>% select(origin,destin,nval)
-```
+<!-- ```{r} -->
+<!-- guy <- "Netherlands" -->
+<!-- oneguy <- merged %>% filter(reporter == guy) %>% filter() -->
+<!-- p1 <- ggplot(NULL) + geom_point(data=merged,aes(x=n_nwei,y=n_nval),size=1,alpha=0.1) + -->
+<!--                geom_point(data=oneguy,aes(x=n_nwei,y=n_nval),size=1,color="red") +  -->
+<!--                labs(x="Normalized net trade by weight",y="Normalized net trade value", title=guy) -->
+<!-- p2 <- ggplot(NULL) + geom_histogram(data=oneguy,aes(x=n_nwei,y=..ncount..)) + -->
+<!--                labs(x="Normalized net trade weight",y="Count",title=guy) -->
+<!-- grid.arrange(p1, p2, ncol=2) -->
+<!-- ``` -->
 
-```{r}
-sources <-      netdf %>% distinct(origin) %>% rename(label = origin)
-destinations <- netdf %>% distinct(destin) %>% rename(label = destin)
-```
- 
-```{r}
-nodes <- full_join(sources,destinations,by="label")
-nodes <- nodes %>% rowid_to_column("id")
-```
+<!-- #What happens here? -->
+<!-- ##How can be a net importer based on weight and exporter based on value???? -->
+<!-- ##Or viceversa... -->
+<!-- ```{r} -->
+<!-- san_che <- merged %>% select(period_date,reporter,partner,nwei,nval) %>% filter(nwei*nval<0) %>% -->
+<!--            mutate(ratio = nwei/nval) -->
+<!-- ggplot(san_che) + geom_histogram(aes(x=log(abs(ratio))),bins=100) -->
+<!-- definitively_weird <- san_che %>% filter(abs(ratio)>100) -->
+<!-- ``` -->
 
-```{r}
-per_route <- netdf %>% group_by(origin,destin) %>% summarise(weight = abs(sum(nval))/1e6) %>%  ungroup()
-#per_route <- netdf %>% group_by(origin,destin) %>% summarise(weight = n()) %>%  ungroup()
-(max(per_route$weight))
-```
+<!-- #Should I use `nval' or `nwei'??? -->
+<!-- ```{r} -->
+<!-- flux <- merged %>% select(period_date,partner,reporter,nwei,nval) -->
+<!-- flux <- flux %>% -->
+<!--   mutate(origin = ifelse(nval < 0,as.character(reporter),as.character(partner))) %>% -->
+<!--   mutate(destin = ifelse(nval > 0,as.character(reporter),as.character(partner))) %>% -->
+<!--   select(-partner,-reporter) -->
+<!-- ``` -->
 
-```{r}
-edges <- per_route %>% left_join(nodes,by=c("origin" = "label")) %>% rename(from = id)
-edges <- edges     %>% left_join(nodes,by=c("destin" = "label")) %>% rename(to   = id)
-```
+<!-- #Get data for the network -->
+<!-- ```{r} -->
+<!-- netdf <- flux %>% filter(period_date == "2014-01-01") %>% select(origin,destin,nval) -->
+<!-- ``` -->
 
-```{r}
-edges <- select(edges,from,to,weight)
-```
+<!-- ```{r} -->
+<!-- sources <-      netdf %>% distinct(origin) %>% rename(label = origin) -->
+<!-- destinations <- netdf %>% distinct(destin) %>% rename(label = destin) -->
+<!-- ``` -->
 
-```{r}
-routes_network <- network(edges,vertex.attr = nodes, matrix.type="edgelist",ignore.eval=FALSE)
-routes_network
-```
-```{r}
-plot(routes_network,vertex.cex = 2)
-```
-```{r}
-library(visNetwork)
-library(networkD3)
-```
+<!-- ```{r} -->
+<!-- nodes <- full_join(sources,destinations,by="label") -->
+<!-- nodes <- nodes %>% rowid_to_column("id") -->
+<!-- ``` -->
 
-```{r}
-visNetwork(nodes,edges)
-```
+<!-- ```{r} -->
+<!-- per_route <- netdf %>% group_by(origin,destin) %>% summarise(weight = abs(sum(nval))/1e6) %>%  ungroup() -->
+<!-- #per_route <- netdf %>% group_by(origin,destin) %>% summarise(weight = n()) %>%  ungroup() -->
+<!-- (max(per_route$weight)) -->
+<!-- ``` -->
 
-```{r}
-edges <- mutate(edges, width = weight/5 + 1)
-```
+<!-- ```{r} -->
+<!-- edges <- per_route %>% left_join(nodes,by=c("origin" = "label")) %>% rename(from = id) -->
+<!-- edges <- edges     %>% left_join(nodes,by=c("destin" = "label")) %>% rename(to   = id) -->
+<!-- ``` -->
 
-```{r}
-visNetwork(nodes, edges) %>% 
-  visIgraphLayout(layout = "layout_with_fr") %>% 
-  visEdges(arrows = "middle")
-```
-```{r}
-nodes_d3 <- mutate(nodes, id = id - 1)
-edges_d3 <- mutate(edges, from = from - 1, to = to - 1)
-```
+<!-- ```{r} -->
+<!-- edges <- select(edges,from,to,weight) -->
+<!-- ``` -->
 
-```{r}
-forceNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", 
-             NodeID = "label", Group = "id", Value = "weight", 
-             opacity = 1, fontSize = 16, zoom = TRUE)
-```
+<!-- ```{r} -->
+<!-- routes_network <- network(edges,vertex.attr = nodes, matrix.type="edgelist",ignore.eval=FALSE) -->
+<!-- routes_network -->
+<!-- ``` -->
 
-```{r}
-sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", 
-              NodeID = "label", Value = "weight", fontSize = 16, unit = "Letter(s)")
-```
+<!-- ```{r} -->
+<!-- library(visNetwork) -->
+<!-- library(networkD3) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- edges <- mutate(edges, width = weight/5 + 1) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- visNetwork(nodes, edges) %>%  -->
+<!--   visIgraphLayout(layout = "layout_with_fr") %>%  -->
+<!--   visEdges(arrows = "middle") -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to",  -->
+<!--               NodeID = "label", Value = "weight", fontSize = 12, unit = "Letter(s)") -->
+<!-- ``` -->
+
+
+
+
+
+<!-- ```{r} -->
+<!-- ci <- Imports %>% filter(period==201401) %>% filter(as.character(reporter) == "Spain" | as.character(partner) == "Spain") %>% select(-X,-period,-reporter_code,-partner_code,-commodity_code,-year,-month,-price_usd_kg) -->
+<!-- ce <- Exports %>% filter(period==201401) %>% filter(as.character(reporter) == "Spain" | as.character(partner) == "Spain") %>% select(-X,-period,-reporter_code,-partner_code,-commodity_code,-year,-month,-price_usd_kg) -->
+<!-- ``` -->
+
