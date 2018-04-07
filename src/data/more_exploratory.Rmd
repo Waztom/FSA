@@ -110,15 +110,27 @@ check <- full_join(si,se,by=c("origin","destin","period")) %>%
 check$trade_value_usd.x <- as.numeric(check$trade_value_usd.x)
 check$trade_value_usd.y <- as.numeric(check$trade_value_usd.y)
 
-maxval <- check %>% summarize(max(max(trade_value_usd.x,trade_value_usd.y,na.rm=TRUE),na.rm=TRUE))
+maxval <- check %>% summarize(maxval = max(trade_weight,na.rm=TRUE))
+maxval <- maxval[1,1]
+minval <- check %>% summarize(minval = min(trade_weight,na.rm=TRUE))
+minval <- minval[1,1]
+rtrade <- maxval - minval
 
-check <- check %>% mutate(weigthed_imbalance = imbalance * trade_weight/maxval)
+maxval <- check %>% summarize(maxval = max(imbalance-1,na.rm=TRUE))
+maxval <- maxval[1,1]
+minval <- check %>% summarize(minval = min(imbalance-1,na.rm=TRUE))
+minval <- minval[1,1]
+rscore <- maxval - minval
+
+check <- check %>% mutate(wei1 = (imbalance-1)/rscore) %>%
+                   mutate(wei2 = (trade_weight-minval)/rtrade) %>%
+                   mutate(weighted_imbalance = wei1/wei2)
 
 best_origin <- check %>% group_by(origin) %>%
-  summarize(score = 1/abs(mean(error_ratio,na.rm=TRUE)-1))
+  summarize(score = mean(weighted_imbalance,na.rm=TRUE)) %>% filter(!is.na(score))
 
 best_destin <- check %>% group_by(destin) %>%
-  summarize(score = 1/abs(mean(error_ratio,na.rm=TRUE)-1))
+  summarize(score = mean(weighted_imbalance,na.rm=TRUE)) %>% filter(!is.na(score))
 
 ggplot(check) + geom_histogram(aes(x=log10(imbalance),y=..ncount..),bins=100) + 
   labs(x="Log_{10} Error",y="pdf",title="Distribution of the log_{10} error")
