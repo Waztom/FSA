@@ -1,18 +1,17 @@
 ---
-title: "Using K-means on Comtrade data and other exploration"
+title: "Exploration of Comtrade data and initial experiments for country classification based on International trade network metrics"
+author: "Àlex Fabregat"
 output:
-  html_document: default
-  html_notebook: default
   pdf_document:
     latex_engine: xelatex
+  html_notebook: default
+  html_document: default
 ---
 
-# Default chunk options
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
-#Required libraries
-```{r,message=FALSE,warning=FALSE}
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
 library(RPostgreSQL)
 library(tidyverse)
 library(dbplyr)
@@ -31,8 +30,9 @@ library(igraph)
 library(tidygraph)
 library(cluster) 
 library(fpc)
+library(plotly)
 ```
-#Choose wheter to read data from file or SQL
+#Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing fresh data from Comtrade via SQL according to the commidity code.
 ```{r}
 read_file = FALSE
@@ -60,8 +60,10 @@ df <- df[complete.cases(df),]
 * Compute price by dividing the trade value in US$ by the net weight in Kg
 * Split the data accordingly to the trade flow direction into Imports and Exports
 ```{r}
-guys_2_remove <- c("EU-27","Areas, nes","Other Europe, nes","Other Africa, nes","Other Asia, nes","World")
-df2 <- df %>% filter(!as.character(partner) %in% guys_2_remove) %>% filter(!as.character(reporter) %in% guys_2_remove)
+guys_2_remove <- c("EU-27","Areas, nes","Other Europe, nes","Other Africa, nes",
+                   "Other Asia, nes","World")
+df2 <- df %>% filter(!as.character(partner) %in% guys_2_remove) %>%
+              filter(!as.character(reporter) %in% guys_2_remove)
 df2 <- df2 %>% mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
                mutate(year        = as.integer(str_sub(period,1,4))) %>%
                mutate(month       = as.integer(str_sub(period,5,6))) %>%
@@ -100,12 +102,15 @@ print(paste("Number of rows in Imports/Exports:",nrow(scsi),"/",nrow(scse),sep="
 ###Checking the Comtrade data in terms of trade value
 The reported value of a commodity imported into A from B should be the same as the exported value of the same commodity from B into A.
 Let's compare then the trade values in USD for each **origin**, **destination** and **period**
-The plot shows the distribution of ratio of the two reported trade values in log10 scale.
-If the two trade values are in agreement this value is 1 (**0 in log10!!**).
-Positive values in the log10 scale mean that the reported imports are larger than the corresponding export and otherwise for negative.
-```{r}
+The plot shows the distribution of the *imbalace* for the two reported trade values.
+If the two trade values are in agreement this value is 0.
+We included an attempt to identify the best origins and destinations in terms of reporting. This is done
+by defining a weighted_imbalance where the imbalance is weighted by the (scaled) trade. More work is required here since
+the scaled_trade has huge levels of skewness.
+```{r,out.width='100%'}
 check <- full_join(si,se,by=c("origin","destin","period")) %>%
-  mutate(imbalance = trade_value_usd.x/trade_value_usd.y) %>%
+  mutate(imbalance = (trade_value_usd.x - trade_value_usd.y)/
+                     (trade_value_usd.x + trade_value_usd.y)) %>%
   mutate(trade_weight = 0.5 * (trade_value_usd.x + trade_value_usd.y))
 check$trade_value_usd.x <- as.numeric(check$trade_value_usd.x)
 check$trade_value_usd.y <- as.numeric(check$trade_value_usd.y)
@@ -116,53 +121,59 @@ minval <- check %>% summarize(minval = min(trade_weight,na.rm=TRUE))
 minval <- minval[1,1]
 rtrade <- maxval - minval
 
-maxval <- check %>% summarize(maxval = max(imbalance-1,na.rm=TRUE))
-maxval <- maxval[1,1]
-minval <- check %>% summarize(minval = min(imbalance-1,na.rm=TRUE))
-minval <- minval[1,1]
-rscore <- maxval - minval
-
-check <- check %>% mutate(wei1 = (imbalance-1)/rscore) %>%
-                   mutate(wei2 = (trade_weight-minval)/rtrade) %>%
-                   mutate(weighted_imbalance = wei1/wei2)
+check <- check %>% mutate(scaled_trade = (trade_weight-minval)/rtrade) %>%
+                   mutate(weighted_imbalance = abs(imbalance) * (1-sqrt(scaled_trade)))
 
 best_origin <- check %>% group_by(origin) %>%
-  summarize(score = mean(weighted_imbalance,na.rm=TRUE)) %>% filter(!is.na(score))
+  summarize(score = 1.0/mean(weighted_imbalance,na.rm=TRUE)) %>% filter(!is.na(score))
 
 best_destin <- check %>% group_by(destin) %>%
-  summarize(score = mean(weighted_imbalance,na.rm=TRUE)) %>% filter(!is.na(score))
+  summarize(score = 1.0/mean(weighted_imbalance,na.rm=TRUE)) %>% filter(!is.na(score))
 
-ggplot(check) + geom_histogram(aes(x=log10(imbalance),y=..ncount..),bins=100) + 
-  labs(x="Log_{10} Error",y="pdf",title="Distribution of the log_{10} error")
-ggplot(best_origin) + geom_bar(aes(x=reorder(origin,score),y=score),stat="identity") + coord_flip()
+pp1 <- ggplot(check) + geom_histogram(aes(x=abs(imbalance),y=..ncount..),bins=100) + 
+  labs(x="abs(Imbalance)",y="pdf",title="Distribution of the abs(imbalance)")
+pp2 <- ggplot(check) + geom_histogram(aes(x=1-sqrt(scaled_trade),y=..ncount..),bins=100) + 
+  labs(x="1-scaled_trade",y="pdf",title="Distribution of the scaled_trade")
+pp3 <- ggplot(best_origin %>% filter(score>5)) +
+  geom_bar(aes(x=reorder(origin,score),y=score),stat="identity") + coord_flip() +
+  labs(title="Best origins at reporting")
+pp4 <- ggplot(best_destin %>% filter(score>5)) +
+  geom_bar(aes(x=reorder(destin,score),y=score),stat="identity") + coord_flip() +
+    labs(title="Best destinations at reporting")
+grid.arrange(pp1, pp2, pp3, pp4,ncol=2)
 ```
 
 If everything goes as expected, every reported Imports entry should be corresponded with a entry in Exports.
 Let's check this by counting the number of missing values in the joined data frame.
+The fraction is huge! ~60%!!!
 ```{r}
 nmis <- sum(is.na(check$trade_value_usd.x)|is.na(check$trade_value_usd.y))
-print(paste("Percentage of total missing values (unmatching Imports/Exports): ",100*nmis/nrow(check),"%",sep=""))
+print(paste("Percentage of total missing values (unmatching Imports/Exports): ",
+            100*nmis/nrow(check)," %",sep=""))
 check <- check[complete.cases(check),]
 ```
 
-```{r}
+###Let's plot this disparity between Imports and Exports
+```{r,out.width='100%'}
 mytitle <- "Trade value Jan. 2014 to Jan. 2016"
 check <- check %>% 
-  rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) %>% 
-  mutate(ratio = from_imports/from_exports) 
+  rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) 
 p1 <- ggplot(check) + geom_point(aes(x=from_imports,y=from_exports)) +
-        geom_abline(slope=1, intercept=0,color="red") +
-        labs(x="From imports",y="From exports",title=mytitle) 
-p3 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports))) +geom_abline(slope=1, intercept=0,color="red") +
+      geom_abline(slope=1, intercept=0,color="red") +
+      labs(x="From imports",y="From exports",title=mytitle) 
+p3 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports))) +
+      geom_abline(slope=1, intercept=0,color="red") +
       labs(x="From imports",y="From exports",title=paste(mytitle," (log scale)")) 
 grid.arrange(p1, p3, ncol=2)
 ```
-#Average over the time span
+#Alleviate via averaging
+Given that it may be significant delays in reporting the trade operations, we take the average over the whole time span.
+Results indicate a significant reduction on the disparity.
 ```{r}
 si2 <- si %>% group_by(origin,destin) %>% summarize(trade_value_usd = mean(trade_value_usd))
 se2 <- se %>% group_by(origin,destin) %>% summarize(trade_value_usd = mean(trade_value_usd))
 check <- full_join(si2,se2,by=c("origin","destin"))
-check[is.na(check)] <- 0
+check <- check[complete.cases(check),]
 mytitle <- "Trade value average"
 check <- check %>% 
   rename(from_imports = trade_value_usd.x,from_exports = trade_value_usd.y) %>% 
@@ -171,73 +182,102 @@ p1 <- p1 + coord_cartesian(xlim = c(0, 6.5e7),ylim=c(0,6.5e7))
 p3 <- p3 + coord_cartesian(xlim = c(0,8),ylim=c(0,8))
 p11 <- ggplot(check) + geom_point(aes(x=from_imports,y=from_exports)) +
         geom_abline(slope=1, intercept=0,color="red") +
-        labs(x="From imports",y="From exports",title=mytitle) + coord_cartesian(xlim = c(0, 6.5e7),ylim=c(0,6.5e7))
-p33 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports))) +geom_abline(slope=1, intercept=0,color="red") +
-      labs(x="From imports",y="From exports",title=paste(mytitle," (log scale)")) + coord_cartesian(xlim = c(0,8),ylim=c(0,8))
+        labs(x="From imports",y="From exports",title=mytitle) +
+        coord_cartesian(xlim = c(0, 6.5e7),ylim=c(0,6.5e7))
+p33 <- ggplot(check) + geom_point(aes(x=log10(from_imports),y=log10(from_exports))) +
+       geom_abline(slope=1, intercept=0,color="red") +
+       labs(x="From imports",y="From exports",title=paste(mytitle," (log scale)")) +
+       coord_cartesian(xlim = c(0,8),ylim=c(0,8))
 grid.arrange(p1, p3, p11, p33,ncol=2,nrow=2)
 ```
 
+#Modelling
+###Net trade fluxes
+Let's assumed that despite the previous red flags, the Comtrade Imports data is reliable.
+Here we compute the *net* trade flux for each country by taking the difference between the total trade influx and outflux.
+A new variable **ratio** defined as (Total imports - Total exports)/(Total imports + Total exports) is computed.
+For $\left| ratio \right|\approx 0$ the country might be thought as a **Distributor**.
+For $ratio \approx +1$ the country might be thought as a **Consumer**.
+For $ratio \approx -1$ the country might be thought as a **Producer**.
 ```{r}
-origin_country <- unique(si$origin)
-mylist <- list() #create an empty list
+month_list <- unique(si$period)
 i <- 1
-for (cur_count in origin_country) {
-n1 <- si %>% filter(period == 201401) %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
-n2 <- si %>% filter(period == 201401) %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
-  vec <- character(3) #preallocate a numeric vector
+mylist <- list() #create an empty list
+for (cur_month in month_list){
+sity <- si %>% filter(period == cur_month)
+origin_country <- unique(sity$origin)
+destin_country <- unique(sity$destin)
+all_country    <- union(origin_country,destin_country)
+for (cur_count in all_country) {
+n1 <- sity %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
+n2 <- sity %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
+  vec <- character(4) #preallocate a numeric vector
     vec[1] <- as.character(cur_count)
     vec[2] <- n1
     vec[3] <- n2
+    vec[4] <- cur_month
   mylist[[i]] <- vec #put all vectors in the list
   i <- i + 1
 }
+}
+i <- i - 1
+```
+
+###Transform the list into a dataframe and do some tidying
+We plot here the results for several prototypical countries:
+*Neherlands as distributor
+*Spain as producer
+*United Kingdom as consumer
+We also plot the temporal evolution of this metric **ratio** for Netherlands.
+Over time the Netherlands switch from a producer for periods of low import fluxes and as a distributor for periods
+of high volume of imports. That's cool, don't you think?
+```{r}
 net_flux <- do.call("rbind",mylist)
-net_flux <- data.frame(matrix(unlist(net_flux), nrow=i-1, byrow=F),stringsAsFactors=FALSE)
+net_flux <- data.frame(matrix(unlist(net_flux), nrow=i, byrow=F),stringsAsFactors=FALSE)
 net_flux <- net_flux %>% transform(X2 = as.numeric(X2)) %>% rename(total_export = X2)
 net_flux <- net_flux %>% transform(X3 = as.numeric(X3)) %>% rename(total_import = X3)
+net_flux <- net_flux %>% rename(period = X4)
 net_flux <- net_flux %>% mutate(ratio = (total_import-total_export)/(total_import + total_export))
 net_flux <- net_flux %>% rename(node = X1)
-p1 <- ggplot(NULL) + geom_point(data = net_flux,aes(x=total_import/1e6,y=ratio),alpha=0.5) + 
-               geom_point(data = net_flux %>% filter(node=="Spain"),         aes(x=total_import/1e6,y=ratio),color="red",     size=5) +
-               geom_point(data = net_flux %>% filter(node=="Netherlands"),   aes(x=total_import/1e6,y=ratio),color="blue",    size=5) +
-               geom_point(data = net_flux %>% filter(node=="United Kingdom"),aes(x=total_import/1e6,y=ratio),color="magenta", size=5) +
-               labs(x="Total imports (thousands of tons)",y="Producer                        Distributor                        Consumer",
+tmp1 <- net_flux %>% filter(period == 201401)
+tmp2 <- net_flux %>% mutate(period_date = ymd(paste(period,"01",sep="")))
+x1 <- ggplot(NULL) + geom_point(data = tmp1,aes(x=total_import/1e6,y=ratio),alpha=0.5) + 
+                     geom_point(data = tmp1 %>% filter(node=="Spain"),         
+                                aes(x=total_import/1e6,y=ratio),color="red",     size=5) +
+                     geom_point(data = tmp1 %>% filter(node=="Netherlands"),   
+                                aes(x=total_import/1e6,y=ratio),color="blue",    size=5) +
+                     geom_point(data = tmp1 %>% filter(node=="United Kingdom"),
+                                aes(x=total_import/1e6,y=ratio),color="magenta", size=5) +
+labs(x="Total imports (thousands of tons)",y="Producer                        Distributor                        Consumer",
                     title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
                     subtitle = "Legend: Spain (red), Netherlands (blue), United Kingdom (magenta)")
-p1
-distributors <- net_flux %>% filter(abs(ratio) < 0.3)
+x2 <- ggplot(NULL) + geom_point(data = tmp2 %>% filter(node=="Netherlands"),   
+                                aes(x=total_import/1e6,y=ratio,size=period_date),alpha=0.2) +
+                     coord_cartesian(xlim = c(-2,55),ylim=c(-1,1))+
+labs(x="Total imports (thousands of tons)",y="Producer                        Distributor                        Consumer",
+                    title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
+                    subtitle = "Temporal evolution for Netherlands")
+x1
+x2
+distributors <- tmp1 %>% filter(abs(ratio) < 0.3)
 ```
 
-#Get data for the network
+#Let's build the network for the Imports on January 2014.
 ```{r}
 netdf <- si %>% filter(period == 201401) %>% select(origin,destin,trade_value_usd)
-```
-
-```{r}
 sources <-      netdf %>% distinct(origin) %>% rename(label = origin)
 destinations <- netdf %>% distinct(destin) %>% rename(label = destin)
-```
-
-```{r}
 nodes <- full_join(sources,destinations,by="label")
 nodes <- nodes %>% rowid_to_column("id")
-```
-
-```{r}
-per_route <- netdf %>% group_by(origin,destin) %>% summarise(weight = sum(trade_value_usd)/1e6) %>%  ungroup()
-#per_route <- netdf %>% group_by(origin,destin) %>% summarise(weight = n()) %>%  ungroup()
+per_route <- netdf %>% group_by(origin,destin) %>%
+             summarise(weight = sum(trade_value_usd)/1e6) %>% ungroup()
+net_test  <- netdf %>% group_by(origin,destin) %>%
+             summarise(cc = n()) %>% ungroup() #Check the uniqueness: cc must be 1
 (max(per_route$weight))
-```
-
-```{r}
 edges <- per_route %>% left_join(nodes,by=c("origin" = "label")) %>% rename(from = id)
 edges <- edges     %>% left_join(nodes,by=c("destin" = "label")) %>% rename(to   = id)
-```
-
-```{r}
 edges <- select(edges,from,to,weight)
 ```
-
 
 #Network analysis
 ```{r}
@@ -256,104 +296,112 @@ communities <- edge.betweenness.community(undirected_network)
 grouping <- membership(communities)
 ```
 
+#Do some plotting of the network attributes
+```{r}
+metric <- do.call(rbind.data.frame, Map('c', degree_val, bet_val,tri_no))
+colnames(metric) <- c("degree_val","bet_val","tri_no")
+ggplot(metric) + geom_point(aes(x=degree_val,y=bet_val,color=tri_no),size=2)+
+    scale_colour_gradientn(colours=rainbow(4))
+```
+
+
 #Add the degree val to nodes
 ```{r}
 nodes$degree_val <- sapply(degree_val, paste0)
 tmp <- nodes %>% select(-id) %>% rename(node=label)
-mydata <- left_join(tmp,net_flux,by="node") %>% select(-node,-total_export)
+mydata <- left_join(tmp,net_flux %>% filter(period==201401),by="node") %>%
+          select(-node,-total_export)
 ```
-
 
 ```{r}
-mydata <- mutate_all(mydata, function(x) as.numeric(as.character(x)))
-mydata <- na.omit(mydata)
-mydata <- scale(mydata)
+mp <- ggplot(mydata) + geom_point(aes(x=total_import,y=ratio,
+                       color=as.integer(degree_val)),size=2,alpha=0.7) +
+                       scale_colour_gradientn(colours=rainbow(4))
+mp
 ```
 
 
-# Determine number of clusters
-```{r}
-wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
-for (i in 2:15) wss[i] <- sum(kmeans(mydata, 
-  	centers=i)$withinss)
-plot(1:15, wss, type="b", xlab="Number of Clusters",
-  ylab="Within groups sum of squares")
-```
 
 
-```{r}
-# Ensure reproducibility
-set.seed(42)
-# K-Means Cluster Analysis
-fit <- kmeans(mydata, 5) # 5 cluster solution
-# get cluster means 
-aggregate(mydata,by=list(fit$cluster),FUN=mean)
-# append cluster assignment
-mydata <- data.frame(mydata, fit$cluster)
-```
 
-#kmeans attempt with 3 dimensions
-```{r}
-# Ward Hierarchical Clustering
-d <- dist(mydata, method = "euclidean") # distance matrix
-fit <- hclust(d, method="ward") 
-plot(fit) # display dendogram
-groups <- cutree(fit, k=5) # cut tree into 5 clusters
-# draw dendogram with red borders around the 5 clusters 
-rect.hclust(fit, k=5, border="red")
-```
-# ```{r}
-# # Model Based Clustering
-# library(mclust)
-# fit <- Mclust(mydata)
-# plot(fit) # plot results 
-# summary(fit) # display the best model
-# ```
-
-
-```{r}
-fit <- kmeans(mydata, 5) # 5 cluster solution
-# vary parameters for most readable graph
-clusplot(mydata, fit$cluster, color=TRUE, shade=TRUE, 
-  	labels=2, lines=0)
-# Centroid Plot against 1st 2 discriminant functions
-plotcluster(mydata, fit$cluster)
-```
-
-
+<!-- # ```{r} -->
+<!-- # mydata <- mutate_all(mydata, function(x) as.numeric(as.character(x))) -->
+<!-- # mydata <- na.omit(mydata) -->
+<!-- # mydata <- scale(mydata) -->
+<!-- # ``` -->
+<!-- # Determine number of clusters -->
 <!-- ```{r} -->
-<!-- routes_network <- network(edges,vertex.attr = nodes, matrix.type="edgelist",ignore.eval=FALSE) -->
-<!-- routes_network -->
+<!-- wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var)) -->
+<!-- for (i in 2:15) wss[i] <- sum(kmeans(mydata,  -->
+<!--   	centers=i)$withinss) -->
+<!-- plot(1:15, wss, type="b", xlab="Number of Clusters", -->
+<!--   ylab="Within groups sum of squares") -->
 <!-- ``` -->
 
 
-# ```{r}
-# edges <- mutate(edges, width = weight/5 + 1)
-# ```
-
-# ```{r}
-# visNetwork(nodes, edges) %>%
-#   visIgraphLayout(layout = "layout_with_fr") %>%
-#   visEdges(arrows = "middle")
-# ```
-
-
-# ```{r}
-# nodes_d3 <- mutate(nodes, id = id - 1)
-# edges_d3 <- mutate(edges, from = from - 1, to = to - 1)
-# ```
-
 <!-- ```{r} -->
-<!-- sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", -->
-<!--               NodeID = "label", Value = "weight", fontSize = 12, unit = "Letter(s)") -->
+<!-- # Ensure reproducibility -->
+<!-- set.seed(42) -->
+<!-- # K-Means Cluster Analysis -->
+<!-- fit <- kmeans(mydata, 5) # 5 cluster solution -->
+<!-- # get cluster means  -->
+<!-- aggregate(mydata,by=list(fit$cluster),FUN=mean) -->
+<!-- # append cluster assignment -->
+<!-- mydata <- data.frame(mydata, fit$cluster) -->
 <!-- ``` -->
 
+<!-- #kmeans attempt with 3 dimensions -->
+<!-- # ```{r} -->
+<!-- # # Ward Hierarchical Clustering -->
+<!-- # d <- dist(mydata, method = "euclidean") # distance matrix -->
+<!-- # fit <- hclust(d, method="ward")  -->
+<!-- # plot(fit) # display dendogram -->
+<!-- # groups <- cutree(fit, k=5) # cut tree into 5 clusters -->
+<!-- # # draw dendogram with red borders around the 5 clusters  -->
+<!-- # rect.hclust(fit, k=5, border="red") -->
+<!-- # ``` -->
+<!-- # ```{r} -->
+<!-- # # Model Based Clustering -->
+<!-- # library(mclust) -->
+<!-- # fit <- Mclust(mydata) -->
+<!-- # plot(fit) # plot results  -->
+<!-- # summary(fit) # display the best model -->
+<!-- # ``` -->
 
 
+<!-- # ```{r} -->
+<!-- # fit <- kmeans(mydata, 5) # 5 cluster solution -->
+<!-- # # vary parameters for most readable graph -->
+<!-- # clusplot(mydata, fit$cluster, color=TRUE, shade=TRUE,  -->
+<!-- #   	labels=2, lines=0) -->
+<!-- # # Centroid Plot against 1st 2 discriminant functions -->
+<!-- # plotcluster(mydata, fit$cluster) -->
+<!-- # ``` -->
+
+```{r}
+routes_network <- network(edges,vertex.attr = nodes, matrix.type="edgelist",ignore.eval=FALSE)
+routes_network
+```
+
+```{r}
+edges <- mutate(edges, width = weight/5 + 1)
+```
+
+```{r}
+visNetwork(nodes, edges) %>%
+ visIgraphLayout(layout = "layout_with_fr") %>%
+ visEdges(arrows = "middle")
+```
 
 
-# ```{r}
-# ci <- Imports %>% filter(period==201401) %>% filter(as.character(reporter) == "Spain" | as.character(partner) == "Spain") %>% select(-X,-period,-reporter_code,-partner_code,-commodity_code,-year,-month,-price_usd_kg)
-# ce <- Exports %>% filter(period==201401) %>% filter(as.character(reporter) == "Spain" | as.character(partner) == "Spain") %>% select(-X,-period,-reporter_code,-partner_code,-commodity_code,-year,-month,-price_usd_kg)
-# ```
+```{r}
+nodes_d3 <- mutate(nodes, id = id - 1)
+edges_d3 <- mutate(edges, from = from - 1, to = to - 1)
+```
+
+```{r}
+sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to",
+              NodeID = "label", Value = "weight", fontSize = 12, unit = "Letter(s)")
+```
+
 
