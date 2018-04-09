@@ -222,7 +222,7 @@ edges             <- get_edges(trade.flow,nodes,year_links)
 edges<-edges%>%rename(id=to)%>%left_join(nodes,edges,by="id") %>%select(from,width_trade_value,label)%>%rename(id=from)%>%left_join(nodes,edges,by="id") %>% select(c(2,3,4))
 
 #In this example have only chosen to look at communities that are connected so no edge attribute included here. Which of the main communities talk to one another for a year's worth of cucumber trade. See above chunk for same getLinkCommunities call to see more info.
-lc <- getLinkCommunities(edges[,c(2,3,1)], directed =T)
+lc <- getLinkCommunities(edges[,c(2,3)], directed =T)
 
 #Plot lc data showing main communitie clusters and membership
 plot(lc, type = "members")
