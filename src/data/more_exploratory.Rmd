@@ -315,17 +315,27 @@ labs(x="Total imports (thousands of tons)",
      y="Producer                        Distributor                        Consumer",
      title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
      subtitle = "Legend: Spain (red), Netherlands (blue), United Kingdom (magenta)")
-x2 <- ggplot(NULL) + geom_point(data = tmp2 %>% filter(node=="Netherlands"),   
-                     aes(x=total_import/1e6,y=ratio,size=period_date),alpha=0.2) +
-                     coord_cartesian(xlim = c(-2,55),ylim=c(-1,1))+
-labs(x="Total imports (thousands of tons)",
-     y="Producer                        Distributor                        Consumer",
-     title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
-     subtitle = "Temporal evolution for Netherlands")
+tmp3 <- tmp2 %>%
+    filter(node=="Netherlands") %>%
+    mutate(month=month(period_date)) %>%
+    mutate(quarter = ceiling(as.numeric(month) / 3))
+x2 <- ggplot(NULL) +
+    geom_point(data = tmp3,
+    aes(x=total_import/1e6,y=ratio,color=quarter),size=3) +
+    geom_path(data = tmp3, aes(x=total_import/1e6,y=ratio),alpha=0.1) +
+    coord_cartesian(xlim = c(-1,30),ylim=c(-1,1)) +
+    scale_colour_gradientn(colours=rainbow(4)) +
+    labs(x="Total imports (thousands of tons)",
+    y="Producer                        Distributor                        Consumer",
+    title="Vertical axis: (Total imports - Total exports)/(Total imports + Total exports)",
+    subtitle = "Temporal evolution for Netherlands")
 x1
 x2
 (distributors <- tmp1 %>% filter(abs(ratio) < 0.25) %>% arrange(total_import))
 ```
+
+
+
 
 # Let's build the network for the Imports on January 2014.
 ### First let's build the routes for each origin/destination pair
@@ -449,15 +459,15 @@ ggplotly(g, tooltip="text")
 ### Note that the dataset has been scaled!
 ```{r}
 mydata <- mutate_all(mydata, function(x) as.numeric(as.character(x))) %>% select(-period)
-mydata <- na.omit(mydata)
-mydata <- scale(mydata)
+mydata1 <- na.omit(mydata)
+mydata1 <- scale(mydata1)
 ```
 
 ### Determine an adequate number of clusters
 I think 5-6 seems reasonable.
 ```{r}
-wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
-for (i in 2:15) wss[i] <- sum(kmeans(mydata,
+wss <- (nrow(mydata1)-1)*sum(apply(mydata1,2,var))
+for (i in 2:15) wss[i] <- sum(kmeans(mydata1,
   	centers=i)$withinss)
 plot(1:15, wss, type="b", xlab="Number of Clusters",
   ylab="Within groups sum of squares")
@@ -470,26 +480,26 @@ set.seed(42)
 # Number of clusters I want
 nc = 5 
 # K-Means Cluster Analysis
-fit <- kmeans(mydata, nc) # 5 cluster solution
+fit <- kmeans(mydata1, nc) # 5 cluster solution
 # get cluster means
-aggregate(mydata,by=list(fit$cluster),FUN=mean)
+aggregate(mydata1,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
-mydata <- data.frame(mydata, fit$cluster)
+mydata1 <- data.frame(mydata1, fit$cluster)
 ```
 
 ### Let's take a look a the classification
 
 ```{r}
-e1 <- ggplot(mydata) + geom_point(aes(x=total_import,y=ratio,color=fit.cluster),size=2)+
+e1 <- ggplot(mydata1) + geom_point(aes(x=total_import,y=ratio,color=fit.cluster),size=2)+
                        scale_colour_gradientn(colours=rainbow(4))+
                        labs(x="Total imports",y="ratio")
-e2 <- ggplot(mydata) + geom_point(aes(x=total_import,y=degree_val,color=fit.cluster),size=2)+
+e2 <- ggplot(mydata1) + geom_point(aes(x=total_import,y=degree_val,color=fit.cluster),size=2)+
                        scale_colour_gradientn(colours=rainbow(4))+
                        labs(x="Total imports",y="Degree")
-e3 <- ggplot(mydata) + geom_point(aes(x=total_import,y=bet_val,color=fit.cluster),size=2)+
+e3 <- ggplot(mydata1) + geom_point(aes(x=total_import,y=bet_val,color=fit.cluster),size=2)+
                        scale_colour_gradientn(colours=rainbow(4))+
                        labs(x="Total imports",y="Betweeness")
-e4 <- ggplot(mydata) + geom_point(aes(x=degree_val,y=bet_val,color=fit.cluster),size=2)+
+e4 <- ggplot(mydata1) + geom_point(aes(x=degree_val,y=bet_val,color=fit.cluster),size=2)+
                        scale_colour_gradientn(colours=rainbow(4))+
                        labs(x="Degree",y="Betweeness")
 grid.arrange(e1,e2,e3,e4,nrow=2,ncol=2)
@@ -498,7 +508,7 @@ grid.arrange(e1,e2,e3,e4,nrow=2,ncol=2)
 I don't know how to replace the id by the country names
 ```{r}
 # Ward Hierarchical Clustering
-d <- dist(mydata, method = "euclidean") # distance matrix
+d <- dist(mydata1, method = "euclidean") # distance matrix
 fit <- hclust(d, method="ward")
 plot(fit) # display dendogram
 groups <- cutree(fit, k=nc) # cut tree into 5 clusters
@@ -517,16 +527,66 @@ rect.hclust(fit, k=nc, border="red")
 
 ### More results
 ```{r}
-fit <- kmeans(mydata, nc) # 5 cluster solution
+fit <- kmeans(mydata1, nc) # 5 cluster solution
 # vary parameters for most readable graph
-clusplot(mydata, fit$cluster, color=TRUE, shade=TRUE,
+clusplot(mydata1, fit$cluster, color=TRUE, shade=TRUE,
  	labels=2, lines=0)
 # Centroid Plot against 1st 2 discriminant functions
-plotcluster(mydata, fit$cluster)
+plotcluster(mydata1, fit$cluster)
 (fit$size)
 (fit$centers)
 
 ```
+
+
+#This addresses Janis' request
+```{r}
+this_country <- "United Kingdom"
+some_stuff <- net_flux %>% mutate(period_date = ymd(paste(period,"01",sep="")))
+nether <- some_stuff %>% filter(node==this_country)
+
+time_history <- sort(unique(nether$period))
+
+i <- 1
+dat1 <- integer(1)
+dat2 <- integer(1)
+for (cur_time in time_history){
+  junk1 <- some_stuff %>% filter(period == cur_time)
+  netdf1 <- si %>% filter(period == cur_time) %>% select(origin,destin,trade_value_usd)
+  sources1 <-      netdf1 %>% distinct(origin) %>% rename(label = origin)
+  destinations1 <- netdf1 %>% distinct(destin) %>% rename(label = destin)
+  per_route1 <- netdf1 %>% group_by(origin,destin) %>% summarise(weight = sum(trade_value_usd)/1e6) %>% ungroup()
+  nodes1 <- full_join(sources1,destinations1,by="label")
+  nodes1 <- nodes1 %>% rowid_to_column("id")
+  edges1 <- per_route1 %>% left_join(nodes1,by=c("origin" = "label")) %>% rename(from = id)
+  edges1 <- edges1     %>% left_join(nodes1,by=c("destin" = "label")) %>% rename(to   = id)
+  edges1 <- select(edges1,from,to,weight)
+  g <- tbl_graph(nodes = nodes1, edges = edges1, directed = TRUE)
+    degree_val  <- degree(g)
+    bet_val     <- betweenness(g)
+    this_one <- nodes1[nodes1$label==this_country,1]
+    dat1[i] <- degree_val[this_one]
+    dat2[i] <- bet_val[this_one]
+    i <- i + 1
+  }
+
+temp_data <- some_stuff %>% filter(node==this_country) %>% mutate(month=month(period_date),quarter = ceiling(as.numeric(month) / 3)) %>%
+             arrange(period)
+temp_data$degree_val <- sapply(dat1, paste0)
+temp_data$bet_val    <- sapply(dat2, paste0)
+
+temp_data$degree_val <- as.integer(temp_data$degree_val)
+temp_data$bet_val    <- as.integer(temp_data$bet_val)
+ 
+v1 <- ggplot(NULL) +
+      geom_point(data = temp_data,
+      aes(x=ratio,y=degree_val,color=quarter,size=total_import)) +
+      scale_colour_gradientn(colours=rainbow(4)) +
+      labs(x="Ratio",
+           y="Degree",
+      title = this_country)
+```
+
 
 <!-- # ```{r} -->
 <!-- # routes_network <- network(edges,vertex.attr = nodes, matrix.type="edgelist",ignore.eval=FALSE) -->
@@ -542,3 +602,9 @@ plotcluster(mydata, fit$cluster)
 <!-- # sankeyNetwork(Links = edges_d3, Nodes = nodes_d3, Source = "from", Target = "to", -->
 <!-- #               NodeID = "label", Value = "weight", fontSize = 12, unit = "Letter(s)") -->
 <!-- # ``` -->
+
+
+
+
+
+
