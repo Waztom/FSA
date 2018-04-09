@@ -21,7 +21,7 @@ import numpy as np
 
 percentile=0.5
 commodity='pork...'
-commodity_codes=['0203','0203']
+commodity_codes=['0905','0905']
 trade_period=['201601', '201612']
 partners_to_ignore=['World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes']
 
