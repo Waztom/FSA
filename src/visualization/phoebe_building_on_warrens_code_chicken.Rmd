@@ -1,0 +1,119 @@
+---
+title: "Summary_of_monthly_network_grahs + community anlysis"
+author: "Warren Thompson"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+library(linkcomm)
+```
+
+#Access comtrade database - look for cucumber info for world
+```{r}
+#source("get_Comtrade_data_network_graph.R")
+#world_data   <- get_Comtrade_data_network_graph(201401,201601,"default","070700")
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_data   <- read.csv("world_chicken_data_3.csv", header = TRUE, sep = ",")
+```
+
+#Loop to get features from each months network graph
+```{r}
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+period_list               <- list() #List of months
+net_list                  <- list() #Find graph plots by index eg. net_list[[24]]
+trade_list <-list()
+degree_list <- list() #create list of degrees for each node 
+eigen_centrality_list <- list()
+count_triangles_list <-list()
+betweenness_list <- list()
+summary_list <- list()
+
+#change period to date format
+world_data_date <- world_data %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data(world_data_date)
+
+for (i in world_monthly_data){
+  #Call to function to calculate nett trade. NB call to get_nett_trade include type of    calc, nett vs flux. See function for more info
+  month_nett_trade  <- get_trade_attribute(i,"nett")
+  #month_nett_trade_by_month <- get_trade_attribute_monthly(i,"nett")
+  
+  #Determine crude thresholding via quantiles 
+  month_quantiles   <- quantile(i$trade_value_usd)
+  trade_threshold   <- month_quantiles[1]
+  
+  #Starting with starting_node above, get links that are connected to this node
+  month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
+  
+  #Get nodes and edges 
+  #NB trade attribute in nodes will be what you chose in calling get_nett_trade 
+  nodes             <- get_nodes(trade.flow,month_links,month_nett_trade)
+  edges             <- get_edges(trade.flow,nodes,month_links)
+  
+  #Assign attributes and sizes/color to nodes
+  nodes$color <-  ifelse(nodes$trade_attribute > 0, "red","blue")
+  nodes$size  <-  (abs(nodes$trade_attribute) - min(nodes$trade_attribute)) /                             (max(nodes$trade_attribute) - min(nodes$trade_attribute))*50
+  
+  #create tbl_graph from tidygraph package
+  g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+  
+  #Abstarct features from network graph
+  degree(g) -> degree_val
+  eigen_centrality(g) -> eigen_val
+  count_triangles(g) -> tri_no
+  betweenness(g) -> bet_val
+  
+  #abstract time periods
+  month               <- unique(i$period)
+
+  #Plot for analysis
+  net <- visNetwork(nodes, edges, main = as.character(paste0(trade.flow," ",month))) %>% 
+  visIgraphLayout(randomSeed = 10, layout = "layout_in_circle") %>%
+  visEdges(arrows = "to") %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
+  
+   #Appedn features to respective lists
+  period_list <- list.append(period_list, month)
+  net_list <- list.append(net_list, net)
+  trade_list <- list.append(trade_list, month_nett_trade)
+  degree_list <- list.append(degree_list, degree_val) #create list of degrees for each node 
+  eigen_centrality_list <- list.append(eigen_centrality_list, eigen_val)
+  count_triangles_list <-list.append(count_triangles_list, tri_no)
+  betweenness_list <- list.append(betweenness_list, bet_val)
+  #summary_list<- list.append(summary_list, trade_list, betweenness_list)
+  
+  #summary_taketwo <- do.call(rbind, Map(data.frame, betweenness_list=betweenness_list, net_trade = trade_list))
+}
+```
+
+
+```{r}
+#Combine lists into dataframe
+abstraction_summary <- do.call(rbind, Map(data.frame, period=period_list, betweenness_list=betweenness_list, net_trade = trade_list))
+
+```
+
+
+
