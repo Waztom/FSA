@@ -183,11 +183,10 @@ dfs <- list("degree_val" = dat1, "bet_val" = dat2, "tri_no" = dat3, "node" = dat
 metrics <- as.data.frame(dfs)
 
 all_info <- full_join(net_flux,metrics,by=c("node","period"))
-all_info[is.nan(all_info$ave_in_wei),]$max_in_wei = 0
+all_info[is.nan(all_info$ave_in_wei),]$max_in_wei   = 0
 all_info[is.nan(all_info$ave_out_wei),]$max_out_wei = 0
-all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei = 0
+all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei   = 0
 all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
-#all_info <- all_info %>% filter(deg_in_wei != 0 & deg_out_wei !=0)
 
 #v1 <- ggplot(NULL) +
 #      geom_point(data = temp_data,
