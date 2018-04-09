@@ -1,0 +1,232 @@
+---
+title: "Summary_of_monthly_network_grahs + community anlysis"
+author: "Warren Thompson"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+library(linkcomm)
+```
+
+#Access comtrade database - look for cucumber info for world
+```{r}
+#source("get_Comtrade_data_network_graph.R")
+#world_data   <- get_Comtrade_data_network_graph(201401,201601,"default","070700")
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",")
+```
+
+#Loop to get features from each months network graph
+```{r}
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+period_list               <- list() #List of months
+net_list                  <- list() #Find graph plots by index eg. net_list[[24]]
+
+#Lists of features from monthly graphs
+eigen_list                <- list() 
+sum_degree_list           <- list() 
+edge_density_list         <- list()
+average_path_length_list  <- list()
+transitivity_list         <- list()
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data(world_data)
+
+for (i in world_monthly_data){
+  #Call to function to calculate nett trade. NB call to get_nett_trade include type of    calc, nett vs flux. See function for more info
+  month_nett_trade  <- get_trade_attribute(i,"nett")
+  
+  #Determine crdue thresholding via quantiles 
+  month_quantiles   <- quantile(i$trade_value_usd)
+  trade_threshold   <- month_quantiles[2]
+  
+  #Starting with starting_node above, get links that are connected to this node
+  month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
+  
+  #Get nodes and edges 
+  #NB trade attribute in nodes will be what you chose in calling get_nett_trade 
+  nodes             <- get_nodes(trade.flow,month_links,month_nett_trade)
+  edges             <- get_edges(trade.flow,nodes,month_links)
+  
+  #Assign attributes and sizes/color to nodes
+  nodes$color <-  ifelse(nodes$trade_attribute > 0, "red","blue")
+  nodes$size  <-  (abs(nodes$trade_attribute) - min(nodes$trade_attribute)) /                             (max(nodes$trade_attribute) - min(nodes$trade_attribute))*50
+  
+  #create tbl_graph from tidygraph package
+  g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+  
+  #Abstarct features from network graph
+  month               <- unique(i$period)
+  eigen               <- eigen_centrality(g)
+  eigen_centrality    <- eigen$value
+  sum_degree          <- sum(degree(g))
+  edge_density        <- edge_density(g)
+  average_path_length <- mean_distance(g)
+  transitivity        <- transitivity(g)
+
+  #Appedn features to respective lists
+  period_list               <- list.append(period_list, month)
+  eigen_list                <- list.append(eigen_list, eigen_centrality)
+  sum_degree_list           <- list.append(sum_degree_list, sum_degree)
+  edge_density_list         <- list.append(edge_density_list, edge_density)
+  average_path_length_list  <- list.append(average_path_length_list,average_path_length)
+  transitivity_list         <- list.append(transitivity_list, transitivity)
+ 
+  #Plot for analysis
+  net <- visNetwork(nodes, edges, main = as.character(paste0(trade.flow," ",month))) %>% 
+  visIgraphLayout(randomSeed = 10, layout = "layout_in_circle") %>%
+  visEdges(arrows = "to") %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
+  
+  #Graphs stored in net_list
+  net_list <- list.append(net_list, net)
+  
+}
+
+#Combine lists into dataframe
+abstraction_summary <- do.call(rbind, Map(data.frame, period=period_list, eigen_centrality=eigen_list, sum_degree = sum_degree_list, edge_density = edge_density_list, average_path_length = average_path_length_list, transitivity = transitivity_list))
+
+#Convert period to date type
+abstraction_summary <- abstraction_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Plot feature summary over time
+eigen_centrality_plot <- ggplot(abstraction_summary, aes(x=period, y = eigen_centrality)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Eigen centrality")
+
+sum_degree_plot <- ggplot(abstraction_summary, aes(x=period, y = sum_degree)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Sum degree")
+
+edge_density_plot <- ggplot(abstraction_summary, aes(x=period, y = edge_density)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Edge density")
+
+average_path_length_plot <- ggplot(abstraction_summary, aes(x=period, y =                 average_path_length)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Average path length")
+
+transivity_plot <- ggplot(abstraction_summary, aes(x=period, y = transitivity)) + 
+  geom_line() + 
+  geom_point() +
+  ylab("Transitivity")
+
+grid.arrange(eigen_centrality_plot, sum_degree_plot, edge_density_plot,average_path_length_plot, transivity_plot, ncol=2)
+
+```
+
+#Monthly link analysis exploration using linkcomm
+```{r}
+world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",")
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+lc_list               <- list() #List of plots
+cluster_list          <- list() #List nested communities 
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data(world_data)
+
+for (i in world_monthly_data){
+  #Call to function to calculate nett trade
+  month_trade_attribute  <- get_trade_attribute(i,"flux")
+  
+  #Determine crdue thresholding via quantiles 
+  month_quantiles   <- quantile(i$trade_value_usd)
+  trade_threshold   <- month_quantiles[2]
+  
+  #Starting with starting_node above, get links that are connected to this node
+  month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
+  
+  #Get nodes and edges
+  nodes             <- get_nodes(trade.flow,month_links,month_trade_attribute)
+  edges             <- get_edges(trade.flow,nodes,month_links)
+  
+  #Need to do some complicated conversions to get from ID to name of country again
+  edges<-edges%>%rename(id=to)%>%left_join(nodes,edges,by="id") %>%select(from,width_trade_value,label)%>%rename(id=from)%>%left_join(nodes,edges,by="id") %>% select(c(3,4,2,5))
+  
+#Note column selection for edge attribute in getLink Communities below! In this case have chosen to only look at edges, so who talks to one another. possible to include attributes: width_trade_value but can also choose width_nettweight_kg (change select call above) and trade attribute (flux or nett trade depending on call to get_). Options to play. Check edges output above to be sure of atrribute selection.
+  lc <- getLinkCommunities(edges[,c(1,2)], directed =T)
+  lc_list <- list.append(lc_list,lc)
+  
+}
+
+```
+
+#Plot sumamry data as clustered communities with highest membership. 
+```{r}
+#Plot sumamry data
+for (lc in lc_list){
+  plot(lc, type = "members")
+}
+dev.off()
+```
+
+#Yearly link analysis exploration using linkcomm
+```{r}
+world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",") #NB data must be in year period from sql query
+
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+year_start_month   <- as.Date("20140101", "%Y%m%d")
+year_end_month    <- as.Date("20141201",  "%Y%m%d")
+
+#Convert period to date type
+world_data_year <- world_data %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Collect data into year
+world_data_year <- world_data_year %>% filter(period <= year_end_month & period >= year_start_month)%>% select(period,trade_flow,reporter,partner,netweight_kg,trade_value_usd) 
+
+#Call to function to calculate trade attribute for
+year_trade_attribute  <- get_trade_attribute(world_data_year,"nett")
+  
+#Determine crude thresholding via quantiles 
+year_quantiles   <- quantile(world_data_year$trade_value_usd)
+trade_threshold   <- year_quantiles[3]
+  
+#Starting with starting_node above, get links that are connected to this node
+year_links       <- get_network_links(trade.flow,starting_node,trade_threshold,world_data_year)
+  
+#Get nodes and edges
+nodes             <- get_nodes(trade.flow,year_links,year_trade_attribute)
+edges             <- get_edges(trade.flow,nodes,year_links)
+  
+#Need to do some complicated conversions to get from ID to name of country again
+edges<-edges%>%rename(id=to)%>%left_join(nodes,edges,by="id") %>%select(from,width_trade_value,label)%>%rename(id=from)%>%left_join(nodes,edges,by="id") %>% select(c(2,3,4))
+
+#In this example have only chosen to look at communities that are connected so no edge attribute included here. Which of the main communities talk to one another for a year's worth of cucumber trade. See above chunk for same getLinkCommunities call to see more info.
+lc <- getLinkCommunities(edges[,c(2,3)], directed =T)
+
+#Plot lc data showing main communitie clusters and membership
+plot(lc, type = "members")
+#Plot linked communites - show how clusters interact
+plot(lc, type = "graph", layout = "spencer.circle", shownodesin = 1)
+
+```

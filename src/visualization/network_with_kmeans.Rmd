@@ -130,7 +130,9 @@ nodes_networkatr <-
                   replace_na(list(total_export=0, total_import=0))%>% 
                   mutate(imp_exp_net = total_export - total_import) %>%
                   mutate(imp_exp_net_reg = imp_exp_net/500000) %>%
-                  mutate(normalised_imp_exp_net = (total_export - total_import)/total_import)
+                  mutate(normalised_imp_exp_net = (total_export - total_import)/total_import) %>%
+                  mutate(alex_ratio = (total_import - total_export)/(total_import+total_export)) %>%
+                  mutate(reg_betweenness = betweeness/200)
 #get rid of infinities
 nodes_networkatr$normalised_imp_exp_net[is.infinite(nodes_networkatr$normalised_imp_exp_net)] <- 0
 ```
@@ -146,7 +148,7 @@ ggplot(nodes_2D_imports, aes(total_import, betweeness)) +
 #trying out kmeans - net vs betweenness
 ```{r}
 nodes_2D_net <- nodes_networkatr %>% select(imp_exp_net, betweeness)
-kmObj2 <- kmeans(nodes_2D_net, centers = 4)
+kmObj2 <- kmeans(nodes_2D_net, centers = 6)
 ggplot(nodes_2D_net, aes(imp_exp_net, betweeness)) +
         geom_point(colour = kmObj2$cluster, size = 3) 
 ```
@@ -164,9 +166,24 @@ ggplot(nodes_2D_net_reg, aes(x=imp_exp_net_reg, y=betweeness, colour=as.factor(k
 #with normalised net
 ```{r}
 nodes_2D_net_norm <- nodes_networkatr %>% select(normalised_imp_exp_net, betweeness)
-kmObj3 <- kmeans(nodes_2D_net_norm, centers = 4)
+kmObj4 <- kmeans(nodes_2D_net_norm, centers = 4)
 ggplot(nodes_2D_net_norm, aes(normalised_imp_exp_net, betweeness)) +
-        geom_point(colour = kmObj3$cluster, size = 3) 
+        geom_point(colour = kmObj4$cluster, size = 3) 
 ```
 
+#with alex ratio
+```{r}
+nodes_2D_net_alex <- nodes_networkatr %>% select(alex_ratio, betweeness)
+set.seed(2)
+kmObj5 <- kmeans(nodes_2D_net_alex, centers = 4)
+ggplot(nodes_2D_net_alex, aes(x=alex_ratio, y=betweeness, colour=as.factor(kmObj5$cluster))) + geom_point(size = 3) + labs(x="Import Ratio", y="Betweenness", col="Clusters") + scale_color_manual(labels = c("Low activity", "Importers", "Exporters", "Distributers"), values = c("purple", "lightblue", "grey", "orange"))
 
+```
+#using betweenness/100 to try to regulate it a bit (at the moment the clusters more or less depend on betweenness)
+```{r}
+nodes_2D_net_alex_reg <- nodes_networkatr %>% select(alex_ratio, reg_betweenness)
+set.seed(3)
+kmObj6 <- kmeans(nodes_2D_net_alex_reg, centers = 4)
+ggplot(nodes_2D_net_alex_reg, aes(x=alex_ratio, y=reg_betweenness, colour=as.factor(kmObj6$cluster))) + geom_point(size = 3) + labs(x="Import Ratio", y="Betweenness/100", col="Clusters") + scale_color_manual(labels = c("Low activity", "Importers", "Exporters", "Distributers"), values = c("purple", "lightblue", "grey", "orange"))
+
+```
