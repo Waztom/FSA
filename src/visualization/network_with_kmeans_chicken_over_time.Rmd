@@ -38,7 +38,7 @@ cc_all_chicken <- comcode[grep('CHICKEN',  toupper(comcode$description)),]
 
 #Access comtrade database - look for chicken info for world
 ```{r}
-source("get_Comtrade_data_network_graph.R")
+#source("get_Comtrade_data_network_graph.R")
 #world_chicken_data_2   <- get_Comtrade_data_network_graph(201001,201601,"default","0207")
 #write.csv(world_chicken_data_2, file = "world_chicken_data_3.csv")
 ```
@@ -47,11 +47,13 @@ source("get_Comtrade_data_network_graph.R")
 #Access comtrade database saved as csv file
 ```{r}
 world_chicken_data_csv   <- read.csv("world_chicken_data_3.csv", header = TRUE, sep = ",")
+#Get data into months stored in list
+world_chicken_monthly_data <- get_Comtrade_monthly_data(world_chicken_data_csv)
 ```
 . 
 #Prepare data
 ```{r}
-world_chicken_data_graph <- world_chicken_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+world_chicken_data_graph <-for (i in world_monthly_data){world_monthly_data %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))}
 ```
 
 #Select time line in month - looking at all months now
@@ -118,9 +120,9 @@ betweenness(g) -> bet_val
 
 #creating total exports and imports for each country
 ```{r}
-total_exports<- world_chicken_data_graph_exlworldEU_simple %>% group_by (partner) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = partner)
+total_exports<- world_chicken_data_graph_exlworldEU_simple %>% group_by (period, partner) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = partner)
 
-total_imports <- world_chicken_data_graph_exlworldEU_simple %>% group_by (reporter) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = reporter)
+total_imports <- world_chicken_data_graph_exlworldEU_simple %>% group_by (period, reporter) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = reporter)
 ```
 
 
@@ -137,7 +139,8 @@ nodes_networkatr <-
                   mutate(imp_exp_net = total_export - total_import) %>%
                   mutate(imp_exp_net_reg = imp_exp_net/500000) %>%
                   mutate(normalised_imp_exp_net = (total_export - total_import)/total_import) %>%
-                  mutate(alex_ratio = (total_import - total_export)/(total_import+total_export))
+                  mutate(alex_ratio = (total_import - total_export)/(total_import+total_export)) %>%
+                           mutate(reg_betweenness = betweeness/200)
 #get rid of infinities
 nodes_networkatr$normalised_imp_exp_net[is.infinite(nodes_networkatr$normalised_imp_exp_net)] <- 0
 
@@ -178,4 +181,19 @@ ggplot(nodes_2D_net_norm, aes(normalised_imp_exp_net, betweeness)) +
         geom_point(colour = kmObj3$cluster, size = 3) 
 ```
 
+#with alex ratio
+```{r}
+nodes_2D_net_alex <- nodes_networkatr %>% select(alex_ratio, betweeness)
+set.seed(2)
+kmObj5 <- kmeans(nodes_2D_net_alex, centers = 4)
+ggplot(nodes_2D_net_alex, aes(x=alex_ratio, y=betweeness, colour=as.factor(kmObj5$cluster))) + geom_point(size = 3) + labs(x="Import Ratio", y="Betweenness", col="Clusters") + scale_color_manual(labels = c("Low activity", "Importers", "Exporters", "Distributers"), values = c("purple", "lightblue", "grey", "orange"))
 
+```
+#using betweenness/200 to try to regulate it a bit (at the moment the clusters more or less depend on betweenness)
+```{r}
+nodes_2D_net_alex_reg <- nodes_networkatr %>% select(alex_ratio, reg_betweenness)
+set.seed(3)
+kmObj6 <- kmeans(nodes_2D_net_alex_reg, centers = 4)
+ggplot(nodes_2D_net_alex_reg, aes(x=alex_ratio, y=reg_betweenness, colour=as.factor(kmObj6$cluster))) + geom_point(size = 3) + labs(x="Import Ratio", y="Betweenness/100", col="Clusters") + scale_color_manual(labels = c("Low activity", "Importers", "Exporters", "Distributers"), values = c("purple", "lightblue", "grey", "orange"))
+
+```
