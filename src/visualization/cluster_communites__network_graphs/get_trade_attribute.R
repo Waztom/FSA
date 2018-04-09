@@ -1,5 +1,5 @@
 #Type is to calculate nett trade or flux as per Alex's definition (nett imports - nett exports)/(nett imports + nett exports)
-get_nett_trade <- function(df, type){
+get_trade_attribute <- function(df, type){
   
   df <- df %>% filter(trade_flow != "Re-imports" & trade_flow != "Re-exports" & reporter != "World" & reporter != "EU-27" & partner != "World" & partner != "EU-27")
   df$partner  <- as.character(df$partner)

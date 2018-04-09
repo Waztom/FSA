@@ -179,7 +179,7 @@ for (i in world_monthly_data){
 
 ```
 
-#Plot sumamry data as clustered communities with highest membership 
+#Plot sumamry data as clustered communities with highest membership. 
 ```{r}
 #Plot sumamry data
 for (lc in lc_list){
