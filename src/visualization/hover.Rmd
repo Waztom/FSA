@@ -1,0 +1,135 @@
+---
+title: Hover with your mouse to reveal the country
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE,echo=FALSE)
+```
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+library(lubridate)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(gridExtra)
+library(network)
+library(ggraph)
+library(visNetwork)
+library(networkD3)
+library(igraph)
+library(tidygraph)
+library(cluster) 
+library(fpc)
+library(plotly)
+library(rgl)
+```
+
+```{r}
+read_file = FALSE
+#
+if(read_file==TRUE){
+source("get_Comtrade_data_all.R")
+df <- get_Comtrade_data_all(201401,201601,"default","070700")
+write.csv(df,'../data/Comtrade_all.csv')
+}else{
+df <- read.csv(file="../data/Comtrade_all.csv",header=TRUE)  
+}
+df <- df[complete.cases(df),]
+guys_2_remove <- c("EU-27","Areas, nes","Other Europe, nes","Other Africa, nes",
+                   "Other Asia, nes","World")
+df2 <- df %>% filter(!as.character(partner) %in% guys_2_remove) %>%
+              filter(!as.character(reporter) %in% guys_2_remove)
+df2 <- df2 %>% mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+               mutate(year        = as.integer(str_sub(period,1,4))) %>%
+               mutate(month       = as.integer(str_sub(period,5,6))) %>%
+               mutate(price_usd_kg= trade_value_usd/netweight_kg)
+Imports <- df2 %>% filter(trade_flow == "Imports") %>% select(-trade_flow,-X)
+Exports <- df2 %>% filter(trade_flow == "Exports") %>% select(-trade_flow,-X)
+si <- Imports %>% select(period,reporter,partner,trade_value_usd) %>%
+                  mutate(origin = as.character(partner)) %>%
+                  mutate(destin = as.character(reporter)) %>% 
+                  select(-reporter,-partner)
+month_list <- unique(si$period)
+i <- 1
+mylist <- list() #create an empty list
+for (cur_month in month_list){
+sity <- si %>% filter(period == cur_month)
+origin_country <- unique(sity$origin)
+destin_country <- unique(sity$destin)
+all_country    <- union(origin_country,destin_country)
+for (cur_count in all_country) {
+n1 <- sity %>% filter(origin==cur_count) %>% summarize(t1 = sum(trade_value_usd))
+n2 <- sity %>% filter(destin==cur_count) %>% summarize(t2 = sum(trade_value_usd))
+  vec <- character(4) #preallocate a numeric vector
+    vec[1] <- as.character(cur_count)
+    vec[2] <- n1
+    vec[3] <- n2
+    vec[4] <- cur_month
+  mylist[[i]] <- vec #put all vectors in the list
+  i <- i + 1
+}
+}
+i <- i - 1
+net_flux <- do.call("rbind",mylist)
+net_flux <- data.frame(matrix(unlist(net_flux), nrow=i, byrow=F),stringsAsFactors=FALSE)
+net_flux <- net_flux %>% transform(X2 = as.numeric(X2)) %>% rename(total_export = X2)
+net_flux <- net_flux %>% transform(X3 = as.numeric(X3)) %>% rename(total_import = X3)
+net_flux <- net_flux %>% rename(period = X4)
+net_flux <- net_flux %>% mutate(ratio = (total_import-total_export)/(total_import + total_export))
+net_flux <- net_flux %>% rename(node = X1)
+
+selected_period <- 201401
+netdf <- si %>% filter(period == selected_period) %>%
+                select(origin,destin,trade_value_usd)
+per_route <- netdf %>%
+             group_by(origin,destin) %>%
+             summarise(weight = sum(trade_value_usd)/1e6) %>% ungroup()
+
+sources <-      netdf %>% distinct(origin) %>% rename(label = origin)
+destinations <- netdf %>% distinct(destin) %>% rename(label = destin)
+nodes <- full_join(sources,destinations,by="label")
+nodes <- nodes %>% rowid_to_column("id")
+edges <- per_route %>% left_join(nodes,by=c("origin" = "label")) %>% rename(from = id)
+edges <- edges     %>% left_join(nodes,by=c("destin" = "label")) %>% rename(to   = id)
+edges <- select(edges,from,to,weight)
+g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
+degree_val  <- degree(g)
+eigen_val   <- eigen_centrality(g)
+tri_no      <- count_triangles(g)
+bet_val     <- betweenness(g)
+undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+communities <- edge.betweenness.community(undirected_network)
+grouping    <- membership(communities)
+metric <- do.call(rbind.data.frame, Map('c', degree_val, bet_val,tri_no))
+colnames(metric) <- c("degree_val","bet_val","tri_no")
+gg <- g
+E(g)$weight <- edges$weight
+nodes$degree_val <- sapply(degree_val, paste0)
+nodes$bet_val    <- sapply(bet_val, paste0)
+tmp1 <- nodes %>% select(-id) %>% rename(node=label)
+tmp2 <- net_flux %>% filter(period==selected_period)
+mydata <- left_join(tmp1,tmp2,by="node") %>%
+          select(-node,-total_export)
+tmplab <- nodes$label
+hover <- cbind(mydata,tmplab) %>% rename(country = tmplab)
+```
+
+```{r, out.width="90%"}
+g <- ggplot(hover, aes(as.integer(bet_val), ratio, text=country,
+                       color=as.integer(degree_val),
+                       size=total_import/1e6)) + geom_point()+
+                         scale_colour_gradientn(colours=rainbow(4))+
+  labs(x="Betweenness centrality",y="Producer > Distributor > Consumer",
+       title="Country classification based on network metrics",
+       subtitle=ymd(paste(as.character(selected_period),"01",sep="")))
+ggplotly(g, tooltip="text")
+```

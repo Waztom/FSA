@@ -1,15 +1,16 @@
 ---
-title: "Exploration of Comtrade data and initial experiments for country classification based on International trade network metrics"
+title: Exploration of Comtrade data and initial experiments for country classification
+  based on International trade network metrics
 author: "Àlex Fabregat"
 output:
+  html_document: default
+  html_notebook: default
   pdf_document:
     latex_engine: xelatex
-  html_notebook: default
-  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+knitr::opts_chunk$set(warning = FALSE, echo=TRUE)
 ```
 ```{r,message=FALSE,warning=FALSE,echo=FALSE}
 library(RPostgreSQL)
@@ -31,6 +32,7 @@ library(tidygraph)
 library(cluster) 
 library(fpc)
 library(plotly)
+library(rgl)
 ```
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
@@ -282,9 +284,11 @@ i <- i - 1
 
 ### Transform the list into a dataframe and do some tidying
 We plot here the results for several prototypical countries:
+
 * Neherlands as distributor
 * Spain as producer
 * United Kingdom as consumer
+
 We also plot the temporal evolution of this metric **ratio** for Netherlands.
 Over time the Netherlands switch from a producer for periods of low import fluxes and as a distributor for periods
 of high volume of imports. That's cool, don't you think?
@@ -409,6 +413,7 @@ mydata <- left_join(tmp1,tmp2,by="node") %>%
 * ratio = (Imports-Exports)/(Imports+Exports)
 * Degree
 * Betweeness
+
 In this case it is possible to visualize the dataset in a 2D plot with the other features shows using color and size.
 It is probably a good exercise to compare this plot and the k-means results (next section).
 
@@ -417,15 +422,27 @@ The results in this plot indicate that:
 * Producers do not import (not suprising, maybe)
 * Big importers are rarely pure **Consumers** or **Producers** but **Distributors**.
 ```{r}
-ggplot(mydata) + geom_point(aes(x=total_import/1e6,y=ratio,
-                       color=as.integer(degree_val),size=as.integer(bet_val)+1),alpha=0.7) +
- #                      geom_text(aes(x=total_import/1e6,y=ratio,label=nodes$label)) +
+ggplot(mydata) + geom_point(aes(x=as.integer(bet_val),y=ratio,
+                       color=as.integer(degree_val)+1,size=as.numeric(total_import)/1e6),alpha=0.7) +
                        scale_colour_gradientn(colours=rainbow(4)) +
-  labs(x="Total Imports (thousands of tons)",y="(Imp - Exp) / (Imp + Exp)",
+  labs(x="Betweenness centrality",y="(Imp - Exp) / (Imp + Exp)",
        title="Country classification based on network metrics",
        subtitle=ymd(paste(as.character(selected_period),"01",sep="")))
 ```
 
+# Hover with your mouse to show the country
+```{r}
+tmplab <- nodes$label
+hover <- cbind(mydata,tmplab) %>% rename(country = tmplab)
+g <- ggplot(hover, aes(as.integer(bet_val), ratio, text=country,
+                       color=as.integer(degree_val),
+                       size=total_import/1e6)) + geom_point()+
+                         scale_colour_gradientn(colours=rainbow(4))+
+  labs(x="Betweenness centrality",y="Producer > Distributor > Consumer",
+       title="Country classification based on network metrics",
+       subtitle=ymd(paste(as.character(selected_period),"01",sep="")))
+ggplotly(g, tooltip="text")
+```
 
 
 # Let's do k-means
@@ -477,7 +494,6 @@ e4 <- ggplot(mydata) + geom_point(aes(x=degree_val,y=bet_val,color=fit.cluster),
                        labs(x="Degree",y="Betweeness")
 grid.arrange(e1,e2,e3,e4,nrow=2,ncol=2)
 ```
-
 
 I don't know how to replace the id by the country names
 ```{r}
