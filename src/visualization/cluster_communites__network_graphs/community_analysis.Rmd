@@ -55,7 +55,7 @@ world_monthly_data <- get_Comtrade_monthly_data(world_data)
 
 for (i in world_monthly_data){
   #Call to function to calculate nett trade. NB call to get_nett_trade include type of    calc, nett vs flux. See function for more info
-  month_nett_trade  <- get_nett_trade(i,"nett")
+  month_nett_trade  <- get_trade_attribute(i,"nett")
   
   #Determine crdue thresholding via quantiles 
   month_quantiles   <- quantile(i$trade_value_usd)
