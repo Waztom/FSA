@@ -31,7 +31,6 @@ library(tidygraph)
 library(cluster) 
 library(fpc)
 library(plotly)
-library(rgl)
 ```
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
@@ -125,15 +124,15 @@ net_flux <- net_flux %>% mutate(ratio = (tot_in_wei-tot_out_wei)/(tot_in_wei + t
 ```
 
 ```{r}
-tmp2 <- net_flux %>% mutate(period_date = ymd(paste(period,"01",sep="")))
-tmp3 <- tmp2 %>%
+tmp1 <- net_flux %>% mutate(period_date = ymd(paste(period,"01",sep="")))
+tmp2 <- tmp1 %>%
     filter(node=="Netherlands") %>%
     mutate(month=month(period_date)) %>%
     mutate(quarter = ceiling(as.numeric(month) / 3))
 x2 <- ggplot(NULL) +
-    geom_point(data = tmp3,
+    geom_point(data = tmp2,
     aes(x=tot_in_wei/1e6,y=ratio,color=quarter),size=3) +
-    geom_path(data = tmp3, aes(x=tot_in_wei/1e6,y=ratio),alpha=0.1) +
+    geom_path(data = tmp2, aes(x=tot_in_wei/1e6,y=ratio),alpha=0.1) +
     coord_cartesian(xlim = c(-1,30),ylim=c(-1,1)) +
     scale_colour_gradientn(colours=rainbow(4)) +
     labs(x="Total imports (thousands of tons)",
@@ -146,18 +145,15 @@ x2
 
 #This addresses Janis' request
 ```{r}
-this_country <- "Netherlands"
-some_stuff <- net_flux %>% mutate(period_date = ymd(paste(period,"01",sep="")))
-nether <- some_stuff %>% filter(node==this_country)
-
-time_history <- sort(unique(nether$period))
+time_history <- sort(unique(si$period))
 
 i <- 1
 dat1 <- integer(1)
 dat2 <- integer(1)
 dat3 <- integer(1)
+dat4 <- character(1)
+dat5 <- character(1)
 for (cur_time in time_history){
-  junk1 <- some_stuff %>% filter(period == cur_time)
   netdf1 <- si %>% filter(period == cur_time) %>% select(origin,destin,trade_value_usd)
   sources1 <-      netdf1 %>% distinct(origin) %>% rename(label = origin)
   destinations1 <- netdf1 %>% distinct(destin) %>% rename(label = destin)
@@ -171,27 +167,34 @@ for (cur_time in time_history){
     degree_val  <- degree(g)
     bet_val     <- betweenness(g)
     tri_no      <- count_triangles(g)
-    this_one <- nodes1[nodes1$label==this_country,1]
+    all_country <- unique(nodes1$label)
+    for (cur_country in all_country){
+    this_one <- nodes1[nodes1$label==cur_country,1]######
     dat1[i] <- degree_val[this_one]
     dat2[i] <- bet_val[this_one]
     dat3[i] <- tri_no[this_one]
+    dat4[i] <- cur_country
+    dat5[i] <- cur_time
     i <- i + 1
+    }
   }
 
-temp_data <- some_stuff %>% filter(node==this_country) %>% mutate(month=month(period_date),quarter = ceiling(as.numeric(month) / 3)) %>%
-             arrange(period)
-temp_data$degree_val <- sapply(dat1, paste0)
-temp_data$bet_val    <- sapply(dat2, paste0)
+dfs <- list("degree_val" = dat1, "bet_val" = dat2, "tri_no" = dat3, "node" = dat4, "period" = dat5)
+metrics <- as.data.frame(dfs)
 
-temp_data$degree_val <- as.integer(temp_data$degree_val)
-temp_data$bet_val    <- as.integer(temp_data$bet_val)
- 
-v1 <- ggplot(NULL) +
-      geom_point(data = temp_data,
-      aes(x=ratio,y=degree_val,color=quarter,size=tot_in_wei)) +
-      scale_colour_gradientn(colours=rainbow(4)) +
-      labs(x="Ratio",
-           y="Degree",
-      title = this_country)
-v1
+all_info <- full_join(net_flux,metrics,by=c("node","period"))
+all_info[is.nan(all_info$ave_in_wei),]$max_in_wei = 0
+all_info[is.nan(all_info$ave_out_wei),]$max_out_wei = 0
+all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei = 0
+all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
+#all_info <- all_info %>% filter(deg_in_wei != 0 & deg_out_wei !=0)
+
+#v1 <- ggplot(NULL) +
+#      geom_point(data = temp_data,
+#      aes(x=ratio,y=degree_val,color=quarter,size=tot_in_wei)) +
+#      scale_colour_gradientn(colours=rainbow(4)) +
+#      labs(x="Ratio",
+#           y="Degree",
+#      title = this_country)
+#v1
 ```
