@@ -82,7 +82,7 @@ destin_country <- unique(sity$destin)
 all_country    <- union(origin_country,destin_country)
 numc[[j]] <- length(all_country)
 j <- j + 1 
-print(paste('Number of countries for the period ',cur_month,' : ',numc[j],sep=""))
+#print(paste('Number of countries for the period ',cur_month,' : ',numc[[j]],sep=""))
 for (cur_count in all_country) {
   
 for_origin <- sity %>% filter(origin==cur_count) %>% summarize(a1 = sum(trade_value_usd),
@@ -209,4 +209,66 @@ all_info[is.nan(all_info$ave_in_wei),]$max_in_wei   = 0
 all_info[is.nan(all_info$ave_out_wei),]$max_out_wei = 0
 all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei   = 0
 all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
+```
+
+# Write a csv
+```{r}
+write.csv(all_info,"all_features.csv",col.names = TRUE)
+```
+
+# Normalize total influx and outflux by the period mean
+```{r}
+all_info <- all_info %>% group_by(period) %>%
+  mutate(tot_in_wei_n = tot_in_wei/mean(tot_in_wei)) %>%
+  mutate(tot_out_wei_n = tot_out_wei/mean(tot_out_wei)) %>%
+  mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) %>%
+  mutate(degree_net = deg_out_wei - deg_in_wei) %>%
+  mutate(overall_flux = tot_out_wei + tot_in_wei) %>%
+  mutate(month = month(period_date)) %>%
+  ungroup()
+```
+
+#Do some plots
+
+```{r}
+selected_countries <- c("Germany","Spain","Netherlands","United Kingdom")
+ggplot(all_info %>% filter(node %in% selected_countries)) + 
+     geom_point(aes(
+        x     = period_date,
+        y     = ratio,
+        color = deg_out_wei-deg_in_wei,
+        size  = tot_in_wei_n,
+        shape = node
+      )) + 
+        scale_colour_gradientn(colours=rainbow(4))
+```
+
+# Data for modelling
+```{r}
+mydata1 <- all_info %>% ungroup() %>% select(month,deg_out_wei,deg_in_wei,tot_in_wei_n,tot_out_wei_n,ratio,bet_val,overall_flux,eigen_val)
+mydata1 <- scale(mydata1)
+```
+
+
+### Determine an adequate number of clusters
+I think 12 seems reasonable.
+```{r}
+wss <- (nrow(mydata1)-1)*sum(apply(mydata1,2,var))
+for (i in 2:15) wss[i] <- sum(kmeans(mydata1,
+  	centers=i)$withinss)
+plot(1:15, wss, type="b", xlab="Number of Clusters",
+  ylab="Within groups sum of squares")
+```
+### Add the cluster index to the data
+```{r}
+# Ensure reproducibility
+set.seed(42)
+# Number of clusters I want
+nc = 5 
+# K-Means Cluster Analysis
+fit <- kmeans(mydata1, nc) # 5 cluster solution
+# get cluster means
+aggregate(mydata1,by=list(fit$cluster),FUN=mean)
+# append cluster assignment
+mydata1 <- data.frame(mydata1, fit$cluster,all_info$node)
 ```
