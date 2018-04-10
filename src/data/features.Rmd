@@ -245,19 +245,17 @@ ggplot(all_info %>% filter(node %in% selected_countries)) +
 
 # Data for modelling: select a bunch of variables for k-means
 ```{r}
-mydata1 <- all_info %>% select(month, deg_out_wei, deg_in_wei, tot_in_wei_n, tot_out_wei_n, ratio, bet_val, overall_flux, eigen_val)
-mydata1 <- scale(mydata1) # Data must be scaled!!
+mydata <- all_info %>% select(month, deg_out_wei, deg_in_wei, tot_in_wei_n, tot_out_wei_n, ratio, bet_val, overall_flux, eigen_val)
+mydata_s <- scale(mydata) # Data must be scaled!!
 ```
 
 
 ### Determine an adequate number of clusters
 I think 12 seems reasonable.
 ```{r}
-wss <- (nrow(mydata1)-1)*sum(apply(mydata1,2,var))
-for (i in 2:15) wss[i] <- sum(kmeans(mydata1,
-  	centers=i)$withinss)
-plot(1:15, wss, type="b", xlab="Number of Clusters",
-  ylab="Within groups sum of squares")
+wss <- (nrow(mydata_s)-1)*sum(apply(mydata_s,2,var))
+for (i in 2:15) wss[i] <- sum(kmeans(mydata_s, centers=i)$withinss)
+plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
 ```
 ### Add the cluster index to the data
 ```{r}
@@ -266,9 +264,10 @@ set.seed(42)
 # Number of clusters I want
 nc = 12 
 # K-Means Cluster Analysis
-fit <- kmeans(mydata1, nc) # 5 cluster solution
+fit <- kmeans(mydata_s, nc) # 5 cluster solution
 # get cluster means
-aggregate(mydata1,by=list(fit$cluster),FUN=mean)
+aggregate(mydata_s,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
-results <- data.frame(mydata1, fit$cluster, all_info$node) %>% rename(cluster = fit.cluster) %>% rename(node = all_info.node)
+results_s <- data.frame(mydata_s, fit$cluster, all_info$node) %>% rename(cluster = fit.cluster) %>% rename(node = all_info.node)
+results   <- data.frame(mydata,   fit$cluster, all_info$node) %>% rename(cluster = fit.cluster) %>% rename(node = all_info.node)
 ```
