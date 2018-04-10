@@ -1,0 +1,100 @@
+---
+title: Modelling of International chicken trade and identification of anomalies via k-means
+author: "Phoebe"
+output:
+  html_document: default
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, echo=TRUE)
+```
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+library(lubridate)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(gridExtra)
+library(network)
+library(ggraph)
+library(visNetwork)
+library(networkD3)
+library(igraph)
+library(tidygraph)
+library(cluster) 
+library(fpc)
+library(plotly)
+library(lubridate)
+library(rgl)
+library(anomalize)
+```
+
+# read chicken csv and prepare data
+```{r}
+chicken_data <- read.csv(file="Chicken_data_PM.csv",header=TRUE)  
+```
+
+# Normalize total influx and outflux by the period mean
+```{r}
+Chicken_data_normalised <- chicken_data %>% group_by(period) %>%
+  mutate(tot_in_wei_n = tot_in_wei/mean(tot_in_wei)) %>%
+  mutate(tot_out_wei_n = tot_out_wei/mean(tot_out_wei)) %>%
+  mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) %>%
+  mutate(degree_net = deg_out_wei - deg_in_wei) %>%
+  mutate(overall_flux = tot_out_wei + tot_in_wei) %>%
+  mutate(month = month(period_date)) %>%
+  ungroup()
+```
+
+
+#Do some plots
+
+```{r}
+selected_countries <- c("Germany","Spain","Netherlands","United Kingdom")
+ggplot(Chicken_data_normalised %>% filter(node %in% selected_countries)) + 
+     geom_point(aes(
+        x     = period_date,
+        y     = ratio,
+        color = deg_out_wei-deg_in_wei,
+        size  = tot_in_wei_n,
+        shape = node
+      )) + 
+        scale_colour_gradientn(colours=rainbow(4)) +
+  ylim(-1, 1)
+```
+
+#Do some plots - look at betweenness
+
+```{r}
+selected_countries <- c("Germany","Spain")
+ggplot(Chicken_data_normalised %>% filter(node %in% selected_countries)) + 
+     geom_point(aes(
+        x     = period_date,
+        y     = bet_val,
+        color = deg_out_wei-deg_in_wei,
+        size  = tot_in_wei_n,
+        shape = node
+      )) + 
+        scale_colour_gradientn(colours=rainbow(4)) 
+```
+lots of jumping about so many too difficult to find anomalies?
+
+#try out anomalise on ratio data
+```{r}
+germany_chicken <- Chicken_data_normalised %>% filter(node == "Germany") %>% select(period_date, ratio)
+#use time decompose if using a time series to remove trends overtime
+germany_chicken_notime <- time_decompose(germany_chicken, target=ratio) 
+
+anomalize(germany_chicken_notime, target=remainder,alpha=50) -> germany_summary
+germany_anomalies <- germany_summary %>% filter(anomaly == "Yes")
+germany_anomalies
+```
+
+
