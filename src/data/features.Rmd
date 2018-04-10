@@ -31,6 +31,8 @@ library(tidygraph)
 library(cluster) 
 library(fpc)
 library(plotly)
+library(cluster)
+library(factoextra)
 ```
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
@@ -253,6 +255,19 @@ mydata <- all_info %>% select(month, degree_val, degree_net, ratio, bet_val, ove
 mydata_s <- scale(mydata) # Data must be scaled!!
 ```
 
+```{r}
+tmp_dat <- all_info %>% filter(period == 201401) %>% select(node, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+tmp_dat <- tmp_dat %>% transform(degree_net = as.numeric(degree_net))
+tmp_dat <- tmp_dat %>% transform(deg_in_wei = as.numeric(deg_in_wei))
+tmp_dat <- tmp_dat %>% transform(deg_out_wei = as.numeric(deg_out_wei))
+tmp_dat2 <- tmp_dat[,-1]
+rownames(tmp_dat2) <- tmp_dat[,1]
+tmp_dat <- scale(tmp_dat2)
+distance <- get_dist(tmp_dat)
+fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+```
+
+
 ### Determine an adequate number of clusters
 ```{r}
 ncmax <- 20
@@ -290,7 +305,7 @@ results   <- data.frame(all_info, fit$cluster) %>% rename(cluster = fit.cluster)
 # Ok, so this is sort of a result of modelling via kmeans:
 ### For a given country and a period, find the most `similar' countries according to cluster classification
 ```{r}
-goal_country <- "Spain"
+goal_country <- "Belarus"
 all_periods <- sort(unique(results$period))
 i <- 1
 c1 <- character(1)
