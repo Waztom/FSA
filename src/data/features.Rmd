@@ -245,8 +245,12 @@ ggplot(all_info %>% filter(node %in% selected_countries)) +
 
 # Data for modelling: select a bunch of variables for k-means
 ```{r}
-mydata <- all_info %>% select(month, deg_out_wei, deg_in_wei, tot_in_wei_n, tot_out_wei_n, ratio, bet_val, overall_flux, eigen_val)
+mydata <- all_info %>% select(month, degree_net, ratio, bet_val, overall_flux)
 mydata_s <- scale(mydata) # Data must be scaled!!
+```
+
+```{r}
+ggplot(all_info) + geom_point(aes(x=month,y=degree_net,color=ratio,size=overall_flux)) + scale_colour_gradientn(colours=rainbow(4))
 ```
 
 
@@ -262,7 +266,7 @@ plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of 
 # Ensure reproducibility
 set.seed(42)
 # Number of clusters I want
-nc = 12 
+nc = 2 
 # K-Means Cluster Analysis
 fit <- kmeans(mydata_s, nc) # 5 cluster solution
 # get cluster means
@@ -270,4 +274,16 @@ aggregate(mydata_s,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
 results_s <- data.frame(mydata_s, fit$cluster, all_info$node) %>% rename(cluster = fit.cluster) %>% rename(node = all_info.node)
 results   <- data.frame(all_info, fit$cluster) %>% rename(cluster = fit.cluster)
+```
+### More results
+```{r}
+fit <- kmeans(mydata_s, nc) # 5 cluster solution
+clusplot(mydata_s, fit$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+```
+
+```{r}
+# Centroid Plot against 1st 2 discriminant functions
+plotcluster(mydata_s, fit$cluster)
+(fit$size)
+(fit$centers)
 ```
