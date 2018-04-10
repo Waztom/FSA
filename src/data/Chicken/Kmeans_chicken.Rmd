@@ -1,0 +1,68 @@
+---
+title: Modelling of International chicken trade and identification of anomalies via k-means
+author: "Phoebe"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, echo=TRUE)
+```
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+library(lubridate)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(gridExtra)
+library(network)
+library(ggraph)
+library(visNetwork)
+library(networkD3)
+library(igraph)
+library(tidygraph)
+library(cluster) 
+library(fpc)
+library(plotly)
+library(lubridate)
+library(rgl)
+```
+
+# read chicken csv and prepare data
+```{r}
+chicken_data <- read.csv(file="Chicken_data_PM.csv",header=TRUE)  
+Summary <- chicken_data %>% mutate(period = paste0(period,"01")) %>% 
+  mutate(period = ymd(period)) %>% 
+  select(period, node, tot_out_wei, tot_in_wei, ratio, bet_val) %>% 
+  mutate(net = tot_out_wei - tot_in_wei) %>%
+  mutate(new_net = net/10^5) %>%
+  mutate(posixct_date = as.POSIXct(period)) %>%
+  mutate(num_date = as.numeric(period))
+
+```
+
+#plot 2D kmeans
+```{r}
+nodes_2D <- Summary %>% select(new_net, bet_val)
+set.seed(1)
+kmObj1 <- kmeans(nodes_2D, centers = 4)
+ggplot(nodes_2D, aes(x=new_net, y=bet_val, colour=as.factor(kmObj1$cluster))) + geom_point(size = 3) + labs(x="Net Imports/10^5", y="Betweenness", col="Clusters") + scale_color_manual(labels = c("Distributers", "Importers", "Low activity", "Exporters"), values = c("purple", "lightblue", "grey", "orange"))
+```
+
+#plot 3D kmeans
+```{r}
+nodes_3D <- Summary %>% select(new_net, bet_val, num_date)
+set.seed(2)
+kmObj2 <- kmeans(nodes_3D, centers = 4)
+kmObj2
+plot(nodes_3D, col = kmObj2$cluster)
+plot3d(nodes_3D, col = kmObj2$cluster, size = 8)
+```
+
