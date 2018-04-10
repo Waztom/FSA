@@ -243,10 +243,10 @@ ggplot(all_info %>% filter(node %in% selected_countries)) +
         scale_colour_gradientn(colours=rainbow(4))
 ```
 
-# Data for modelling
+# Data for modelling: select a bunch of variables for k-means
 ```{r}
-mydata1 <- all_info %>% ungroup() %>% select(month,deg_out_wei,deg_in_wei,tot_in_wei_n,tot_out_wei_n,ratio,bet_val,overall_flux,eigen_val)
-mydata1 <- scale(mydata1)
+mydata1 <- all_info %>% select(month, deg_out_wei, deg_in_wei, tot_in_wei_n, tot_out_wei_n, ratio, bet_val, overall_flux, eigen_val)
+mydata1 <- scale(mydata1) # Data must be scaled!!
 ```
 
 
