@@ -264,7 +264,7 @@ plot(1:15, wss, type="b", xlab="Number of Clusters",
 # Ensure reproducibility
 set.seed(42)
 # Number of clusters I want
-nc = 5 
+nc = 12 
 # K-Means Cluster Analysis
 fit <- kmeans(mydata1, nc) # 5 cluster solution
 # get cluster means
