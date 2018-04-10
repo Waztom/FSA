@@ -269,5 +269,5 @@ fit <- kmeans(mydata_s, nc) # 5 cluster solution
 aggregate(mydata_s,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
 results_s <- data.frame(mydata_s, fit$cluster, all_info$node) %>% rename(cluster = fit.cluster) %>% rename(node = all_info.node)
-results   <- data.frame(all_info, fit$cluster, all_info$node) %>% rename(cluster = fit.cluster)
+results   <- data.frame(all_info, fit$cluster) %>% rename(cluster = fit.cluster)
 ```
