@@ -33,7 +33,9 @@ library(fpc)
 library(plotly)
 library(cluster)
 library(factoextra)
+library(anomalize)
 ```
+
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
 ```{r}
@@ -329,55 +331,71 @@ partner_list <- data.frame(c1,as.character(c2)) %>% rename(node = c1) %>% rename
 (as.data.frame(table(cbind(unlist(c2)))) %>% arrange(desc(Freq)))
 ```
 
-
-# Pretty much off-topic:
-### Effect of spanish cucumbers imports on 2011 had no apparent effect on the imports into Germany.
+# Phoebe's anomalize works great for anomaly detection in time-series data
 ```{r}
-df2011 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2011.csv",stringsAsFactors = FALSE)
-df2011 <- df2011 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..)
-df2011 <- df2011 %>%
-        rename(period          = "Period") %>%
-        rename(trade_flow      = "Trade.Flow") %>%
-        rename(reporter        = "Reporter") %>%
-        rename(partner         = "Partner") %>%
-        rename(netweight_kg    = "Netweight..kg.") %>%
-        rename(trade_value_usd = "Trade.Value..US..")
-df2011 <- df2011 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>%
-  filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep="")))
-#
-df2012 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2012.csv",stringsAsFactors = FALSE)
-df2012 <- df2012 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..)
-df2012 <- df2012 %>%
-        rename(period          = "Period") %>%
-        rename(trade_flow      = "Trade.Flow") %>%
-        rename(reporter        = "Reporter") %>%
-        rename(partner         = "Partner") %>%
-        rename(netweight_kg    = "Netweight..kg.") %>%
-        rename(trade_value_usd = "Trade.Value..US..")
-df2012 <- df2012 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>%
-  filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep="")))
-#
-df2013 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2013.csv",stringsAsFactors = FALSE)
-df2013 <- df2013 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..)
-df2013 <- df2013 %>%
-        rename(period          = "Period") %>%
-        rename(trade_flow      = "Trade.Flow") %>%
-        rename(reporter        = "Reporter") %>%
-        rename(partner         = "Partner") %>%
-        rename(netweight_kg    = "Netweight..kg.") %>%
-        rename(trade_value_usd = "Trade.Value..US..")
-df2013 <- df2013 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>%
-  filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep="")))
-#
-#
-#
-df <- df %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>%
-  filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep="")))
-full <- rbind(df2011,df2012,df2013,df)
-#ggplot(NULL) + geom_point(data=df,aes(x=period_date,y=trade_value_usd)) + geom_line(data=df,aes(x=period_date,y=trade_value_usd)) +
-#               geom_point(data=df2011,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2011,aes(x=period_date,y=trade_value_usd),color="red") +
-#               geom_point(data=df2012,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2012,aes(x=period_date,y=trade_value_usd),color="red") +
-#               geom_point(data=df2013,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2013,aes(x=period_date,y=trade_value_usd),color="red")
-ggplot(full) + geom_point(aes(x=period_date,y=trade_value_usd)) + geom_line(aes(x=period_date,y=trade_value_usd)) + 
-  labs(x="Period date", y="Trade value in $US",title = "Imports of cucumbers from Spain into Germany")
+anomal <- all_info %>% filter(node == "Spain") %>% select(period_date,degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+anomal %>% time_decompose(ratio) %>% anomalize(remainder) %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol = 1, alpha_ribbon = 0.1, color_no = "black", color_yes = "red", alpha_dots = 0.5) +
+  labs(title = "Ratio anomalies")
 ```
+
+```{r}
+linmodel <- all_info %>% filter(period == 201401) %>% select(overall_flux,degree_val,bet_val,ratio,tri_no,eigen_val)
+linmodel = as.data.frame(sapply(linmodel, as.numeric))
+lm.fit <- lm(overall_flux ~., data = linmodel)
+summary(lm.fit)
+```
+
+
+
+<!-- # Pretty much off-topic: -->
+<!-- ### Effect of spanish cucumbers imports on 2011 had no apparent effect on the imports into Germany. -->
+<!-- ```{r} -->
+<!-- df2011 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2011.csv",stringsAsFactors = FALSE) -->
+<!-- df2011 <- df2011 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..) -->
+<!-- df2011 <- df2011 %>% -->
+<!--         rename(period          = "Period") %>% -->
+<!--         rename(trade_flow      = "Trade.Flow") %>% -->
+<!--         rename(reporter        = "Reporter") %>% -->
+<!--         rename(partner         = "Partner") %>% -->
+<!--         rename(netweight_kg    = "Netweight..kg.") %>% -->
+<!--         rename(trade_value_usd = "Trade.Value..US..") -->
+<!-- df2011 <- df2011 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- # -->
+<!-- df2012 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2012.csv",stringsAsFactors = FALSE) -->
+<!-- df2012 <- df2012 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..) -->
+<!-- df2012 <- df2012 %>% -->
+<!--         rename(period          = "Period") %>% -->
+<!--         rename(trade_flow      = "Trade.Flow") %>% -->
+<!--         rename(reporter        = "Reporter") %>% -->
+<!--         rename(partner         = "Partner") %>% -->
+<!--         rename(netweight_kg    = "Netweight..kg.") %>% -->
+<!--         rename(trade_value_usd = "Trade.Value..US..") -->
+<!-- df2012 <- df2012 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- # -->
+<!-- df2013 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2013.csv",stringsAsFactors = FALSE) -->
+<!-- df2013 <- df2013 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..) -->
+<!-- df2013 <- df2013 %>% -->
+<!--         rename(period          = "Period") %>% -->
+<!--         rename(trade_flow      = "Trade.Flow") %>% -->
+<!--         rename(reporter        = "Reporter") %>% -->
+<!--         rename(partner         = "Partner") %>% -->
+<!--         rename(netweight_kg    = "Netweight..kg.") %>% -->
+<!--         rename(trade_value_usd = "Trade.Value..US..") -->
+<!-- df2013 <- df2013 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- # -->
+<!-- # -->
+<!-- # -->
+<!-- df <- df %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- full <- rbind(df2011,df2012,df2013,df) -->
+<!-- #ggplot(NULL) + geom_point(data=df,aes(x=period_date,y=trade_value_usd)) + geom_line(data=df,aes(x=period_date,y=trade_value_usd)) + -->
+<!-- #               geom_point(data=df2011,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2011,aes(x=period_date,y=trade_value_usd),color="red") + -->
+<!-- #               geom_point(data=df2012,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2012,aes(x=period_date,y=trade_value_usd),color="red") + -->
+<!-- #               geom_point(data=df2013,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2013,aes(x=period_date,y=trade_value_usd),color="red") -->
+<!-- ggplot(full) + geom_point(aes(x=period_date,y=trade_value_usd)) + geom_line(aes(x=period_date,y=trade_value_usd)) +  -->
+<!--   labs(x="Period date", y="Trade value in $US",title = "Imports of cucumbers from Spain into Germany") -->
+<!-- ``` -->
