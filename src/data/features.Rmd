@@ -31,20 +31,28 @@ library(tidygraph)
 library(cluster) 
 library(fpc)
 library(plotly)
+library(cluster)
+library(factoextra)
+library(anomalize)
 ```
+
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
 ```{r}
-read_file = FALSE
+get_file = 1
 #
-if(read_file==TRUE){
+if(get_file == 0){
 source("get_Comtrade_data_all.R")
 df <- get_Comtrade_data_all(201401,201601,"default","070700")
 write.csv(df,'Comtrade_all.csv')
 }else{
-df <- read.csv(file="Comtrade_all.csv",header=TRUE)  
+df <- read.csv(file="Comtrade_all.csv",header=TRUE)
+df <- df %>% select(-X,-reporter_code,-partner_code,-commodity_code)
 }
 ```
+
+
+
 
 # Clean the missing data in the raw set (if any)
 ```{r}
@@ -61,7 +69,7 @@ df2 <- df2 %>% mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
                mutate(year        = as.integer(str_sub(period,1,4))) %>%
                mutate(month       = as.integer(str_sub(period,5,6))) %>%
                mutate(price_usd_kg= trade_value_usd/netweight_kg)
-Imports <- df2 %>% filter(trade_flow == "Imports") %>% select(-trade_flow,-X)
+Imports <- df2 %>% filter(trade_flow == "Imports") %>% select(-trade_flow)
 si <- Imports %>% select(period,reporter,partner,trade_value_usd) %>%
                   mutate(origin = as.character(partner)) %>%
                   mutate(destin = as.character(reporter)) %>% 
@@ -213,7 +221,7 @@ all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
 
 # Write a csv
 ```{r}
-write.csv(all_info,"all_features.csv",col.names = TRUE)
+write.csv(all_info,"all_features.csv")
 ```
 
 # Normalize total influx and outflux by the period mean
@@ -243,32 +251,151 @@ ggplot(all_info %>% filter(node %in% selected_countries)) +
         scale_colour_gradientn(colours=rainbow(4))
 ```
 
-# Data for modelling
+# Data for modelling: select a bunch of variables for k-means
 ```{r}
-mydata1 <- all_info %>% ungroup() %>% select(month,deg_out_wei,deg_in_wei,tot_in_wei_n,tot_out_wei_n,ratio,bet_val,overall_flux,eigen_val)
-mydata1 <- scale(mydata1)
+mydata <- all_info %>% select(month, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+mydata_s <- scale(mydata) # Data must be scaled!!
+```
+
+```{r}
+tmp_dat <- all_info %>% filter(period == 201401) %>% select(node, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+tmp_dat <- tmp_dat %>% transform(degree_net = as.numeric(degree_net))
+tmp_dat <- tmp_dat %>% transform(deg_in_wei = as.numeric(deg_in_wei))
+tmp_dat <- tmp_dat %>% transform(deg_out_wei = as.numeric(deg_out_wei))
+tmp_dat2 <- tmp_dat[,-1]
+rownames(tmp_dat2) <- tmp_dat[,1]
+tmp_dat <- scale(tmp_dat2)
+distance <- get_dist(tmp_dat)
+fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
 ```
 
 
 ### Determine an adequate number of clusters
-I think 12 seems reasonable.
 ```{r}
-wss <- (nrow(mydata1)-1)*sum(apply(mydata1,2,var))
-for (i in 2:15) wss[i] <- sum(kmeans(mydata1,
-  	centers=i)$withinss)
-plot(1:15, wss, type="b", xlab="Number of Clusters",
-  ylab="Within groups sum of squares")
+ncmax <- 20
+wss <- (nrow(mydata_s)-1)*sum(apply(mydata_s,2,var))
+for (i in 2:ncmax) wss[i] <- sum(kmeans(mydata_s, centers=i)$withinss)
+plot(1:ncmax, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
 ```
 ### Add the cluster index to the data
 ```{r}
 # Ensure reproducibility
 set.seed(42)
 # Number of clusters I want
-nc = 5 
+nc = 20
 # K-Means Cluster Analysis
-fit <- kmeans(mydata1, nc) # 5 cluster solution
+fit <- kmeans(mydata_s, nc) # 5 cluster solution
 # get cluster means
-aggregate(mydata1,by=list(fit$cluster),FUN=mean)
+aggregate(mydata_s,by=list(fit$cluster),FUN=mean)
 # append cluster assignment
-mydata1 <- data.frame(mydata1, fit$cluster,all_info$node)
+results_s <- data.frame(mydata_s, fit$cluster, all_info$node) %>% rename(cluster = fit.cluster) %>% rename(node = all_info.node)
+results   <- data.frame(all_info, fit$cluster) %>% rename(cluster = fit.cluster)
 ```
+### More results
+#```{r}
+#fit <- kmeans(mydata_s, nc) # cluster solution
+#clusplot(mydata_s, fit$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+#```
+
+#```{r}
+# Centroid Plot against 1st 2 discriminant functions
+#plotcluster(mydata_s, fit$cluster)
+#(fit$size)
+#(fit$centers)
+#```
+
+# Ok, so this is sort of a result of modelling via kmeans:
+### For a given country and a period, find the most `similar' countries according to cluster classification
+```{r}
+goal_country <- "Belarus"
+all_periods <- sort(unique(results$period))
+i <- 1
+c1 <- character(1)
+c2 <- list()
+for (goal_period in all_periods){
+tmp <- results %>% filter(node == goal_country) %>% filter(period == goal_period)
+the_cluster <- tmp$cluster
+partners <- results %>% filter(cluster == the_cluster) %>% filter(period == goal_period)
+partners <- unique(partners$node)
+partners <- setdiff(partners,goal_country)
+print(partners)
+c1[i]   <- goal_period
+c2[[i]] <- unlist(partners)
+i <- i + 1 
+}
+
+#List of similar countries per period
+partner_list <- data.frame(c1,as.character(c2)) %>% rename(node = c1) %>% rename(partners = as.character.c2.)
+
+# Most often similar countries
+(as.data.frame(table(cbind(unlist(c2)))) %>% arrange(desc(Freq)))
+```
+
+# Phoebe's anomalize works great for anomaly detection in time-series data
+```{r}
+anomal <- all_info %>% filter(node == "Spain") %>% select(period_date,degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+anomal %>% time_decompose(ratio) %>% anomalize(remainder) %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol = 1, alpha_ribbon = 0.1, color_no = "black", color_yes = "red", alpha_dots = 0.5) +
+  labs(title = "Ratio anomalies")
+```
+
+```{r}
+linmodel <- all_info %>% filter(period == 201401) %>% select(overall_flux,degree_val,bet_val,ratio,tri_no,eigen_val)
+linmodel = as.data.frame(sapply(linmodel, as.numeric))
+lm.fit <- lm(overall_flux ~., data = linmodel)
+summary(lm.fit)
+```
+
+
+
+<!-- # Pretty much off-topic: -->
+<!-- ### Effect of spanish cucumbers imports on 2011 had no apparent effect on the imports into Germany. -->
+<!-- ```{r} -->
+<!-- df2011 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2011.csv",stringsAsFactors = FALSE) -->
+<!-- df2011 <- df2011 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..) -->
+<!-- df2011 <- df2011 %>% -->
+<!--         rename(period          = "Period") %>% -->
+<!--         rename(trade_flow      = "Trade.Flow") %>% -->
+<!--         rename(reporter        = "Reporter") %>% -->
+<!--         rename(partner         = "Partner") %>% -->
+<!--         rename(netweight_kg    = "Netweight..kg.") %>% -->
+<!--         rename(trade_value_usd = "Trade.Value..US..") -->
+<!-- df2011 <- df2011 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- # -->
+<!-- df2012 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2012.csv",stringsAsFactors = FALSE) -->
+<!-- df2012 <- df2012 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..) -->
+<!-- df2012 <- df2012 %>% -->
+<!--         rename(period          = "Period") %>% -->
+<!--         rename(trade_flow      = "Trade.Flow") %>% -->
+<!--         rename(reporter        = "Reporter") %>% -->
+<!--         rename(partner         = "Partner") %>% -->
+<!--         rename(netweight_kg    = "Netweight..kg.") %>% -->
+<!--         rename(trade_value_usd = "Trade.Value..US..") -->
+<!-- df2012 <- df2012 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- # -->
+<!-- df2013 <- read.csv("/Users/Caro_i_Alex/FSA/data/comtrade2013.csv",stringsAsFactors = FALSE) -->
+<!-- df2013 <- df2013 %>% select(Period,Trade.Flow, Reporter, Partner, Netweight..kg., Trade.Value..US..) -->
+<!-- df2013 <- df2013 %>% -->
+<!--         rename(period          = "Period") %>% -->
+<!--         rename(trade_flow      = "Trade.Flow") %>% -->
+<!--         rename(reporter        = "Reporter") %>% -->
+<!--         rename(partner         = "Partner") %>% -->
+<!--         rename(netweight_kg    = "Netweight..kg.") %>% -->
+<!--         rename(trade_value_usd = "Trade.Value..US..") -->
+<!-- df2013 <- df2013 %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- # -->
+<!-- # -->
+<!-- # -->
+<!-- df <- df %>% filter(trade_flow == "Imports") %>% filter(partner == "Spain") %>% -->
+<!--   filter(reporter == "Germany") %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) -->
+<!-- full <- rbind(df2011,df2012,df2013,df) -->
+<!-- #ggplot(NULL) + geom_point(data=df,aes(x=period_date,y=trade_value_usd)) + geom_line(data=df,aes(x=period_date,y=trade_value_usd)) + -->
+<!-- #               geom_point(data=df2011,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2011,aes(x=period_date,y=trade_value_usd),color="red") + -->
+<!-- #               geom_point(data=df2012,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2012,aes(x=period_date,y=trade_value_usd),color="red") + -->
+<!-- #               geom_point(data=df2013,aes(x=period_date,y=trade_value_usd),color="red") + geom_line(data=df2013,aes(x=period_date,y=trade_value_usd),color="red") -->
+<!-- ggplot(full) + geom_point(aes(x=period_date,y=trade_value_usd)) + geom_line(aes(x=period_date,y=trade_value_usd)) +  -->
+<!--   labs(x="Period date", y="Trade value in $US",title = "Imports of cucumbers from Spain into Germany") -->
+<!-- ``` -->

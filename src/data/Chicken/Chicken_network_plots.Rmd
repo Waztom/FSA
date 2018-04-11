@@ -1,0 +1,213 @@
+---
+title: "Global chicken network anomaly detection via k-means"
+date: "09/04/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(ggraph)
+library(rgl)
+library(knitr)
+```
+
+#Get the auxiliary data
+```{r}
+source("get_HMRC_aux_data.R")
+list1 <- get_HMRC_aux_data()
+comcode <- data.frame(Reduce(rbind, list1[1]))
+port    <- data.frame(Reduce(rbind, list1[2]))
+country <- data.frame(Reduce(rbind, list1[3]))
+```
+
+#Find fresh chicken comcodes - Thank you Alex for making life nice and easy for us! 
+```{r}
+cc_all_chicken <- comcode[grep('CHICKEN',  toupper(comcode$description)),]
+```
+
+#Access comtrade database - look for chicken info for world
+```{r}
+#source("get_Comtrade_data_network_graph.R")
+#world_chicken_data_2   <- get_Comtrade_data_network_graph(201001,201601,"default","0207")
+#write.csv(world_chicken_data_2, file = "world_chicken_data_3.csv")
+```
+
+
+#Access comtrade database saved as csv file
+```{r}
+world_chicken_data_csv   <- read.csv("world_chicken_data_3.csv", header = TRUE, sep = ",")
+
+```
+. 
+#Prepare data
+```{r}
+world_chicken_data_graph <- world_chicken_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+```
+
+#Select time line in month - looking at all months now
+```{r}
+time_start <- "2015-12-01"
+time_end <- "2016-01-01"
+world_chicken_data_graph <- world_chicken_data_graph %>% filter(period < time_end & period >= time_start) 
+```
+
+#cut out world, EU-27, Other Europe, nes and Areas nes
+```{r}
+world_chicken_data_graph_exlworldEU <- world_chicken_data_graph %>% filter(partner != "World") %>% filter(reporter != "EU-27") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Areas, nes")
+```
+
+#cut out trade with value less than 3rd quantile value
+```{r}
+world_chicken_data_graph_exlworldEU_simple <- world_chicken_data_graph_exlworldEU %>% filter(quantile(trade_value_usd, 0.75)<trade_value_usd)
+```
+
+#Create nodes 
+```{r}
+imports_from <- world_chicken_data_graph_exlworldEU_simple %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
+imports_to <- world_chicken_data_graph_exlworldEU_simple %>% select(partner) %>% rename(label = partner) %>% distinct(label)
+
+#Combine to form one list of country nodes
+nodes <- full_join(imports_from,imports_to, by = 'label')
+nodes <- arrange(nodes,label)
+
+#Add ID column. 
+nodes <- nodes %>% rowid_to_column("id")
+```
+
+#Create edges table 
+```{r}
+edges <-  world_chicken_data_graph_exlworldEU_simple %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
+          
+edges <- select(edges, from, to, trade_value_usd)
+
+```
+
+`
+#Analysis of network
+#create tbl_graph from tidygraph package. Find out how many nodes and edges we have
+```{r}
+g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE) 
+print(g)
+```
+
+#creating attributes
+```{r}
+#creating various network values
+degree(g) ->degree_val
+eigen_centrality(g) -> eigen_val
+count_triangles(g) -> tri_no
+betweenness(g) -> bet_val
+
+#working out assignment to communities
+undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
+communities <- edge.betweenness.community(undirected_network) 
+grouping <- membership(communities)
+
+```
+
+
+#creating total exports and imports for each country
+```{r}
+total_exports<- world_chicken_data_graph_exlworldEU_simple %>% group_by (period, partner) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = partner)
+
+total_imports <- world_chicken_data_graph_exlworldEU_simple %>% group_by (period, reporter) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = reporter)
+```
+
+
+#bringing it all together
+```{r}
+nodes_networkatr <- 
+  nodes %>% mutate(degree = degree_val, 
+                   eigencentrality = eigen_val$vector, 
+                   triangles = tri_no, 
+                   betweeness = bet_val) %>% 
+                  left_join(total_imports, by = "label") %>% 
+                  left_join(total_exports, by = "label") %>% 
+                  replace_na(list(total_export=0, total_import=0))%>% 
+                  mutate(imp_exp_net = total_export - total_import) %>%
+                  mutate(imp_exp_net_reg = imp_exp_net/500000) %>%
+                  mutate(normalised_imp_exp_net = (total_export - total_import)/total_import) %>%
+                  mutate(alex_ratio = (total_import - total_export)/(total_import+total_export)) %>%
+                           mutate(reg_betweenness = betweeness/200)
+#get rid of infinities
+nodes_networkatr$normalised_imp_exp_net[is.infinite(nodes_networkatr$normalised_imp_exp_net)] <- 0
+
+#community = grouping) - to add communities to tables too - bit to complex for now
+```
+
+#basic plot with communities
+```{r}
+h <- set_vertex_attr(undirected_network, "color", value = c("yellow", "blue", "red", "lightblue", "green", "purple")[grouping])
+plot(h)
+```
+#Create network graph with grouping
+```{r}
+nodes_groups <- nodes %>% mutate (group = grouping)
+                                
+visNetwork(nodes_groups, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visEdges(arrows = "to",
+           color=list(inherit=TRUE)) %>%
+  visNodes(font=list(size=40), shadow = TRUE) %>%
+#shows 1st degree children and parents
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=2, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visGroups(groupname = "1", color = "orange") %>%
+  visGroups(groupname = "2", color = "lightblue") %>%
+  visGroups(groupname = "3", color = "pink") %>%
+  visGroups(groupname = "4", color = "grey") %>%
+  visGroups(groupname = "5", color = "lightgreen") %>%
+  visGroups(groupname = "6", color = "purple") 
+```
+#looking into net importers and producers
+```{r}
+total_exports<- world_chicken_data_graph_exlworldEU_simple %>% group_by (partner) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = partner)
+
+total_imports <- world_chicken_data_graph_exlworldEU_simple %>% group_by (reporter) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = reporter)
+
+
+nodes_nets <- nodes_groups %>% left_join(total_exports, by = "label") %>% left_join(total_imports, by = "label")
+
+nodes_nets_clean <- nodes_nets %>% replace_na(list(total_export=0, total_import=0))
+nodes_nets_summary <- nodes_nets_clean %>% group_by (id, label, group) %>% mutate(net = total_export - total_import)
+nodes_nets_summary_abs <- nodes_nets_summary %>% mutate(value = abs(net))
+
+nodes_nets_summary_shape <- nodes_nets_summary_abs %>% mutate(shape = ifelse(net <0, "dot", ifelse(net >0, "square")))
+
+```
+
+#new visual with node size depending on import/export
+```{r}
+Network <- visNetwork(nodes_nets_summary_shape, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visEdges(arrows = "to",
+           color=list(inherit=TRUE)) %>%
+  visNodes(font=list(size=40), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visGroups(groupname = "1", color = "orange") %>%
+  visGroups(groupname = "2", color = "lightblue") %>%
+  visGroups(groupname = "3", color = "pink") %>%
+  visGroups(groupname = "4", color = "grey") %>%
+  visGroups(groupname = "5", color = "lightgreen") %>%
+  visGroups(groupname = "6", color = "purple") %>%
+  visLegend(addNodes = list(
+  list(label = "Net Importer", shape = "dot"),
+  list(label = "Net Exporter", shape = "square")
+ ),
+ useGroups = FALSE)
+Network
+```
+
+
