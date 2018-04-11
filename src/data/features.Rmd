@@ -34,20 +34,26 @@ library(plotly)
 library(cluster)
 library(factoextra)
 library(anomalize)
+library(boot)
+library(leaps)
 ```
 
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
 ```{r}
-get_file = 1
+get_file = 2
 #
 if(get_file == 0){
 source("get_Comtrade_data_all.R")
 df <- get_Comtrade_data_all(201401,201601,"default","070700")
 write.csv(df,'Comtrade_all.csv')
-}else{
+}else if (get_file==1){
 df <- read.csv(file="Comtrade_all.csv",header=TRUE)
 df <- df %>% select(-X,-reporter_code,-partner_code,-commodity_code)
+}else{
+df <- read.csv("/home/alex/S2DS/FSA/src/data/Chicken/world_chicken_data_3.csv",header=TRUE)
+df <- df %>% select(-X,-reporter_code,-partner_code,-commodity_code)
+#df <- df %>% mutate(period = as.factor(paste(str_sub(period_date,1,4),str_sub(period_date,6,7),sep=""))) %>% select(-period_date)
 }
 ```
 
@@ -65,7 +71,7 @@ guys_2_remove <- c("EU-27","Areas, nes","Other Europe, nes","Other Africa, nes",
                    "Other Asia, nes","World")
 df2 <- df %>% filter(!as.character(partner) %in% guys_2_remove) %>%
               filter(!as.character(reporter) %in% guys_2_remove)
-df2 <- df2 %>% mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+df2 <- df2 %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) %>%
                mutate(year        = as.integer(str_sub(period,1,4))) %>%
                mutate(month       = as.integer(str_sub(period,5,6))) %>%
                mutate(price_usd_kg= trade_value_usd/netweight_kg)
@@ -142,14 +148,14 @@ numc_per_period <- as.data.frame(numc_per_period) %>% mutate(period_date = ymd(p
 ```{r}
 tmp1 <- net_flux %>% mutate(period_date = ymd(paste(period,"01",sep="")))
 tmp2 <- tmp1 %>%
-    filter(node=="Netherlands") %>%
+    filter(node=="United Kingdom") %>%
     mutate(month=month(period_date)) %>%
     mutate(quarter = ceiling(as.numeric(month) / 3))
 x2 <- ggplot(NULL) +
     geom_point(data = tmp2,
     aes(x=tot_in_wei/1e6,y=ratio,color=quarter),size=3) +
     geom_path(data = tmp2, aes(x=tot_in_wei/1e6,y=ratio),alpha=0.1) +
-    coord_cartesian(xlim = c(-1,30),ylim=c(-1,1)) +
+    coord_cartesian(ylim=c(-1,1)) +
     scale_colour_gradientn(colours=rainbow(4)) +
     labs(x="Total imports (thousands of tons)",
     y="Producer                        Distributor                        Consumer",
@@ -254,11 +260,13 @@ ggplot(all_info %>% filter(node %in% selected_countries)) +
 # Data for modelling: select a bunch of variables for k-means
 ```{r}
 mydata <- all_info %>% select(month, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+list_of_countries <- all_info %>% select(node)
 mydata_s <- scale(mydata) # Data must be scaled!!
 ```
 
 ```{r}
-tmp_dat <- all_info %>% filter(period == 201401) %>% select(node, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
+tmp_dat <- all_info %>% filter(period == 201401) %>% 
+  select(node, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
 tmp_dat <- tmp_dat %>% transform(degree_net = as.numeric(degree_net))
 tmp_dat <- tmp_dat %>% transform(deg_in_wei = as.numeric(deg_in_wei))
 tmp_dat <- tmp_dat %>% transform(deg_out_wei = as.numeric(deg_out_wei))
@@ -266,7 +274,9 @@ tmp_dat2 <- tmp_dat[,-1]
 rownames(tmp_dat2) <- tmp_dat[,1]
 tmp_dat <- scale(tmp_dat2)
 distance <- get_dist(tmp_dat)
-fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+fviz_dist(distance, gradient = list(low = "#0677FF", mid = "white", high = "#FF3333"),lab_size = 4) +
+  labs(title="K-means distance for the top 70% percentile of countries in terms of overall trade value flux",
+       subtitle = "The blueish, the closer")
 ```
 
 
@@ -307,7 +317,7 @@ results   <- data.frame(all_info, fit$cluster) %>% rename(cluster = fit.cluster)
 # Ok, so this is sort of a result of modelling via kmeans:
 ### For a given country and a period, find the most `similar' countries according to cluster classification
 ```{r}
-goal_country <- "Belarus"
+goal_country <- "United Kingdom"
 all_periods <- sort(unique(results$period))
 i <- 1
 c1 <- character(1)
@@ -340,7 +350,7 @@ anomal %>% time_decompose(ratio) %>% anomalize(remainder) %>% time_recompose() %
 ```
 
 ```{r}
-linmodel <- all_info %>% filter(period == 201401) %>% select(overall_flux,degree_val,bet_val,ratio,tri_no,eigen_val)
+linmodel <- all_info %>% select(overall_flux,degree_val,bet_val,eigen_val)
 linmodel = as.data.frame(sapply(linmodel, as.numeric))
 lm.fit <- lm(overall_flux ~., data = linmodel)
 summary(lm.fit)
