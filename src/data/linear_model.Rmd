@@ -41,15 +41,19 @@ library(leaps)
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
 ```{r}
-get_file = 1
+get_file = 2
 #
 if(get_file == 0){
 source("get_Comtrade_data_all.R")
 df <- get_Comtrade_data_all(201401,201601,"default","070700")
 write.csv(df,'Comtrade_all.csv')
-}else{
+}else if (get_file==1){
 df <- read.csv(file="Comtrade_all.csv",header=TRUE)
 df <- df %>% select(-X,-reporter_code,-partner_code,-commodity_code)
+}else{
+df <- read.csv("/home/alex/S2DS/FSA/src/data/Chicken/world_chicken_data_3.csv",header=TRUE)
+df <- df %>% select(-X,-reporter_code,-partner_code,-commodity_code)
+#df <- df %>% mutate(period = as.factor(paste(str_sub(period_date,1,4),str_sub(period_date,6,7),sep=""))) %>% select(-period_date)
 }
 ```
 
@@ -67,7 +71,7 @@ guys_2_remove <- c("EU-27","Areas, nes","Other Europe, nes","Other Africa, nes",
                    "Other Asia, nes","World")
 df2 <- df %>% filter(!as.character(partner) %in% guys_2_remove) %>%
               filter(!as.character(reporter) %in% guys_2_remove)
-df2 <- df2 %>% mutate(period_date = ymd(paste(period,"01",sep=""))) %>%
+df2 <- df2 %>% mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) %>%
                mutate(year        = as.integer(str_sub(period,1,4))) %>%
                mutate(month       = as.integer(str_sub(period,5,6))) %>%
                mutate(price_usd_kg= trade_value_usd/netweight_kg)
@@ -294,3 +298,32 @@ nn <- which.max(reg.summary$adjr2)
 points(nn,reg.summary$adjr2[nn],col = " red ",cex=2, pch=20)
 ```
 
+# Best 6 variable choice with sinergies
+```{r}
+linmodel <- all_info %>% mutate(overall_flux_busd = overall_flux/1e9) %>%
+            select(overall_flux_busd, deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, net_group)
+lm.best <- lm(overall_flux_busd ~
+              poly(deg_in_wei,2) +
+              poly(deg_out_wei,3) +
+              poly(degree_net,2) +
+              poly(bet_val,3) +
+              poly(tri_no,3) +
+              poly(eigen_val,3) +
+              net_group,
+              data = linmodel)
+summary(lm.best)
+regfit.full = regsubsets(overall_flux_busd~poly(deg_in_wei,2) +
+              poly(deg_out_wei,3) +
+              poly(degree_net,2) +
+              poly(bet_val,3) +
+              poly(tri_no,3) +
+              poly(eigen_val,3) +
+              net_group,
+              linmodel,nvmax=19)
+(reg.summary <- summary(regfit.full))
+rsq <- reg.summary$rsq
+rsq <- rowid_to_column(as.data.frame(rsq))
+ggplot(rsq,aes(x=rowid,y=rsq)) + geom_point() + geom_line() + labs("Number of variables", y="R^2",
+                                                                 title="Varaible selection analysis",
+                                                                 subtitle="EIGENVALUE WITHOUT WEIGHTED-EDGES")
+```
