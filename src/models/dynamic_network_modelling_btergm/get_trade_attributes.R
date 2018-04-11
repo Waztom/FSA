@@ -16,8 +16,12 @@ get_trade_attributes <- function(df){
   
   world_trade_att    <- full_join(world_imports_to, world_imports_from, by='label', stringsAsFactors = FALSE) %>% full_join(., world_exports_from, by='label', stringsAsFactors = FALSE) %>% full_join(.,world_exports_to, by='label', stringsAsFactors = FALSE) %>% mutate_all(funs(replace(., is.na(.), 0))) %>% mutate(nett_trade =as.numeric(scale(((trade_value_usd.x+trade_value_usd.y.y)-(trade_value_usd.x.x + trade_value_usd.y))))) 
   world_trade_att    <- world_trade_att %>% mutate(trade_flux =((trade_value_usd.x + trade_value_usd.y.y)-(trade_value_usd.x.x + trade_value_usd.y))/((trade_value_usd.x+trade_value_usd.y.y)+(trade_value_usd.x.x + trade_value_usd.y))) 
+  world_trade_att    <- world_trade_att %>% mutate(trade_value =as.numeric(scale(((trade_value_usd.x + trade_value_usd.y.y)))))  
   world_trade_att    <- world_trade_att %>% mutate(nett_weight=as.numeric(scale(((netweight_kg.x + netweight_kg.y.y)-(netweight_kg.x.x + netweight_kg.y)))))
-  world_trade_att    <- world_trade_att %>% select(label, nett_trade,trade_flux,nett_weight)     
+  world_trade_att    <- world_trade_att %>% mutate(trade_weight_value =as.numeric(scale(((netweight_kg.x + netweight_kg.y.y)))))
+  
+  
+  world_trade_att    <- world_trade_att %>% select(label, nett_trade,trade_flux, trade_value, nett_weight,trade_weight_value)     
   return(world_trade_att)
       
 }
