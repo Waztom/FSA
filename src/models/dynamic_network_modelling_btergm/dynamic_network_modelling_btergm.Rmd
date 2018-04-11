@@ -62,7 +62,9 @@ for (i in world_monthly_data){
   #Add some node attributes 
   net <- set.vertex.attribute(net, "nett_trade",nodes_model$nett_trade)
   net <- set.vertex.attribute(net, "trade_flux",nodes_model$trade_flux)
+  net <- set.vertex.attribute(net, "trade_value",nodes_model$trade_value)
   net <- set.vertex.attribute(net,"nett_weight",nodes_model$nett_weight)
+  net <- set.vertex.attribute(net, "trade_weight_value",nodes_model$trade_weight_value)
   
   #capture period
   month               <- unique(i$period)
@@ -80,18 +82,19 @@ period_summary <- do.call(rbind, Map(data.frame, period=period_list))
 period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
 
 #Try covariate model without temperal component - very rough attempt, can have a look at including/dropping terms
-model.1a <- btergm(net_list ~ edges + mutual + transitiveties + nodecov("nett_trade") + nodecov("trade_flux") +nodecov("nett_weight") , R = 50, parallel = "snow",  ncpus = 2)
+model.1a <- btergm(net_list ~ edges + mutual + transitiveties  + nodecov("nett_trade") + nodecov("trade_flux") + nodecov("nett_weight") + nodeicov("trade_value") + nodeicov("trade_weight_value") + timecov(transform = function(t) t), R = 25, parallel = "snow",  ncpus = 5)
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 summary(model.1a, level = 0.95)
 
+idegree + odegree + espartners + distance + mo
 #Goodness of fit test
-gof.1a <- gof(model.1a, nsim = 5, statistics = c(esp, geodesic, deg))
+gof.1a <- gof(model.1a, nsim = 5, statistics = c(edgebetweenness.modularity,esp,nsp,ideg,odeg, edgebetweenness.pr))
 plot(gof.1a)
 dev.off()
 
 #Try covariate model with temporal component - how to make list index a date? 
-model.1b <- btergm(net_list ~ edges + mutual + transitiveties + nodecov("nett_trade") + nodecov("trade_flux") +nodecov("nett_weight") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 2)
+model.1b <- btergm(net_list ~ edges + mutual + transitiveties + nodeicov("trade_value_width") + nodecov("nett_trade") + nodecov("trade_flux") +nodecov("nett_weight") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 2)
 
 #See parameter estimates etc with 95% CI
 summary(model.1b, level = 0.95)
