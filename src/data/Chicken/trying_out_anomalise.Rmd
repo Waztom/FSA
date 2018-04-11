@@ -30,7 +30,6 @@ library(igraph)
 library(tidygraph)
 library(cluster) 
 library(fpc)
-library(plotly)
 library(lubridate)
 library(rgl)
 library(anomalize)
@@ -88,7 +87,7 @@ lots of jumping about so many too difficult to find anomalies?
 
 #try out anomalise on ratio data
 ```{r}
-germany_chicken <- Chicken_data_normalised %>% filter(node == "Germany") %>% select(period_date, ratio)
+germany_chicken <- Chicken_data_normalised %>% filter(node == "Germany") %>% select(period_date, ratio, bet_val, degree_val, tri_no, eigen_val)
 #use time decompose if using a time series to remove trends overtime
 germany_chicken_notime <- time_decompose(germany_chicken, target=ratio) 
 
@@ -96,5 +95,129 @@ anomalize(germany_chicken_notime, target=remainder,alpha=50) -> germany_summary
 germany_anomalies <- germany_summary %>% filter(anomaly == "Yes")
 germany_anomalies
 ```
+#plot everything
+```{r}
+selected_countries_new = c("United Kingdom", "Germany", "Spain", "France", "Mexico", "Netherlands")
+Chicken_data_normalised %>% filter(node %in% selected_countries_new)  %>%
+ggplot(aes(period_date, ratio)) +
+  geom_point(color = "#2c3e50", alpha=0.25) +
+  facet_wrap(~node, ncol=3) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 30, hjust=1)) +
+  labs(title = "Node ratios over time")
+```
 
+#twitter - iqr
+```{r}
+#filter columns
+selected_countries_new = c("United Kingdom", "Germany", "Spain", "France", "Mexico", "Netherlands")
+Chicken_data_simple <- Chicken_data_normalised  %>%
+  select(period_date, ratio, node) %>%
+   filter(node %in% selected_countries_new) %>%
+  group_by(node)
+
+
+anomaly_summary <-Chicken_data_simple %>% 
+            time_decompose(ratio, method = "twitter") %>% 
+            anomalize(remainder, alpha = 1, method = "iqr",  verbose = TRUE) 
+
+#anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
+
+anomaly_summary %>% filter(node == "Germany") %>% ungroup %>% plot_anomaly_decomposition 
+
+anomaly_summary %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+```
+#twitter - gesd
+```{r}
+#filter columns
+selected_countries_new = c("United Kingdom", "Germany", "Spain", "France", "Mexico", "Netherlands")
+Chicken_data_simple <- Chicken_data_normalised  %>%
+  select(period_date, ratio, node) %>%
+   filter(node %in% selected_countries_new) %>%
+  group_by(node)
+
+
+anomaly_summary <-Chicken_data_simple %>% 
+            time_decompose(ratio, method = "twitter") %>% 
+            anomalize(remainder, alpha = 1, method = "gesd",  verbose = TRUE) 
+
+#anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
+
+anomaly_summary %>% filter(node == "Germany") %>% ungroup %>% plot_anomaly_decomposition 
+
+anomaly_summary %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+```
+#stl- iqr
+```{r}
+#filter columns
+selected_countries_new = c("United Kingdom", "Germany", "Spain", "France", "Mexico", "Netherlands")
+Chicken_data_simple <- Chicken_data_normalised  %>%
+  select(period_date, ratio, node) %>%
+   filter(node %in% selected_countries_new) %>%
+  group_by(node)
+
+
+anomaly_summary <-Chicken_data_simple %>% 
+            time_decompose(ratio, method = "stl") %>% 
+            anomalize(remainder, alpha = 1, method = "iqr") 
+
+#anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
+
+anomaly_summary %>% filter(node == "Netherlands") %>% ungroup %>% plot_anomaly_decomposition 
+
+anomaly_summary %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+```
+#stl - gesd
+```{r}
+#filter columns
+selected_countries_new = c("United Kingdom", "Germany", "Spain", "France", "Mexico", "Netherlands")
+Chicken_data_simple <- Chicken_data_normalised  %>%
+  select(period_date, ratio, node) %>%
+   filter(node %in% selected_countries_new) %>%
+  group_by(node)
+
+
+anomaly_summary <-Chicken_data_simple %>% 
+            time_decompose(ratio, method = "stl") %>% 
+            anomalize(remainder, alpha = 5, method = "gesd") 
+
+#anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
+
+anomaly_summary %>% filter(node == "Netherlands") %>% ungroup %>% plot_anomaly_decomposition 
+
+anomaly_summary %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+```
+
+
+#trying to get it to work for all countries
+```{r}
+selected_countries_new <- c("Sierra Leone")
+Chicken_data_simple <- Chicken_data_normalised  %>%
+  select(period_date, ratio, node) %>% 
+   filter(node %in% selected_countries_new) %>% ungroup %>% group_by(node)
+
+#group_by(node) %>%
+Chicken_data_simple %>% 
+            time_decompose(ratio, method = "stl")%>% 
+            anomalize(remainder, alpha = 5, method = "iqr") %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+
+#plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+
+#anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
+
+#anomaly_summary %>% filter(node == "Germany") %>% ungroup %>% plot_anomaly_decomposition 
+
+#anomaly_summary %>% time_recompose() %>%
+  #plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+```
+
+```{r}
+Chicken_data_normalised %>% group_by(node) %>% summarise(count = n()) %>% filter(count > 10) %>% ungroup -> above_ten
+
+```
 
