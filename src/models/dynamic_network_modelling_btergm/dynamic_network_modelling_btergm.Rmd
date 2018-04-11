@@ -113,9 +113,6 @@ dev.off()
 
 #Try simplified covariate model without temperal component
 model.1c <- btergm(net_list ~ edges + mutual + transitiveties + twopath + nodeicov("trade_flux") + nodecov("trade_value") + absdiff("trade_value") + isolates, R = 50, parallel = "snow",  ncpus = 3)
-=======
-model.1c <- btergm(net_list ~ edges + mutual + transitiveties, R = 50, parallel = "snow",  ncpus = 3)
->>>>>>> 3405a411bc782b2662650f7b368beac3b4258742
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 #See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
