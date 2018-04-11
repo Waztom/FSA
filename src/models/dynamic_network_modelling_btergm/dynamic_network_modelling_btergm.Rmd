@@ -24,6 +24,14 @@ library(xergm)
 library(btergm)
 ```
 
+```{r}
+source('get_Comtrade_monthly_data.R')
+source('get_country_ids.R')
+source('get_model_edges.R')
+source('get_model_nodes.R')
+source('get_trade_attributes.R')
+```
+
 #Attempt at modelling netwrok graphs of trade
 ```{r}
 world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",")
