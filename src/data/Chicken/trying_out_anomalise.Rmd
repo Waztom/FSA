@@ -161,7 +161,7 @@ Chicken_data_simple <- Chicken_data_normalised  %>%
 
 anomaly_summary <-Chicken_data_simple %>% 
             time_decompose(ratio, method = "stl") %>% 
-            anomalize(remainder, alpha = 1, method = "iqr") 
+            anomalize(remainder, alpha = 0.3, method = "iqr") 
 
 #anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
 
@@ -182,7 +182,7 @@ Chicken_data_simple <- Chicken_data_normalised  %>%
 
 anomaly_summary <-Chicken_data_simple %>% 
             time_decompose(ratio, method = "stl") %>% 
-            anomalize(remainder, alpha = 5, method = "gesd") 
+            anomalize(remainder, alpha = 5, method = "iqr") 
 
 #anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
 
@@ -217,7 +217,21 @@ Chicken_data_simple %>%
 ```
 
 ```{r}
-Chicken_data_normalised %>% group_by(node) %>% summarise(count = n()) %>% filter(count > 10) %>% ungroup -> above_ten
+above_ten <- Chicken_data_normalised  %>% group_by(node) %>% filter(n() > 15) %>%
+  select(period_date, ratio, node) 
+
+
+above_ten_analysed <-above_ten %>% 
+            time_decompose(ratio, method = "stl") %>% anomalize(remainder, alpha = 5, method = "iqr") 
+
+above_ten_anomalies <- above_ten_analysed %>% filter(anomaly == "Yes") %>% print
+
+#anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
+
+anomaly_summary %>% filter(node == "Netherlands") %>% ungroup %>% plot_anomaly_decomposition 
+
+anomaly_summary %>% time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
 
 ```
 
