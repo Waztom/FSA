@@ -1,0 +1,62 @@
+library(shiny)
+library(ggplot2)
+
+# UI
+
+ui = fluidPage(navbarPage("FSA",fluid = TRUE,
+######################################
+  tabPanel("Data Exploration",
+  sidebarLayout(
+    sidebarPanel(
+                 selectInput("var1", "x-axis:", c("Time" = "period_date",
+                                       "Month" = "month",
+                                       "Ratio" = "ratio"), selected = "period_date"),
+                 selectInput("var2", "y-axis:", c("Degrees" = "degree_val",
+                                       "Triangles" = "tri_no",
+                                       "Ratio" = "ratio",
+                                       "Betweeness" = "bet_val"), selected = "ratio"),
+                 selectInput("var3", "Country:", sort(unique(all_info$node)), selected = "Germany")
+                 ),
+    mainPanel(
+              plotOutput("mpgPlot")
+             )
+  )
+ )
+#######################################
+,
+#######################################
+tabPanel("Modeling",
+         sidebarLayout(
+           sidebarPanel(
+             selectInput("var4", "x-axis:", c("Time" = "period_date",
+                                              "Month" = "month",
+                                              "Ratio" = "ratio"), selected = "period_date"),
+             selectInput("var5", "y-axis:", c("Degrees" = "degree_val",
+                                              "Triangles" = "tri_no",
+                                              "Ratio" = "ratio",
+                                              "Betweeness" = "bet_val"), selected = "ratio"),
+             selectInput("var6", "Country:", sort(unique(all_info$node)), selected = "Germany")
+           ),
+           mainPanel(
+             plotOutput("mpgPlot2")
+           )
+         )
+         )
+#######################################
+))#Close the ui
+
+# SERVER
+
+server <- function(input, output) {
+  
+  output$mpgPlot <- renderPlot({
+    ggplot(all_info %>% filter(node == input$var3),aes_string(x=input$var1, y=input$var2)) + geom_point() + geom_line()
+  })
+  
+  output$mpgPlot2 <- renderPlot({
+    ggplot(all_info %>% filter(node == input$var6),aes_string(x=input$var4, y=input$var5)) + geom_point() + geom_line()
+  })
+  
+}
+
+shinyApp(ui, server)

@@ -37,7 +37,25 @@ library(anomalize)
 library(boot)
 library(leaps)
 library(shiny)
+library(DT)
 ```
+
+# Load the data
+```{r}
+source("model_get_data.R")
+pathname <- "../"
+filename <- "Comtrade_all.csv"
+route    <- paste(pathname,filename,sep="")
+all_info <- model_get_data(route)
+list_of_countries <- sort(unique(all_info$node))
+```
+
+# Run kmeans
+```{r}
+source("model_kmeans.R")
+kmeans_res <- model_kmeans(all_info)
+```
+
 
 # Launch the app
 ```{r}
