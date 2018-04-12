@@ -22,8 +22,6 @@ si <- Imports %>% select(period_date,reporter,partner,trade_value_usd) %>%
                   select(-reporter,-partner)
 
 #Select time line in month
-time_start <- "2015-12-01"
-time_end <- "2016-01-01"
 si_month <- si %>% filter(period_date < time_end & period_date >= time_start) 
 
 #cut out trade with value less than 3rd quantile value
