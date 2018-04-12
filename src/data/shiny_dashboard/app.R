@@ -1,88 +1,21 @@
-library(tidyverse)
-library(lubridate)
-library(ggplot2)
-library(stringr)
-library(gridExtra)
-library(network)
-library(ggraph)
-library(visNetwork)
-library(networkD3)
-library(igraph)
-library(tidygraph)
-library(fpc)
-library(cluster)
-library(factoextra)
-library(anomalize)
-library(boot)
-library(leaps)
-library(shiny)
-library(DT)
-
 # UI
 
-ui = fluidPage(navbarPage("FSA",fluid = TRUE,
-######################################
-  tabPanel("Data Exploration",
-  sidebarLayout(
-    sidebarPanel(
-                 selectInput("var1", "x-axis:", c("Time" = "period_date",
-                                       "Month" = "month",
-                                       "Ratio" = "ratio"), selected = "period_date"),
-                 selectInput("var2", "y-axis:", c("Degrees" = "degree_val",
-                                       "Triangles" = "tri_no",
-                                       "Ratio" = "ratio",
-                                       "Betweeness" = "bet_val"), selected = "ratio"),
-                 selectInput("var3", "Country:", sort(unique(all_info$node)), selected = "Germany")
-                 ),
-    mainPanel(
-              plotOutput("mpgPlot")
-             )
-  )
- )
-#######################################
-,
-#######################################
-tabPanel("Modeling",
-         sidebarLayout(
-           sidebarPanel(
-             selectInput("goal_country", "Country:", sort(unique(kmeans_res$node)), selected = "Germany")
-           ),
-           mainPanel(
-             tabPanel("diamonds", DT::dataTableOutput("kmeans"))
-           )
-         )
-         )
-#######################################
-))#Close the ui
+ui = fluidPage(
+        sidebarLayout(
+          sidebarPanel(
+            selectInput("gc", "Country:", sort(unique(kmeans_res$node)), selected = "Germany")),
+        mainPanel(
+          DT::dataTableOutput("kmeans")
+                )
+               )
+              )
 
 # SERVER
 
 server <- function(input, output) {
-  
-  output$mpgPlot <- renderPlot({
-    ggplot(all_info %>% filter(node == input$var3),aes_string(x=input$var1, y=input$var2)) + geom_point() + geom_line()
-  })
-  
-  caca <- reactive({
-  # For a given country and a period, find the most `similar' countries according to cluster classification
-  all_periods <- sort(unique(kmeans_res$period))
-  i <- 1
-  c1 <- character(1)
-  c2 <- list()
-  for (goal_period in all_periods){
-    tmp <- kmeans_res %>% filter(node == str(input$goal_country)) %>% filter(period == goal_period)
-  #  the_cluster <- tmp$cluster
-  #  partners <- kmeans_res %>% filter(cluster == the_cluster) %>% filter(period == goal_period)
-  #  partners <- unique(partners$node)
-  #  partners <- setdiff(partners,goal_country)
-  #  c1[i]   <- goal_period
-  #  c2[[i]] <- unlist(partners)
-    i <- i + 1 
-  }
-  })
-  #output$kmeans <- renderDataTable({as.data.frame(table(cbind(unlist(c2)))) %>% arrange(desc(Freq))})
-  output$kmeans <- renderDataTable({all_periods})
-  
+  tmp <- reactive({kmeans_res %>% filter(node == input$gc)})
+  output$kmeans = DT::renderDataTable({tmp})
 }
 
 shinyApp(ui, server)
+
