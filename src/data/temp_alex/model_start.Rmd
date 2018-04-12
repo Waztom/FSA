@@ -40,9 +40,9 @@ library(leaps)
 # Pick a commodity.
 It is necessary to generate a bunch of local commodity csv files.
 ```{r}
-#pathname <- "/Users/Caro_i_Alex/FSA/src/data/Chicken/"
+#pathname <- "../Chicken/"
 #filename <- "world_chicken_data.csv"
-pathname <- "/Users/Caro_i_Alex/FSA/src/data/"
+pathname <- "../"
 filename <- "Comtrade_all.csv"
 #
 route <- paste(pathname,filename,sep="")
@@ -72,11 +72,11 @@ lm.fit <- model_linear(all_info)
 ### Now test the model against a (country, period) pair
 Let me cheat a bit here and pick a really good pair :)
 ```{r}
-pick_a_month   <- 201402
-pick_a_country <- "Canada"
+pick_a_month   <- 201502
+pick_a_country <- "Spain"
 test <- all_info %>% filter(period == pick_a_month) %>%
                      filter(node == pick_a_country) %>%
-                     select(overall_flux,deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, net_group)
+                     select(overall_flux,deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
 ml <- predict(lm.fit,test[,2:ncol(test)], interval = "prediction")
 print(paste("Observed, predicted and error for overall trade value in billions $US: ", 
             round(ml[1],digits=5),", ",
@@ -91,7 +91,7 @@ pick_a_month   <- 201402
 pick_a_country <- "Italy"
 test <- all_info %>% filter(period == pick_a_month) %>%
                      filter(node == pick_a_country) %>%
-                     select(overall_flux,deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, net_group)
+                     select(overall_flux,deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
 ml <- predict(lm.fit,test[,2:ncol(test)], interval = "prediction")
 print(paste("Observed, predicted and error for overall trade value in billions $US: ", 
             round(ml[1],digits=5),", ",
