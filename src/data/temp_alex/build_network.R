@@ -22,11 +22,13 @@ si <- Imports %>% select(period_date,reporter,partner,trade_value_usd) %>%
                   select(-reporter,-partner)
 
 #Select time line in month
+time_start <- "2015-12-01"
+time_end <- "2016-01-01"
 si_month <- si %>% filter(period_date < time_end & period_date >= time_start) 
 
 #cut out trade with value less than 3rd quantile value
 si_third <- si_month %>% 
-  filter(quantile(trade_value_usd, 0.75)<trade_value_usd)
+  filter(quantile(trade_value_usd, 0.9)<trade_value_usd)
 
 #Create nodes 
 imports_from <- si_third %>% select(origin) %>% rename(label = origin) %>% distinct(label)
@@ -41,34 +43,36 @@ nodes <- nodes %>% rowid_to_column("id")
 edges <-  si_third %>% left_join(nodes, by = c("destin" = "label")) %>% 
   rename(to = id) %>%
   left_join(nodes, by = c("origin"  = "label"))%>%
-  rename(from = id)
+  rename(from = id) %>%
+  mutate(width =  log(trade_value_usd/1000)) %>%
+  select(from, to, width)
 
 
 #working out assignment to communities - plan to swap to kmeans but stick to something we have working for now
-undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE) 
-communities <- edge.betweenness.community(undirected_network) 
+undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+communities <- edge.betweenness.community(undirected_network)
 grouping <- membership(communities)
 
 #creating total exports and imports for each node
 total_exports<- si_third %>%
-  group_by (period_date, origin) %>% 
-  summarize(total_export = sum(trade_value_usd)) %>% 
-  rename(label = partner)
+  group_by (origin)  %>%
+  summarize(total_export = sum(trade_value_usd)) %>%
+  rename(label = origin)
 total_imports <- si_third %>%
-  group_by (period, reporter) %>%
+  group_by (destin) %>%
   summarize(total_import = sum(trade_value_usd)) %>%
-  rename(label = reporter)
+  rename(label = destin)
 
 #adding features to nodes
 nodes_groups_shape_size <- nodes %>% 
   mutate (group = grouping) %>%
-  left_join(total_imports, by = "label") %>% 
-  left_join(total_exports, by = "label") %>% 
-  replace_na(list(total_export=0, total_import=0))%>% 
+  left_join(total_imports, by = "label") %>%
+  left_join(total_exports, by = "label") %>%
+  replace_na(list(total_export=0, total_import=0)) %>%
   mutate(a_ratio = (total_import - total_export)/(total_import+total_export)) %>%
   mutate(value = abs(a_ratio)) %>%
-  mutate(shape = ifelse(a_ratio <0.33, "dot", ifelse(a_ratio >-0.33, "square", ifelse(a_ratio < 0.33 & period_date > -0.33, "diamond"))))
-
+  mutate(shape = ifelse(a_ratio >0.5, "dot", ifelse(a_ratio >-0.5, "triangle", "square"))) %>%
+  select(id, label, group, value, shape)
 
 
 #Creation of network
@@ -77,20 +81,16 @@ Network <- visNetwork(nodes_groups_shape_size, edges) %>%
   visEdges(arrows = "to",
            color=list(inherit=TRUE)) %>%
   visNodes(font=list(size=40), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
-  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visOptions(selectedBy = "group",
+    highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
+    nodesIdSelection = TRUE, clickToUse=TRUE) %>%
   visInteraction(navigationButtons = TRUE) %>%
-  visGroups(groupname = "1", color = "orange") %>%
-  visGroups(groupname = "2", color = "lightblue") %>%
-  visGroups(groupname = "3", color = "pink") %>%
-  visGroups(groupname = "4", color = "grey") %>%
-  visGroups(groupname = "5", color = "lightgreen") %>%
-  visGroups(groupname = "6", color = "purple") %>%
   visLegend(addNodes = list(
-    list(label = "Net Importer", shape = "sqaure"),
-    list(label = "Net Exporter", shape = "square"),
-    list(label = "Distributer", shape = "diamond")
+    list(label = "Importer", shape = "square"),
+    list(label = "Exporter", shape = "dot"),
+    list(label = "Distributer", shape = "triangle")
   ),
-  useGroups = FALSE)
+  useGroups = FALSE, zoom = FALSE)
 
 
 return(Network)
