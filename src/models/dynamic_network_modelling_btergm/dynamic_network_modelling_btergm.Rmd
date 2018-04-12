@@ -112,7 +112,7 @@ plot(gof.1b)
 dev.off()
 
 #Try simplified covariate model without temperal component
-model.1c <- btergm(net_list ~ edges + mutual + transitiveties, R = 50, parallel = "snow",  ncpus = 3)
+model.1c <- btergm(net_list ~ edges + mutual + transitiveties + twopath + nodeicov("trade_flux") + nodecov("trade_value") + absdiff("trade_value") + isolates, R = 50, parallel = "snow",  ncpus = 3)
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 #See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
@@ -125,15 +125,18 @@ dev.off()
 
 #Test model by secting portion of network list and try simulate netwrok and compare to actual to test model
 #1. Get model without most recent network
-model.1d <- btergm(net_list[1:23] ~ edges + mutual + transitiveties, R = 50, parallel = "snow",  ncpus = 2)
-#2. Test GOF by comaring simulated network with actual network
+model.1d <- btergm(net_list[1:23] ~ edges + mutual + transitiveties + twopath, R = 50, parallel = "snow",  ncpus = 3)
+#2. Test GOF by comparing simulated network with actual network
 gof.1d <- gof(model.1d, nsim = 10, target = net_list[[24]], 
-formula = net_list[23:24] ~ edges + mutual + transitiveties, coef = coef(model.1d),statistics = c(esp,nsp,ideg,odeg))
+formula = net_list[1:23] ~ edges + mutual + transitiveties + twopath, coef = coef(model.1d),statistics = c(esp,nsp,ideg,odeg))
 
 #Plot comparison
 plot(gof.1d, roc.rgraph = TRUE, pr.rgraph = TRUE)
 dev.off()
 
 #Test probbility two nodes tied - try UK and Spain. i and j values from country_ids
-interpret(model.1a, type = "tie", i = 193, j = 174, t = 15)
+interpret(model.1c, type = "node", i = c(94), j = c(174,33), t = 2)
+
+#Check model degeneracy
+checkdegeneracy(model.1d, nsim = 10)
 ```
