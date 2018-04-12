@@ -1,12 +1,19 @@
 library(shiny)
+library(ggplot2)
+
+source("../temp_alex/model_get_data.R")
+pathname <- "../"
+filename <- "Comtrade_all.csv"
+route    <- paste(pathname,filename,sep="")
+all_info <- model_get_data(route)
+list_of_countries <- sort(unique(all_info$node))
 
 # Define UI for miles per gallon app ----
 
-# Define UI for miles per gallon app ----
 ui <- fluidPage(
 
   # App title ----
-  titlePanel("Miles Per Gallon"),
+  titlePanel("A first test"),
 
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
@@ -15,21 +22,23 @@ ui <- fluidPage(
     sidebarPanel(
 
       # Input: Selector for variable to plot against mpg ----
-      selectInput("variable", "Variable:",
-                  c("Cylinders" = "cyl",
-                    "Transmission" = "am",
-                    "Gears" = "gear")),
+      selectInput("var1", "x-axis:", c("Time" = "period_date",
+                                       "Month" = "month",
+                                       "Ratio" = "ratio"), selected = "period_date"),
 
-      # Input: Checkbox for whether outliers should be included ----
-      checkboxInput("outliers", "Show outliers", TRUE)
-
+      # Input: Selector for variable to plot against mpg ----
+      selectInput("var2", "y-axis:", c("Degrees" = "degree_val",
+                                       "Triangles" = "tri_no",
+                                       "Ratio" = "ratio",
+                                       "Betweeness" = "bet_val"), selected = "ratio"),
+      
+      # Input: Selector for variable to plot against mpg ----
+      selectInput("var3", "Country:", sort(unique(all_info$node)), selected = "Germany")
+      
     ),
 
     # Main panel for displaying outputs ----
     mainPanel(
-
-      # Output: Formatted text for caption ----
-      h3(textOutput("caption")),
 
       # Output: Plot of the requested variable against mpg ----
       plotOutput("mpgPlot")
@@ -40,31 +49,15 @@ ui <- fluidPage(
 
 # Define server logic to plot various variables against mpg ----
 
-mpgData <- mtcars
-mpgData$am <- factor(mpgData$am, labels = c("Automatic", "Manual"))
+
 
 # Define server logic to plot various variables against mpg ----
 server <- function(input, output) {
-
-  # Compute the formula text ----
-  # This is in a reactive expression since it is shared by the
-  # output$caption and output$mpgPlot functions
-  formulaText <- reactive({
-    paste("mpg ~", input$variable)
-  })
-
-  # Return the formula text for printing as a caption ----
-  output$caption <- renderText({
-    formulaText()
-  })
-
+  
   # Generate a plot of the requested variable against mpg ----
   # and only exclude outliers if requested
   output$mpgPlot <- renderPlot({
-    boxplot(as.formula(formulaText()),
-            data = mpgData,
-            outline = input$outliers,
-            col = "#75AADB", pch = 19)
+    ggplot(all_info %>% filter(node == input$var3),aes_string(x=input$var1, y=input$var2)) + geom_point() + geom_line()
   })
 
 }
