@@ -198,7 +198,7 @@ anomaly_summary %>% time_recompose() %>%
 selected_countries_new <- c("Sierra Leone")
 Chicken_data_simple <- Chicken_data_normalised  %>%
   select(period_date, ratio, node) %>% 
-   filter(node %in% selected_countries_new) %>% ungroup %>% group_by(node)
+   filter(node %in% selected_countries_new) %>% ungroup
 
 #group_by(node) %>%
 Chicken_data_simple %>% 
