@@ -33,11 +33,11 @@ library(fpc)
 library(plotly)
 library(cluster)
 library(factoextra)
-library(anomalize)
+#library(anomalize)
 library(boot)
 library(leaps)
 library(shiny)
-library(DT)
+#library(DT)
 ```
 
 # Load the data
@@ -49,13 +49,6 @@ route    <- paste(pathname,filename,sep="")
 all_info <- model_get_data(route)
 list_of_countries <- sort(unique(all_info$node))
 ```
-
-# Run kmeans
-```{r}
-source("model_kmeans.R")
-kmeans_res <- model_kmeans(all_info)
-```
-
 
 # Launch the app
 ```{r}
