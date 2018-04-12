@@ -20,6 +20,9 @@ get_trade_attribute <- function(df, type){
     } else if (type == "flux"){
     world_trade_flux_att    <- full_join(world_imports_to, world_imports_from, by='label', stringsAsFactors = FALSE) %>% full_join(., world_exports_from, by='label', stringsAsFactors = FALSE) %>% full_join(.,world_exports_to, by='label', stringsAsFactors = FALSE) %>% mutate_all(funs(replace(., is.na(.), 0))) %>% mutate(trade_attribute =((trade_value_usd.x+trade_value_usd.y.y)-(trade_value_usd.x.x + trade_value_usd.y))/((trade_value_usd.x+trade_value_usd.y.y)+(trade_value_usd.x.x + trade_value_usd.y))) %>%select(label,trade_attribute)
     return(world_trade_flux_att)
+    } else if (type == "abs_nett"){
+    world_trade_abs_nett    <- full_join(world_imports_to, world_imports_from, by='label', stringsAsFactors = FALSE) %>% full_join(., world_exports_from, by='label', stringsAsFactors = FALSE) %>% full_join(.,world_exports_to, by='label', stringsAsFactors = FALSE) %>% mutate_all(funs(replace(., is.na(.), 0))) %>% mutate(trade_attribute =as.numeric(abs(scale((trade_value_usd.x+trade_value_usd.y.y)-(trade_value_usd.x.x + trade_value_usd.y))))) %>%select(label,trade_attribute)
+    return(world_trade_abs_nett)
     }
 }
 
