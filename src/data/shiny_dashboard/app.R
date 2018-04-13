@@ -1,7 +1,12 @@
+require(visNetwork)
 ui <- navbarPage("FSA", fluid = TRUE,
       tabPanel("Data Exploration",
         fluidRow(h1("The network"),
-                 h2("What now?")
+                 column(3,
+                    dateInput("date1", "Date:", value = "2012-02-29")),
+                 column(9,
+                        visNetworkOutput("net_plot")
+                        )
                  )
                ),
       tabPanel("Modeling",
@@ -55,6 +60,7 @@ server <- function(input, output) {
 
   source("model_kmeans.R")
   source("model_linear.R")
+  source("build_network.R")
 
   #get kmeans data
   mydata_km <- reactive({
@@ -72,7 +78,14 @@ server <- function(input, output) {
                  input$ratio)
   })
   
-  #kmeans
+  #get network_plot
+  #mydata_network <- reactive({
+  #  build_network(si,as.Date("2014-01-01"))
+  #})
+  
+#####################################################  
+
+    #kmeans
   output$selected_var <- renderDataTable({
     mydata_km()$ddd
   })
@@ -89,6 +102,11 @@ server <- function(input, output) {
   })
   output$lm_fit <- renderPrint({
     mydata_lm()$lm_fit
+  })
+  
+  #network_plot
+  output$net_plot <- renderVisNetwork({
+     build_network(si)
   })
   
 }

@@ -46,7 +46,9 @@ source("model_get_data.R")
 pathname <- "../"
 filename <- "Comtrade_all.csv"
 route    <- paste(pathname,filename,sep="")
-all_info <- model_get_data(route)
+data1    <- model_get_data(route)
+all_info <- data1$all_info
+si       <- data1$si
 list_of_countries <- sort(unique(all_info$node))
 ```
 
@@ -55,10 +57,15 @@ source("model_kmeans.R")
 testing <- model_kmeans(all_info,20,"United Kingdom")
 ```
 
-```{r}
-source("model_linear.R")
-testing1 <- model_linear(all_info,5,5,0,100,4,0.6,0.5)
-```
+#```{r}
+#source("model_linear.R")
+#testing1 <- model_linear(all_info,5,5,0,100,4,0.6,0.5)
+#```
+
+#```{r}
+#source("build_network.R")
+#testing1 <- build_network(si,as.Date("2014-01-01"))
+#```
 
 
 # Launch the app

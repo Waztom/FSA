@@ -19,7 +19,10 @@ Imports <- df2 %>% filter(trade_flow == "Imports") %>% select(-trade_flow)
 si <- Imports %>% select(period,reporter,partner,trade_value_usd) %>%
                   mutate(origin = as.character(partner)) %>%
                   mutate(destin = as.character(reporter)) %>% 
-                  select(-reporter,-partner)
+                  select(-reporter,-partner) %>%
+                 mutate(period_date = ymd(paste(as.character(period),"01",sep="")))
+
+
 
 month_list <- sort(unique(si$period))
 i <- 1
@@ -147,6 +150,6 @@ all_info <- all_info %>% group_by(period) %>%
   mutate(month = month(period_date)) %>%
   ungroup()
 
-return(all_info)
+return(data <- list("all_info" = all_info, "si" = si))
 
 }
