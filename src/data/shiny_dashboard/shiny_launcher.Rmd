@@ -42,15 +42,20 @@ library(shiny)
 
 # Load the data
 ```{r}
-source("model_get_data.R")
-pathname <- "../"
-filename <- "Comtrade_all.csv"
-route    <- paste(pathname,filename,sep="")
-data1    <- model_get_data(route)
-all_info <- data1$all_info
-si       <- data1$si
-list_of_countries <- sort(unique(all_info$node))
+load('all_shiny_data.RData')
 ```
+
+
+# ```{r}
+# source("model_get_data.R")
+# pathname <- "../"
+# filename <- "Comtrade_all.csv"
+# route    <- paste(pathname,filename,sep="")
+# data1    <- model_get_data(route)
+# all_info <- data1$all_info
+# si       <- data1$si
+# list_of_countries <- sort(unique(all_info$node))
+# ```
 
 #```{r}
 #source("model_kmeans.R")
