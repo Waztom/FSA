@@ -1,4 +1,10 @@
-ui <- fluidPage(
+ui <- navbarPage("FSA", fluid = TRUE,
+      tabPanel("Data Exploration",
+        fluidRow(h1("The network"),
+                 h2("What now?")
+                 )
+               ),
+      tabPanel("Modeling",
   fluidRow(h1("k-means classification of countries"),
     column(3,
       selectInput("var1", 
@@ -42,6 +48,7 @@ ui <- fluidPage(
            plotOutput("lm_plot")
    )
   )
+)
 )
 
 server <- function(input, output) {
