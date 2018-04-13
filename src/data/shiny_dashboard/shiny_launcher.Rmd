@@ -52,16 +52,16 @@ si       <- data1$si
 list_of_countries <- sort(unique(all_info$node))
 ```
 
-```{r}
-source("model_kmeans.R")
-testing <- model_kmeans(all_info,20,"United Kingdom")
-```
-
+#```{r}
+#source("model_kmeans.R")
+#testing <- model_kmeans(all_info,20,"United Kingdom")
+#```
+#
 #```{r}
 #source("model_linear.R")
 #testing1 <- model_linear(all_info,5,5,0,100,4,0.6,0.5)
 #```
-
+#
 #```{r}
 #source("build_network.R")
 #testing1 <- build_network(si,as.Date("2014-01-01"))

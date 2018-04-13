@@ -3,7 +3,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
       tabPanel("Data Exploration",
         fluidRow(h1("The network"),
                  column(3,
-                    dateInput("date1", "Date:", value = "2012-02-29")),
+                        sliderInput("date1:", "Month from Jan. 2014",
+                          min = 1, max = length(unique(si$period)), value = 1), step = 1),
                  column(9,
                         visNetworkOutput("net_plot")
                         )
@@ -106,7 +107,7 @@ server <- function(input, output) {
   
   #network_plot
   output$net_plot <- renderVisNetwork({
-     build_network(si)
+     build_network(si,input$date1)
   })
   
 }
