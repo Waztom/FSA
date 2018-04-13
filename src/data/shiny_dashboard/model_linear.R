@@ -1,4 +1,4 @@
-model_linear <- function(all_info,x1,x2,x4,x5,x6,x7){
+ model_linear <- function(all_info,x1,x2,x4,x5,x6,x7){
 
 # # Model assessment via bootstrapping
 # # Scale the _overall_flux_ in \$US into _overall_flux_busd_ in billions of \$US
@@ -13,6 +13,8 @@ model_linear <- function(all_info,x1,x2,x4,x5,x6,x7){
 #print(boot(linmodel, boot.fn, 1000))
 #summary(lm(overall_flux_busd~., data=linmodel))$coef
 
+
+   
 linmodel <- all_info %>% mutate(overall_flux_busd = overall_flux/1e9) %>%
             select(overall_flux_busd, deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
 lm.best <- lm(overall_flux_busd ~
@@ -50,7 +52,11 @@ eigen_val   = x6,
 ratio       = x7
 )
 
+#nnn <- sample(1:nrow(all_info),1,replace = T)
+#ran_row <- all_info[nnn,]
+#ran_row <- ran_row %>% select( deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
+
 predd <- predict(lm.best,querydata,type ="response")
 
-return(data_lm <- list("lm_fit" = reg.summary$rsq, "prediction" = 1000 * predd, "lm_plot" = p1))
+return(data_lm <- list("lm_fit" = reg.summary$rsq, "lm_prediction" = 1000 * predd, "lm_plot" = p1))
 }

@@ -62,6 +62,6 @@ if(nrow(ddd) == 0){
 #ddd <- ddd %>% select(Var1) %>% rename(Candidate = Var1)
 #ddd <- as.data.frame.table(ddd)
 
-return(km_list <- list("km_plot" = km_plot, "ddd" = ddd))
+return(km_list <- list("km_plot" = km_plot, "km_data" = ddd))
 
 }
