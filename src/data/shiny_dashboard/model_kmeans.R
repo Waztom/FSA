@@ -5,10 +5,15 @@ mydata            <- all_info %>% select(month, degree_val, degree_net, ratio, b
 list_of_countries <- all_info %>% select(node)
 mydata_s          <- scale(mydata) # Data must be scaled!!
 
-#ncmax <- 20
-#wss <- (nrow(mydata_s)-1)*sum(apply(mydata_s,2,var))
-#for (i in 2:ncmax) wss[i] <- sum(kmeans(mydata_s, centers=i)$withinss)
+ncmax <- 25
+wss <- (nrow(mydata_s)-1)*sum(apply(mydata_s,2,var))
+for (i in 2:ncmax) wss[i] <- sum(kmeans(mydata_s, centers=i)$withinss)
 #plot(1:ncmax, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
+km_data     <- data.frame(a=c(1:ncmax),b=wss)
+single_clus <- data.frame(a=nc,b=wss[nc])
+km_plot     <- ggplot(NULL) + geom_point(data=km_data,    aes(x=a,y=b),size=4) +
+                              geom_point(data=single_clus,aes(x=a,y=b),size=10,color="red",alpha=0.5) +
+                              labs(x="Number of clusters",y="Within groups sum of squares")
 
 ### Add the cluster index to the data
 # Ensure reproducibility
@@ -56,6 +61,6 @@ if(nrow(ddd) == 0){
 #ddd <- ddd %>% select(Var1) %>% rename(Candidate = Var1)
 #ddd <- as.data.frame.table(ddd)
 
-return(ddd)
+return(km_list <- list("km_plot" = km_plot, "ddd" = ddd))
 
 }

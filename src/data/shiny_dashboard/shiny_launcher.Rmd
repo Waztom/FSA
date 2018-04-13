@@ -50,6 +50,12 @@ all_info <- model_get_data(route)
 list_of_countries <- sort(unique(all_info$node))
 ```
 
+```{r}
+source("model_kmeans.R")
+testing <- model_kmeans(all_info,20,"United Kingdom")
+```
+
+
 # Launch the app
 ```{r}
 runApp("./")
