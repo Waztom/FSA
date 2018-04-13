@@ -3,7 +3,7 @@ build_network <- function(si,date1){
 all_months <- sort(unique(si$period))
   
 #Select time line in month
-si_month <- si %>% filter(period_date == all_months[date1])
+si_month <- si %>% filter(period == all_months[date1])
 
 #cut out trade with value less than 3rd quantile value
 si_third <- si_month %>% 
