@@ -5,6 +5,10 @@ mydata            <- all_info %>% select(month, degree_val, degree_net, ratio, b
 list_of_countries <- all_info %>% select(node)
 mydata_s          <- scale(mydata) # Data must be scaled!!
 
+### Add the cluster index to the data
+# Ensure reproducibility
+set.seed(42)
+
 ncmax <- 25
 wss <- (nrow(mydata_s)-1)*sum(apply(mydata_s,2,var))
 for (i in 2:ncmax) wss[i] <- sum(kmeans(mydata_s, centers=i)$withinss)
@@ -15,9 +19,6 @@ km_plot     <- ggplot(NULL) + geom_point(data=km_data,    aes(x=a,y=b),size=4) +
                               geom_point(data=single_clus,aes(x=a,y=b),size=10,color="red",alpha=0.5) +
                               labs(x="Number of clusters",y="Within groups sum of squares")
 
-### Add the cluster index to the data
-# Ensure reproducibility
-set.seed(42)
 # Number of clusters I want
 #nc = 20
 # K-Means Cluster Analysis

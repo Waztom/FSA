@@ -55,6 +55,11 @@ source("model_kmeans.R")
 testing <- model_kmeans(all_info,20,"United Kingdom")
 ```
 
+```{r}
+source("model_linear.R")
+testing1 <- model_linear(all_info,5,5,0,100,4,0.6,0.5)
+```
+
 
 # Launch the app
 ```{r}
