@@ -40,7 +40,7 @@ library(shiny)
 #library(DT)
 ```
 
-# Load the data
+# Load the data: all_info, si
 ```{r}
 load('all_shiny_data.RData')
 ```
