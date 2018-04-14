@@ -5,9 +5,7 @@ newver <- TRUE
 all_months <- sort(unique(si$period))
 
 if(newver){
-  
 
-  
 si1 <- si %>% filter(period == all_months[date1])
 total_exports <- si1 %>% group_by (origin) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = origin)
 total_imports <- si1 %>% group_by (destin) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = destin)
@@ -25,7 +23,8 @@ nodes <- nodes %>% rowid_to_column("id")
 #Create edges table
 edges <-  si1 %>% inner_join(nodes, by = c("destin" = "label"))  %>% rename(to   = id) %>%
   inner_join(nodes, by = c("origin"  = "label")) %>% rename(from = id) %>%
-  mutate(width =  log10(trade_value_usd)) %>% select(from, to, width)
+  mutate(width =  20 * (trade_value_usd - min(trade_value_usd)) / (max(trade_value_usd)-min(trade_value_usd)) + 1) %>%
+  select(from, to, width)
 
 #working out assignment to communities - plan to swap to kmeans but stick to something we have working for now
 undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
