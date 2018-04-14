@@ -53,8 +53,8 @@ ratio       = x7
 )
 
 #nnn <- sample(1:nrow(all_info),1,replace = T)
-#ran_row <- all_info[nnn,]
-#ran_row <- ran_row %>% select( deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
+##ran_row <- all_info[nnn,]
+##ran_row <- ran_row %>% mutate(overall_flux_musd = overall_flux_usd/1e6) %>% select(node, period, overall_flux_musd)
 
 predd <- predict(lm.best,querydata,type ="response")
 

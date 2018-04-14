@@ -77,3 +77,50 @@ load('all_shiny_data.RData')
 ```{r}
 runApp("./")
 ```
+
+#```{r}
+##creating total exports and imports for each node
+#si1 <- si %>% filter(period == 201401)
+#total_exports <- si1 %>% group_by (origin) %>% summarize(total_export = sum(trade_value_usd)) %>% rename(label = origin)
+#total_imports <- si1 %>% group_by (destin) %>% summarize(total_import = sum(trade_value_usd)) %>% rename(label = destin)
+#tmp <- full_join(total_imports, total_exports, by = "label") %>% replace_na(list(total_export=0, total_import=0))
+#tmp <- tmp %>%   mutate(a_ratio = (total_import - total_export)/(total_import+total_export)) %>%
+#                 mutate(value   = log10(total_import+total_export)) %>%
+#                 mutate(shape   = ifelse(a_ratio > 0.33, "dot", ifelse(a_ratio < -0.33, "triangle", "square")))
+#
+##Now the selection!!
+#tmp <- tmp %>% filter(quantile(total_export + total_import, 0.9) < total_export + total_import)
+#
+#nodes <- tmp   %>% select(label)
+#nodes <- nodes %>% rowid_to_column("id")
+#
+##Create edges table
+#edges <-  si1 %>% inner_join(nodes, by = c("destin" = "label"))  %>% rename(to   = id) %>%
+#                  inner_join(nodes, by = c("origin"  = "label")) %>% rename(from = id) %>%
+#                  mutate(width =  log10(trade_value_usd)) %>% select(from, to, width)
+#
+##working out assignment to communities - plan to swap to kmeans but stick to something we have working for now
+#undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
+#communities        <- edge.betweenness.community(undirected_network)
+#grouping           <- membership(communities)
+#
+#nodes_groups_shape_size <- nodes %>% mutate (group = grouping) %>% inner_join(tmp,by="label") %>% select(id, label, group, value, shape)
+#
+##Creation of network
+#Network <- visNetwork(nodes_groups_shape_size, edges) %>% 
+#  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+#  visEdges(arrows = "to", color=list(inherit=TRUE)) %>%
+#  visNodes(font=list(size=40), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
+#  visOptions(selectedBy = "group", highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
+#    nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+#  visInteraction(navigationButtons = TRUE) %>%
+#  visLegend(addNodes = list(
+#    list(label = "Distributor", shape = "square"),
+#    list(label = "Consumer", shape = "dot"),
+#    list(label = "Producer", shape = "triangle")
+#  ),
+#  useGroups = FALSE, zoom = FALSE)
+#
+#Network
+#```
+
