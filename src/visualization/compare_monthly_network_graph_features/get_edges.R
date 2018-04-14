@@ -10,9 +10,8 @@ get_edges <- function(trade.flow,nodes,df){
     }
 
   edges <- mutate(edges, width_trade_value = sqrt(trade_value_usd/200000))
-  edges <- mutate(edges, width_netweight_kg = sqrt(netweight_kg/500000))
   edges <- na.omit(edges)
-  edges <- select(edges, from, to, width_trade_value,width_netweight_kg)
+  edges <- select(edges, from, to, width_trade_value)
   return(edges)
 
 }

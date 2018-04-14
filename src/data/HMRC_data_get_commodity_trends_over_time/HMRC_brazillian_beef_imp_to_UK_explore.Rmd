@@ -1,5 +1,6 @@
 ---
-title: "Spanish cucumber imports into the UK"
+title: "Brazillian beef into UK explore"
+author: "Phoebe MacDonald"
 output:
   pdf_document:
     latex_engine: pdflatex
@@ -7,6 +8,11 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+```
+
+```{r}
+source("get_HMRC_aux_data.R")
+source("get_HMRC_data.R")
 ```
 
 #Required libraries
@@ -21,7 +27,6 @@ library(gridExtra)
 
 #Get the HMRC auxiliary data
 ```{r}
-source("get_HMRC_aux_data.R")
 list1   <- get_HMRC_aux_data()
 comcode <- data.frame(Reduce(rbind, list1[1]))
 port    <- data.frame(Reduce(rbind, list1[2]))
@@ -35,7 +40,6 @@ cc_all_beef <- comcode[grep('BEEF',  toupper(comcode$description)),]
 
 #Get HMRC import data  (imports df - original column headings for comparison)
 ```{r}
-source("get_HMRC_data_imports.R")
 HMRC_EU_import_food_data_all <- get_HMRC_data_imports(imports)
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data_all))))
 ```
@@ -56,9 +60,7 @@ names(HMRC_EU_import_food_data) <- c("Comcode", "Standard_International_Trade_Cl
 HMRC_columns  <- col_names[c(1,5,8,24,25)]
 HMRC_country  <- "BR"
 HMRC_comcode  <- "16025095"
-model_data_pretbl    <- HMRC_EU_import_food_data %>% 
-                 select(HMRC_columns) %>%                                                         filter(Country_of_Dispatch == HMRC_country & Comcode ==                                   HMRC_comcode) %>%
-                 select(-Country_of_Dispatch, -Comcode)
+model_data_pretbl    <- HMRC_EU_import_food_data %>% select(HMRC_columns) %>% filter(Country_of_Dispatch == HMRC_country & Comcode == HMRC_comcode) %>% select(-Country_of_Dispatch, -Comcode)
 ```
 
 #Make tbl_df
@@ -69,12 +71,7 @@ model_data <- tbl_df(model_data_pretbl)
 
 #Clean data: Run for consistency, but no NAs, no 0000 dates and no negative values CHECK
 ```{r}
-model_data_clean <- model_data %>% na.omit 
-
-%>% 
-                    filter(Quantity_1!=0 & Value != 0) %>%                                                    
-                    filter(Date!="0000000") %>%  
-                    mutate(abs(Quantity_1)  &  abs(Value)) %>% unique()
+model_data_clean <- model_data %>% na.omit %>% filter(Quantity_1!=0 & Value != 0) %>% filter(Date!="0000000") %>% mutate(abs(Quantity_1)  &  abs(Value)) %>% unique()
 ```
 
 #Convert period column to date format
@@ -132,13 +129,9 @@ model_data_clean_avg <-model_data_clean %>% group_by(Date) %>% summarize(Average
 ggplot(model_data_clean_avg) + geom_point(aes(Date, Average_Import_Size), colour = "blue") + geom_smooth(aes(Date, Average_Import_Size), colour = "purple")
 ```
 
-
 #Aggregate data into periods of months
 ```{r}
-model_data_group <- model_data_clean %>% group_by(Date) %>%                          
-                                        summarise(Quantity_1 = sum(Quantity_1),                          
-                                                  Value = sum(Value), 
-                                                  Cost_per_Kg = mean(Cost_per_Kg))
+model_data_group <- model_data_clean %>% group_by(Date) %>% summarise(Quantity_1 = sum(Quantity_1), Value = sum(Value), Cost_per_Kg = mean(Cost_per_Kg))
 ```
 
 #What does the cost/kg of the beef imported into the UK from Brazil look like over time?
@@ -211,12 +204,10 @@ plot_3 <- ggplot(model_data_clean_1617) +
   geom_boxplot(mapping = aes(x=Date,y=Cost_per_Kg,group=Date), color = "blue")                  
 grid.arrange(plot_1, plot_2, plot_3)                 
 ```
+
 #Aggregate data into periods of months
 ```{r}
-model_data_group_1617 <- model_data_clean_1617 %>% group_by(Date) %>%                          
-                                        summarise(Quantity_1 = sum(Quantity_1),                          
-                                                  Value = sum(Value), 
-                                                  Cost_per_Kg = mean(Cost_per_Kg))
+model_data_group_1617 <- model_data_clean_1617 %>% group_by(Date) %>% summarise(Quantity_1 = sum(Quantity_1), Value = sum(Value), Cost_per_Kg = mean(Cost_per_Kg))
 ```
 
 
