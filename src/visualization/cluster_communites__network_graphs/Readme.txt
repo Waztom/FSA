@@ -1,1 +1,6 @@
-Cluster trading communities using linkcomm package¥ Data can be accessed via SQL request Ð see get_Comtrade_data_network_graph.R¥ Script can be edited to explore other commodes and countries¥ Use to get an idea of how network features (eigen centrality, edge density, transitivity, sum degree and average path length change over time)¥ Can adapt script to explore other network features Ð see Tidygraph package for more options
+Cluster trading communities using linkcomm package
+
+- Data can be accessed via SQL request: see get_Comtrade_data_network_graph.R or csv file
+- Script can be edited to explore other commodes and countries
+- Uses edge clustering to aggregate (which countries talk/trade the most to each other?) trading countries into communities 
+
