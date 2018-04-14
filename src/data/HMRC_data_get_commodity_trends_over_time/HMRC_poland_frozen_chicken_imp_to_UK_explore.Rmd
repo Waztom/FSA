@@ -1,5 +1,6 @@
 ---
 title: "Polish frozen chicken imports into the UK"
+author: "Warren Thompson"
 output:
   pdf_document:
     latex_engine: pdflatex

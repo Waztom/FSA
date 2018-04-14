@@ -1,11 +1,20 @@
 ---
 title: "Summary_of_monthly_network_grahs"
+author: "Warren Thompson"
 date: "27/03/2018"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+source('get_nodes.R')
+source('get_network_links.R')
+source('get_nett_trade.R')
+source('get_edges.R')
+source('get_Comtrade_monthly_data.R')
 ```
 
 #Required libraries
@@ -22,6 +31,7 @@ library(gridExtra)
 ```
 
 #Access comtrade database - look for cucumber info for world
+#Use if want to make new query to Comtrade database
 ```{r}
 #source("get_Comtrade_data_network_graph.R")
 #world_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
@@ -70,7 +80,7 @@ for (i in world_monthly_data){
   nodes$color <-  ifelse(nodes$nett_trade > 0, "red","blue")
   nodes$size  <-  (abs(nodes$nett_trade) - min(nodes$nett_trade)) /                             (max(nodes$nett_trade) - min(nodes$nett_trade))*50
   
-  #create tbl_graph from tidygraph package
+  #create tbl_graph from tidygraph package - for extarcting netwrok features in next step
   g <- tbl_graph(nodes = nodes, edges = edges, directed = TRUE)
   
   #Abstarct features from network graph
@@ -82,7 +92,7 @@ for (i in world_monthly_data){
   average_path_length <- mean_distance(g)
   transitivity        <- transitivity(g)
 
-  #Appedn features to respective lists
+  #Append features to respective lists
   period_list               <- list.append(period_list, month)
   eigen_list                <- list.append(eigen_list, eigen_centrality)
   sum_degree_list           <- list.append(sum_degree_list, sum_degree)

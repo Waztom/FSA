@@ -1,5 +1,6 @@
 ---
-title: "Polish fresh chicken imports into the UK"
+title: "Spanish cucumber imports into the UK"
+author: "Warren Thompson"
 output:
   pdf_document:
     latex_engine: pdflatex
@@ -8,7 +9,6 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
-
 
 #Required libraries
 ```{r}
@@ -27,9 +27,9 @@ port    <- data.frame(Reduce(rbind, list1[2]))
 country <- data.frame(Reduce(rbind, list1[3]))
 ```
 
-#Find fresh chicken comcodes - Thank you Alex for making life nice and easy for us! 
+#Find cucumber comcodes - Thank you Alex for making life nice and easy for us! 
 ```{r}
-cc_all_chicken <- comcode[grep('CHICKEN',  toupper(comcode$description)),]
+cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
 ```
 
 #Get HMRC import data from EU (arrivals df)
@@ -39,16 +39,15 @@ HMRC_EU_import_food_data <- get_HMRC_data(arrivals)
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
 ```
 
-#names(HMRC_EU_import_food_data) <- c("Comcode", "Record_Type", "Country_of_Dispatch_Code", "Country_of_Dispatch", "Type_of_Trade", "Country_of_Origin_code", "Country_of_Origin", "Nature_of_Transaction", "Mode_of_Transport", "Date", "Suite_Indicator", "Standard_International_Trade_Classification", "IP_Comcode", "No_of_Consignments", "Invoice_Price", "Net_Mass", "Supplementary Unit") 
-# to add to change column names but will have to change code below
-
-#Select Poland fresh chicken import info
+#Select Spain cucumber import info
 ```{r}
 HMRC_columns  <- col_names[c(1,4,10,14,15,16)]
-HMRC_country  <- "PL"
-HMRC_comcode  <- "02071110"
+HMRC_country  <- "ES"
+HMRC_comcode_1  <- "07070005"
+HMRC_comcode_2 <- "07070090"
+
 model_data    <- HMRC_EU_import_food_data %>% 
-                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode) %>%
+                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode_1 | smk_comcode == HMRC_comcode_2) %>%
                  select(-smk_cod_alpha, -smk_comcode)
 ```
 
@@ -80,49 +79,49 @@ model_data_group <- model_data_clean %>% group_by(smk_period_reference) %>%     
                     cost_per_kg             = mean(cost_per_kg))
 ```
 
-#What does the cost/kg of the Polish fresh chicken imported into the UK look like over time?
+#What does the cost/kg of the cucumber imported into the UK look like over time?
 ```{r}
 ggplot(model_data_group, aes(smk_period_reference, cost_per_kg)) +
-        geom_point() +
-        geom_smooth()
+        geom_point() 
 ```
-* Cost/kg appear to be tighlty grouped at lower cost from 2009 - midway 2012 and have more variance thereafter with an increase in price. Appears there are two tiers of pricing during the respective time frames
 
-#Calculate variance between two halfs of cost/kg over two time periods
+#Very high cost/kg during 2012/2013 - $150/kg seems to be a bit too exorbitant for cucumber! What does the cost/kg look like without the points above $150/kg?
 ```{r}
-(var_2009_2012 <- var(model_data_group %>% filter(smk_period_reference <                           "2012-06-01") %>% select(cost_per_kg)))
-
-(var_2012_2017 <- var(model_data_group %>% filter(smk_period_reference >                           "2012-06-01") %>% select(cost_per_kg)))
+ggplot(model_data_group, aes(smk_period_reference, cost_per_kg)) + 
+  geom_point() + geom_line() + ylim(0,3) + geom_smooth()
 ```
 
-#What does the nett mass of Polish fresh chicken imported into the UK look like over time?
+#What does the nett mass of the cucumber imported into the UK look like over time?
 ```{r}
 ggplot(model_data_group, aes(smk_period_reference, smk_nett_mass)) +
-        geom_point(colour = "blue") 
-```
-
-* Imports of chicken very irregular and larger nett mass from 2009 - midway 2012. * Midway 2012 - 2017 much more regular and significantly less imported 
-
-#What does the nett mass of Polish fresh chicken imported into the UK look like between mid 2012 - current?
-```{r}
-ggplot(model_data_group %>% filter(smk_period_reference > "2012-06-01"),                 aes(smk_period_reference, smk_nett_mass)) +
         geom_point(colour = "blue") +
-        ylim(0,70000) +
-        geom_smooth() +
-        geom_hline(yintercept=10000, linetype="dashed", color = "red")
+        geom_hline(yintercept=1E7, linetype="dashed", color = "red")
 ```
-* Some outliers still observed
+
+* Imports of cucumber appears to be seasonal and follow an oscillating pattern with exception for several points (Occur Nov - Jan) where there are spikes in 2010 & 2014 and possibly 2009, 2016 & 2017. 
+* Also looking at cost/kg over time, note how cost/kg simmilar in months before and/or after at some of these points in time.   
+
+#What does the total trade value look like over time NB nett mass data not always reliable
+```{r}
+ggplot(model_data_group, aes(smk_period_reference, smk_stat_value)) +
+        geom_point(colour = "purple") +
+        geom_hline(yintercept=0.75E7, linetype="dashed", color = "red") +
+        xlab("Date") +
+        ylab("Trade value / £") +
+        ggtitle("Cucumber commodity code: 07070005 + 07070090")
+```
 
 #Did the number of consignments also increase during the spikes? 
 ```{r}
 ggplot(model_data_group, aes(smk_period_reference, smk_no_of_consignments)) +
         geom_line(colour = "green") +
-        geom_point(colour = "green") +
-        geom_smooth()
+        geom_point(colour = "green") 
 ```
-* Opposite relationship observed compared to cost/kg trend over time
 
 #Conclusions and questions
-* Patterns of fresh chicken imports from Poland have changed dramatically after midway 2012
-* Where did all the extra chciken come from - especially between 2009 and midway 2012?
-* Still some anomalies of fresh chicken imports in recent time
+* Possible flag for irregular increased mass cucumbers imported into the UK
+* Possible flag for prices being simmilar before and/or after month of increased mass imported
+* Where do these mysterious cucumbers come from? Comtrade data may help here. 
+* To flag future anomalies can the oscillating and seasonal nett mass of imports of cucumbers from Spain into the UK be modelled?
+* Janis any ideas with modelling continuous data over time - maybe try simple non-linear function using X=period,no. consignments,cost/kg and Y = nett mass cucumbers and try regression? Other model ideas?   
+* Looking ahead, can links be made to determine the source of these extra cucumbers? Possible starting points to to model import/export network with focus on mass balances?

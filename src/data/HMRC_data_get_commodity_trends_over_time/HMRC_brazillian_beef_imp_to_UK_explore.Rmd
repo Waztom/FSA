@@ -1,5 +1,6 @@
 ---
-title: "Spanish cucumber imports into the UK"
+title: "Brazillian beef into UK explore"
+author: "Warren Thompson & Phoebe MacDonald"
 output:
   pdf_document:
     latex_engine: pdflatex
