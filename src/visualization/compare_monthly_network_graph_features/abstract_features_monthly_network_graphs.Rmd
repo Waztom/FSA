@@ -70,7 +70,7 @@ for (i in world_monthly_data){
   trade_threshold   <- month_quantiles[4]
   
   #Starting with starting_node above, get links that are connected to this node
-  month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
+  month_links     <- get_network_links(trade.flow,starting_node,trade_threshold,i)
   
   #Get nodes and edges
   nodes             <- get_nodes(trade.flow,month_links,month_nett_trade)

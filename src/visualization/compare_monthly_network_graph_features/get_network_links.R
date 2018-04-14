@@ -1,5 +1,4 @@
 #Function to collect links that are linked to starting node
-
 get_network_links <- function(trade.flow,starting_node,trade_threshold,df){
   
   df <- df %>% filter(trade_flow != "Re-imports" & trade_flow != "Re-exports" & reporter != "World" & reporter != "EU-27" & partner != "World" & partner != "EU-27")
