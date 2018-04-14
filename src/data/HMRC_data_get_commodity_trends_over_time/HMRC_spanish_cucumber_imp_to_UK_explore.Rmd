@@ -10,6 +10,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
 
+```{r}
+source("get_HMRC_aux_data.R")
+source("get_HMRC_data.R")
+```
+
 #Required libraries
 ```{r}
 require("RPostgreSQL")
@@ -20,7 +25,6 @@ library(tidyverse)
 
 #Get the HMRC auxiliary data
 ```{r}
-source("get_HMRC_aux_data.R")
 list1   <- get_HMRC_aux_data()
 comcode <- data.frame(Reduce(rbind, list1[1]))
 port    <- data.frame(Reduce(rbind, list1[2]))
@@ -34,7 +38,6 @@ cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
 
 #Get HMRC import data from EU (arrivals df)
 ```{r}
-source("get_HMRC_data.R")
 HMRC_EU_import_food_data <- get_HMRC_data(arrivals) 
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
 ```
@@ -46,37 +49,27 @@ HMRC_country  <- "ES"
 HMRC_comcode_1  <- "07070005"
 HMRC_comcode_2 <- "07070090"
 
-model_data    <- HMRC_EU_import_food_data %>% 
-                 select(HMRC_columns) %>%                                                         filter(smk_cod_alpha == HMRC_country & smk_comcode ==                                   HMRC_comcode_1 | smk_comcode == HMRC_comcode_2) %>%
-                 select(-smk_cod_alpha, -smk_comcode)
+model_data    <- HMRC_EU_import_food_data %>% select(HMRC_columns) %>% filter(smk_cod_alpha == HMRC_country & smk_comcode == HMRC_comcode_1 | smk_comcode == HMRC_comcode_2) %>% select(-smk_cod_alpha, -smk_comcode)
 ```
 
 #Clean data: remove any Na values, 0 values and date values == "0000000" 
 ```{r}
-model_data_clean <- model_data %>% na.omit %>% 
-                    filter(smk_nett_mass!=0 & smk_no_of_consignments != 0 &                                 smk_stat_value != 0) %>%                                                  filter(smk_period_reference!="0000000") %>%                                      mutate(abs(smk_nett_mass) & abs(smk_no_of_consignments) &                               abs(smk_stat_value)) %>% 
-                    unique()
+model_data_clean <- model_data %>% na.omit %>% filter(smk_nett_mass!=0 & smk_no_of_consignments != 0 & smk_stat_value != 0) %>% filter(smk_period_reference!="0000000") %>% mutate(abs(smk_nett_mass) & abs(smk_no_of_consignments) & abs(smk_stat_value)) %>% unique()
 ```
 
 #Convert period column to date format
 ```{r}
-model_data_clean <- model_data_clean %>% 
-                    mutate(smk_period_reference = substr(smk_period_reference,                               4,7)) %>% 
-                    mutate(smk_period_reference =                                                            paste0(smk_period_reference,"01")) %>%
-                    mutate(smk_period_reference = as.Date(smk_period_reference,
-                                                          "%y%m%d"))
+model_data_clean <- model_data_clean %>% mutate(smk_period_reference = substr(smk_period_reference, 4,7)) %>% mutate(smk_period_reference = paste0(smk_period_reference,"01")) %>% mutate(smk_period_reference = as.Date(smk_period_reference, "%y%m%d"))
 ```
 
 #Get the cos/kg ($/kg)
 ```{r}
-model_data_clean <- model_data_clean %>% 
-                    mutate(cost_per_kg = smk_stat_value / smk_nett_mass)
+model_data_clean <- model_data_clean %>% mutate(cost_per_kg = smk_stat_value / smk_nett_mass)
 ```
 
 #Aggregate data into periods of months
 ```{r}
-model_data_group <- model_data_clean %>% group_by(smk_period_reference) %>%                          summarise(smk_nett_mass = sum(smk_nett_mass),                                    smk_no_of_consignments  = sum(smk_no_of_consignments),                           smk_stat_value          = sum(smk_stat_value), 
-                    cost_per_kg             = mean(cost_per_kg))
+model_data_group <- model_data_clean %>% group_by(smk_period_reference) %>% summarise(smk_nett_mass = sum(smk_nett_mass), smk_no_of_consignments = sum(smk_no_of_consignments), smk_stat_value = sum(smk_stat_value), cost_per_kg = mean(cost_per_kg))
 ```
 
 #What does the cost/kg of the cucumber imported into the UK look like over time?
