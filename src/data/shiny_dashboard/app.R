@@ -11,7 +11,18 @@ ui <- navbarPage("FSA", fluid = TRUE,
                  column(9,
                    visNetworkOutput("network_plot")
                  )
-               )
+               ),
+          fluidRow(h1("Anomaly detection"),
+                   column(3,
+                          selectInput("ad_country", 
+                                      label = "Select a country",
+                                      choices = sort(unique(all_info$node)),
+                                      selected = "United Kingdom")
+                          ),
+                   column(9,
+                          plotOutput("ad_plot")
+                          )
+               )          
              ),
         tabPanel("Modeling",
           fluidRow(h1("k-means classification of countries"),
@@ -70,6 +81,7 @@ server <- function(input, output) {
   source("model_kmeans.R")
   source("model_linear.R")
   source("build_network.R")
+  source("anomaly_detection.R")
 
   #Kmeans function
   mydata_km <- reactive({
@@ -109,11 +121,15 @@ server <- function(input, output) {
                     mydata_lm()$lm_plot
   })
   
-  # Network_plot
+  # Network plot
   output$network_plot <- renderVisNetwork({
      build_network(si,input$date_network,input$threshold_network)
   })
 
+  # Anomaly detection plot
+  output$ad_plot <- renderPlot({
+    anomaly_detection(all_info,input$ad_country)
+  })
 }
 
 #END OF SERVER
