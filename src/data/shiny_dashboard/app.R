@@ -22,7 +22,26 @@ ui <- navbarPage("FSA", fluid = TRUE,
                    column(9,
                           plotOutput("ad_plot")
                           )
-               )          
+               ),
+          fluidRow(h1("General overview"),
+                   column(3,
+                          selectInput("go_country", 
+                                      label = "Select a countries",
+                                      choices = sort(unique(all_info$node)),
+                                      selected = "United Kingdom",
+                                      multiple = TRUE),
+                          selectInput("go_yaxis", 
+                                      label = "Select a variable",
+                                      choices = c("ratio","bet_val"),
+                                      selected = "ratio",
+                                      multiple = FALSE)                          
+                   ),
+                   column(9,
+                          plotOutput("go_plot")
+                   )
+          )         
+          
+          
              ),
         tabPanel("Modeling",
           fluidRow(h1("k-means classification of countries"),
@@ -129,6 +148,13 @@ server <- function(input, output) {
   # Anomaly detection plot
   output$ad_plot <- renderPlot({
     anomaly_detection(all_info,input$ad_country)
+  })
+  
+  # General overview plot
+  output$go_plot <- renderPlot({
+    ggplot(all_info %>% filter(node %in% input$go_country),
+           aes(x=period_date,y=ratio,color=node)) +
+           geom_point() + geom_line()
   })
 }
 
