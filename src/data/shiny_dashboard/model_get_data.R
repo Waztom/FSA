@@ -97,6 +97,9 @@ dat5 <- integer(1)
 dat6 <- character(1)
 dat7 <- character(1)
 
+#Strictly positive
+si <- si %>% filter(trade_value_usd > 0)
+
 for (cur_time in time_history){
   netdf1 <- si %>% filter(period == cur_time) %>% select(origin,destin,trade_value_usd)
   sources1 <-      netdf1 %>% distinct(origin) %>% rename(label = origin)
@@ -149,6 +152,9 @@ all_info <- all_info %>% group_by(period) %>%
   mutate(overall_flux = tot_out_wei + tot_in_wei) %>%
   mutate(month = month(period_date)) %>%
   ungroup()
+
+#Double check
+all_info <- all_info[complete.cases(all_info),]
 
 return(data <- list("all_info" = all_info, "si" = si))
 
