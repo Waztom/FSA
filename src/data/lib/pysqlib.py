@@ -179,12 +179,6 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
                      password = "2fs@9!^43g")
     cur = conn.cursor()
     
-    ################################################################
-    ## Get the column names and print them out
-    cur.execute("select COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='comtrade'")
-    column_names=pd.DataFrame(cur.fetchall())
-    print(column_names)
-    print()
     
     ################################################################
     ## Lookup the needed comtrade codes for the SQL request
@@ -192,7 +186,7 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
     comtrade_dict = load_comtrade_info()
     
     reporter_code = get_reporter_code(comtrade_dict, reporter_name)
-        
+            
     if reporter_code is None or com_codes is None:
         print('An error occured fetching a comtrade code.')
         return None
