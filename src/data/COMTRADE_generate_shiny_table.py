@@ -6,14 +6,15 @@ Created on Tue Mar 27 11:46:43 2018
 @author: janis
 """
 
-import os
-os.sys.path.append('lib')
+import os, sys
+#os.sys.path.append('lib')
+sys.path.append(os.path.join(os.path.dirname(__file__), "lib"))
 import pysqlib
 import pandas as pd
 import itertools
 import time, datetime
 import argparse
-import sys
+
 
 import numpy as np
 

@@ -13,26 +13,34 @@ import time, datetime
 import json
 import sys
 import numpy as np
+import os
+
+#Define a dictionary of country names
+correction_dictionary = {
+        'Czechia': 'Czech Rep.',
+        'USA': 'United States of America'
+        }
 
 ################################################################
 ## Define a function that load the comtrade json files into a dictionary
 
 def load_comtrade_info():
     comtrade_dictionary={}
-    json_data=open('lib/classificationHS.json')
+#    json_data=open('lib/classificationHS.json')
+    json_data=open(os.path.dirname(__file__)+os.sep+'classificationHS.json')
     comtrade_dictionary['comcodes']= pd.DataFrame(json.load(json_data)['results'])
     json_data.close()
-    json_data=open('lib/partnerAreas.json')
+    json_data=open(os.path.dirname(__file__)+os.sep+'partnerAreas.json')
     comtrade_dictionary['partners']= pd.DataFrame(json.load(json_data)['results'])
     json_data.close()
-    json_data=open('lib/reporterAreas.json')
+    json_data=open(os.path.dirname(__file__)+os.sep+'reporterAreas.json')
     comtrade_dictionary['reporters']= pd.DataFrame(json.load(json_data)['results'])
     json_data.close()
         
     return comtrade_dictionary
 
 ################################################################
-## Define three function which lookup comtrade codes in the comtrade dictionary
+## Define four function which lookup comtrade codes in the comtrade dictionary
 
 def get_partner_code(comtrade_dictionary, country):
     '''
@@ -104,6 +112,19 @@ def get_commodity_codes(comtrade_dictionary, commodity):
         print(' ')
         commodity_code =np.repeat(commodity_code['id'].values,2).tolist()
     return commodity_codes
+
+def correct_country_name(name_to_correct):
+    '''
+    Take a name as input and looks into the name_correction dictionary to return the corrected name
+    '''
+    correct_name = [ key for key,val in correction_dictionary.items() if val == name_to_correct ]
+    if len(correct_name) == 0:
+        #print('No translation for '+name_to_correct)
+        correct_name =  name_to_correct
+    else:
+        # Extract the single value from the list
+        correct_name = correct_name[0]
+    return correct_name
 
 def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine', reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
@@ -215,4 +236,7 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
     # Closing the connection
     cur.close()
     
+    # Correct partner names if needed
+    trade_data.partner = trade_data.partner.apply(correct_country_name)
+
     return trade_data
