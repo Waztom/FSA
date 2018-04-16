@@ -48,19 +48,27 @@ ui <- navbarPage("FSA", fluid = TRUE,
                    visNetworkOutput("network_plot")
                  )
                )),
-        tabPanel("Anomalies",          
-          fluidRow(h1("Anomaly detection"),
-                   column(3,
-                          selectInput("ad_country", 
-                                      label = "Select a country",
-                                      choices = sort(unique(all_info$node)),
-                                      selected = "United Kingdom")
-                          ),
-                   column(9,
-                          plotOutput("ad_plot")
+        tabPanel("Identifying Irregular Trading Patterns",
+                 fluidRow(h1("Flagged Countries During Specifed Month"),
+                          column(3,
+                                 sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1
+                                 )),
+                          column(9,
+                                 dataTableOutput("ad_table_all")
                           )
-               )
-             ),
+                 ),
+                 fluidRow(h1("Country Trade Pattern and Irregularities"),
+                          column(3,
+                                 selectInput("ad_country", 
+                                             label = "Select a country",
+                                             choices = sort(unique(all_info$node)),
+                                             selected = "United Kingdom")
+                          ),
+                          column(9,
+                                 plotOutput("ad_plot")
+                          )
+                 )
+        ),
         tabPanel("Classifying",
           fluidRow(h1("k-means classification of countries"),
             column(3,
@@ -120,6 +128,7 @@ server <- function(input, output) {
   source("model_linear.R")
   source("build_network.R")
   source("anomaly_detection.R")
+  source("anomaly_detection_all.R")
 
   
   #Kmeans function
@@ -165,7 +174,12 @@ server <- function(input, output) {
      build_network(si,input$date_network,input$threshold_network)
   })
 
-  # Anomaly detection plot
+  # Anomalous countries at a point in time
+  output$ad_table_all <- renderDataTable({
+    anomaly_detection_all(all_info,input$date_network)
+  })
+  
+  # Plot of trade pattern for specified country, with irregularities highlighted
   output$ad_plot <- renderPlot({
     anomaly_detection(all_info,input$ad_country)
   })
