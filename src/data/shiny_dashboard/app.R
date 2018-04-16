@@ -328,6 +328,7 @@ output$km_sel <- renderUI({
   
   # Network model output
   output$probability_link <- renderText({
+    si <- si()
     network_model(si,input$month_model,input$from_country,input$to_country)
   })
 }
