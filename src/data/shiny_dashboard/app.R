@@ -30,9 +30,14 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                       choices = sort(unique(all_info$node)),
                                       selected = "United Kingdom",
                                       multiple = TRUE),
+                          selectInput("go_xaxis", 
+                                      label = "Select a variable in x axis",
+                                      choices = names(all_info),
+                                      selected = "period_date",
+                                      multiple = FALSE),
                           selectInput("go_yaxis", 
-                                      label = "Select a variable",
-                                      choices = c("ratio","bet_val"),
+                                      label = "Select a variable in y axis",
+                                      choices = names(all_info),
                                       selected = "ratio",
                                       multiple = FALSE)                          
                    ),
@@ -153,8 +158,8 @@ server <- function(input, output) {
   # General overview plot
   output$go_plot <- renderPlot({
     ggplot(all_info %>% filter(node %in% input$go_country),
-           aes(x=period_date,y=ratio,color=node)) +
-           geom_point() + geom_line()
+           aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
+           geom_point(aes(color=node), size=3, alpha = 0.75)
   })
 }
 
