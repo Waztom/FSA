@@ -3,8 +3,8 @@ require(visNetwork)
 # BEGINNING OF UI
 
 ui <- navbarPage("FSA", fluid = TRUE,
-        tabPanel("Basic overview",
-                 fluidRow(h1("Select a commodity"),
+        tabPanel("Understanding Trade Patterns",
+                 fluidRow(h1("Select a food product"),
                           column(3,
                                  selectInput("commodity", 
                                              label = "Commodities",

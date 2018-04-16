@@ -37,11 +37,14 @@ library(anomalize)
 library(boot)
 library(leaps)
 library(shiny)
+library(btergm)
 #library(DT)
 ```
 
 ```{r}
 source("model_get_data.R")
+cucumber_model <- readRDS("cucumber_network_model_si.rds")
+
 data        <- model_get_data("Vanilla")
 all_info_va <- data$all_info
 si_va       <- data$si
