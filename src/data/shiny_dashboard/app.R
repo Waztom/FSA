@@ -3,8 +3,8 @@ require(visNetwork)
 # BEGINNING OF UI
 
 ui <- navbarPage("FSA", fluid = TRUE,
-        tabPanel("Basic overview",
-                 fluidRow(h1("Select a commodity"),
+        tabPanel("Understanding Trade Patterns",
+                 fluidRow(h1("Select a food product"),
                           column(3,
                                  selectInput("commodity", 
                                              label = "Commodities",
@@ -16,7 +16,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                              selected = "Cucumbers",
                                              multiple = FALSE)
                           )),
-                 fluidRow(h1("General overview"),
+                 fluidRow(h1("Country Trade Patterns Over Time"),
                           column(3,
                                  selectInput("go_country", 
                                              label = "Select a countries",
@@ -38,17 +38,17 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                  plotOutput("go_plot")
                           )
                  )),
-        tabPanel("Trade network",
-          fluidRow(h1("The network"),
+        tabPanel("The Wider Network",
+          fluidRow(h1("Trade Network"),
             column(3,
               sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1),
-              sliderInput("threshold_network:", "Threshold",min = 0.3, max = 0.95, value = 0.9,step = 0.05)
+              sliderInput("threshold_network:", "Network Complexity",min = 0.3, max = 0.95, value = 0.9,step = 0.05)
                  ),
                  column(9,
                    visNetworkOutput("network_plot")
                  )
                )),
-        tabPanel("Identifying Irregular Trading Patterns",
+        tabPanel("Irregular Trading Patterns",
                  fluidRow(h1("Flagged Countries During Specifed Month - SUPER slow - be patient for now"),
                           column(3,
                                  sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1
@@ -69,8 +69,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
                           )
                  )
         ),
-        tabPanel("Classifying",
-          fluidRow(h1("k-means classification of countries"),
+        tabPanel("Classifying Countries",
+          fluidRow(h1("Identifying Similar Countries"),
             column(3,
               selectInput("km_country", 
                 label = "Select a country",
@@ -85,8 +85,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
               plotOutput("km_plot")
             )
           )),
-        tabPanel("Modelling",
-          fluidRow(h1("Linear model"),
+        tabPanel("Predictive Model 1",
+          fluidRow(h1("Predicting the Impact of Adding/Removing Connections"),
             column(3,
               sliderInput("deginwei:", "Arriving links",
                        min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = max(all_info$deg_in_wei),
@@ -115,8 +115,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
             )
          )
       ),
-      tabPanel("Network model",          
-               fluidRow(h1("Predict trade"),
+      tabPanel("Predictive Model 2",          
+               fluidRow(h1("Predicting the Probability of Network Connections"),
                         column(3,
                                selectInput("ad_country", 
                                            label = "Select a country",
