@@ -1,4 +1,3 @@
-#Returns scaled nett trade and nett weight and flux (Alex's definition)
 get_trade_attributes_test <- function(df){
   
   df <- df %>% filter(trade_flow != "Re-imports" & trade_flow != "Re-exports" & reporter != "World" & reporter != "EU-27" & partner != "World" & partner != "EU-27")
@@ -11,8 +10,8 @@ get_trade_attributes_test <- function(df){
   
   #Calculate attributes
   world_trade_att    <- full_join(world_imports_to, world_imports_from, by='label', stringsAsFactors = FALSE) %>% mutate_all(funs(replace(., is.na(.), 0))) %>% mutate(nett_trade =trade_value_usd.y-trade_value_usd.x)
-  
   world_trade_att    <- world_trade_att %>% select(label, nett_trade)     
+  
   return(world_trade_att)
       
 }
