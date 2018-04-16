@@ -11,7 +11,7 @@ df2_anomalies <- df2_analysed %>% filter(anomaly == "Yes")
 #Recomposing time
 anomaly_recomposed <- df2_analysed %>% time_recompose()
 #Create graph with anomalies detected
-anomaly_plot <- plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1) + ylim(c(-1 ,1 )) + labs(labs(x="Time", y="Producer                Distributor                Consumer"))
+anomaly_plot <- plot_anomalies(anomaly_recomposed, time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1) + ylim(c(-1 ,1 )) + labs(labs(x="Time", y="Producer                Distributor                Consumer"))
 
 return(anomaly_plot)
 
