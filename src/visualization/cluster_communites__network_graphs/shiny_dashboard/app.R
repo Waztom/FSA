@@ -1,0 +1,145 @@
+require(visNetwork)
+
+# BEGINNING OF UI
+
+ui <- navbarPage("FSA", fluid = TRUE,
+        tabPanel("Data Exploration",
+          fluidRow(h1("The network"),
+            column(1,
+              sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1),
+              sliderInput("threshold_network:", "Threshold",min = 0.3, max = 0.95, value = 0.9,step = 0.05)),
+                 column(5,
+                   visNetworkOutput("network_plot")
+                 ),
+               #),
+          #fluidRow(h1("Trade communities"),
+                   column(3,
+                          plotOutput("members_plot")
+                   ),
+                   column(3,
+                          plotOutput("cluster_plot")
+                   )
+                )     
+           ), 
+        tabPanel("Modeling",
+          fluidRow(h1("k-means classification of countries"),
+            column(3,
+              selectInput("km_country", 
+                label = "Select a country",
+                choices = sort(unique(all_info$node)),
+                selected = "United Kingdom"),
+              sliderInput("km_num_clust", "Number of clusters", min = 15, max = 25, value = 15)
+            ),
+            column(5,
+              dataTableOutput("km_data")
+            ),
+            column(4,
+              plotOutput("km_plot")
+            )
+          ),
+          fluidRow(h1("Linear model"),
+            column(3,
+              sliderInput("deginwei:", "Arriving links",
+                       min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = max(all_info$deg_in_wei),
+                       step = 1),
+              sliderInput("degoutwei:", "Leaving links",
+                       min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = floor(median(all_info$deg_out_wei)),
+                       step = 1),
+              sliderInput("betval:", "Betweeness",
+                       min = min(all_info$bet_val),     max = max(all_info$bet_val),     value = floor(median(all_info$bet_val)),
+                       step = 1),
+              sliderInput("trino:", "Number of triangles",
+                       min = min(all_info$tri_no),      max = max(all_info$tri_no),      value = floor(median(all_info$tri_no)),
+                       step = 1),
+              sliderInput("eigenval:", "Eigenvalue",
+                       min = min(all_info$eigen_val),   max = max(all_info$eigen_val),   value = floor(median(all_info$eigen_val)),
+                       step = 0.1),
+              sliderInput("ratio:", "Ratio",
+                       min = min(all_info$ratio), max = max(all_info$ratio),             value = floor(median(all_info$ratio)),
+                       step = 0.1)),
+            column(5,
+              wellPanel(htmlOutput("lm_prediction")),
+              h3("Residuals squared for each variable:"),
+              wellPanel(textOutput("lm_fit"))),
+            column(4,
+              plotOutput("lm_plot")
+            )
+         )
+      )
+   )
+# END OF UI
+
+#BEGINNING OF SERVER
+
+server <- function(input, output) {
+
+#Functions
+  
+  source("model_kmeans.R")
+  source("model_linear.R")
+  source("build_network.R")
+  source("anomaly_detection.R")
+  source("community_analysis.R")
+
+  #Kmeans function
+  mydata_km <- reactive({
+               model_kmeans(all_info,input$km_num_clust,input$km_country)
+  })
+  
+  #Linear model function
+  mydata_lm <- reactive({
+               model_linear(all_info,
+                 input$deginwei,
+                 input$degoutwei,
+                 input$betval,
+                 input$trino,
+                 input$eigenval,
+                 input$ratio)
+  })
+  
+#Generating output
+  
+  # kmeans
+  output$km_data <- renderDataTable({
+                    mydata_km()$km_data
+  })
+  output$km_plot <- renderPlot({
+                    mydata_km()$km_plot
+  })
+  
+  # Linear model
+  output$lm_fit <- renderPrint({
+                   mydata_lm()$lm_fit
+  })
+  output$lm_prediction <- renderText({
+                          paste("Prediction of overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
+                          mydata_lm()$lm_prediction,"</b></font>",sep="")
+  })
+  output$lm_plot <- renderPlot({
+                    mydata_lm()$lm_plot
+  })
+  
+  # Network plot
+  output$network_plot <- renderVisNetwork({
+     build_network(si,input$date_network,input$threshold_network)
+  })
+  
+  #Community plot
+  output$members_plot <- renderPlot({
+    community_analysis(si,input$date_network,input$threshold_network, type = "members")
+  })
+  
+  #Cluster plot
+  output$cluster_plot <- renderPlot({
+    community_analysis(si,input$date_network,input$threshold_network, type = "cluster")
+  })
+
+  # Anomaly detection plot
+  output$ad_plot <- renderPlot({
+    anomaly_detection(all_info,input$ad_country)
+  })
+}
+
+#END OF SERVER
+
+shinyApp(ui, server)
