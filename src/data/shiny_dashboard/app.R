@@ -9,7 +9,10 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                  selectInput("commodity", 
                                              label = "Commodities",
                                              choices = c("Cucumbers",
-                                                         "Vanilla"),
+                                                         "Vanilla",
+                                                         "Beer",
+                                                         "Milk",
+                                                         "Maple Syrup"),
                                              selected = "Cucumbers",
                                              multiple = FALSE)
                           )),
@@ -43,8 +46,9 @@ ui <- navbarPage("FSA", fluid = TRUE,
                         h4("Identifies countries which deviate from their normal trade patterns for the month specified, to help identify potential risks"),
                         h6("Select a month on the time dial"),
                         column(3,
-                               sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1
-                               )),
+                               uiOutput("ad_date")
+                               )
+                               ,
                         column(9,
                                dataTableOutput("ad_table_all")
                         )
@@ -53,10 +57,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                         h4("Shows regular trade pattern for the country selected, including seasonal and overall trends. Plus detects deviations from normal trend to help highlight potential risks"),
                         h6("Select a country in the drop down menu"),
                         column(3,
-                               selectInput("ad_country", 
-                                           label = "Select a country",
-                                           choices = sort(unique(all_info$node)),
-                                           selected = "United Kingdom")
+                        uiOutput("ad_sel_country")
                         ),
                         column(9,
                                plotOutput("ad_plot")
@@ -105,14 +106,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
                         h6("Enter the name of two countries and the probability will be returned"),
                         column(3,
                                sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
-                               selectInput("from_country", 
-                                           label = "Select from country",
-                                           choices = sort(unique(all_info$node)),
-                                           selected = "Spain"),
-                               selectInput("to_country", 
-                                           label = "Select to country",
-                                           choices = sort(unique(all_info$node)),
-                                           selected = "United Kingdom")
+                                uiOutput("pm_origin"),
+                                uiOutput("pm_destin")
                         ),
                         column(3,
                                textOutput("probability_link")
@@ -215,6 +210,35 @@ output$lm_var6 <- renderUI({
 sliderInput("ratio:", "Ratio",
             min = min(all_info$ratio), max = max(all_info$ratio),             value = floor(median(all_info$ratio)),
             step = 0.1)
+})
+
+output$ad_date <- renderUI({
+  si <- si()
+  sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1)
+})
+
+output$ad_sel_country <- renderUI({
+  all_info <- all_info()
+  selectInput("ad_country", 
+            label = "Select a country",
+            choices = sort(unique(all_info$node)),
+            selected = "United Kingdom")
+})
+
+output$pm_origin <- renderUI({
+  all_info <- all_info()
+selectInput("from_country", 
+            label = "Select from country",
+            choices = sort(unique(all_info$node)),
+            selected = "Spain")
+})
+
+output$pm_destin <- renderUI({
+  all_info <- all_info()
+selectInput("to_country", 
+            label = "Select to country",
+            choices = sort(unique(all_info$node)),
+            selected = "United Kingdom")
 })
 
 output$ne_date <- renderUI({
