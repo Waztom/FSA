@@ -39,15 +39,15 @@ Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>%
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
   visEdges(arrows = "to", color=list(inherit=TRUE)) %>%
   visNodes(font=list(size=30), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
-  visOptions(selectedBy = "group", highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
     nodesIdSelection = TRUE, clickToUse=TRUE) %>%
-  #visInteraction(navigationButtons = TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
   visLegend(addNodes = list(
     list(label = "Distributor", shape = "square"),
     list(label = "Consumer",    shape = "dot"),
     list(label = "Producer",    shape = "triangle")
   ),
-  useGroups = FALSE, zoom = FALSE, width=0.05, position = "right")
+  useGroups = FALSE, zoom = FALSE, width=0.5, position = "right")
 
 
 return(Network)
