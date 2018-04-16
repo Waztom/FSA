@@ -228,10 +228,13 @@ above_ten_anomalies <- above_ten_analysed %>% filter(anomaly == "Yes") %>% print
 
 #anomalies <- anomaly_summary %>% filter(anomaly == "Yes") %>% print
 
-anomaly_summary %>% filter(node == "Netherlands") %>% ungroup %>% plot_anomaly_decomposition 
+anomaly_summary %>% filter(node == "Netherlands") -> an
+ ungroup %>% plot_anomaly_decomposition 
 
-anomaly_summary %>% time_recompose() %>%
-  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+an %>% time_recompose() -> anomaly_recomp
+  plot_anomalies(anomaly_recomp, time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1) + ylim(c(-1 ,1 )) + labs(labs(x="Time", y="Producer                Distributor                Consumer"))
+
+
 
 ```
 
