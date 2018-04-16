@@ -88,19 +88,19 @@ nodes_groups_shape_size <- nodes %>%
 }
 
 #Creation of network
-Network <- visNetwork(nodes_groups_shape_size, edges) %>% 
+Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>% 
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
   visEdges(arrows = "to", color=list(inherit=TRUE)) %>%
-  visNodes(font=list(size=40), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
+  visNodes(font=list(size=30), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
   visOptions(selectedBy = "group", highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
     nodesIdSelection = TRUE, clickToUse=TRUE) %>%
-  visInteraction(navigationButtons = TRUE) %>%
+  #visInteraction(navigationButtons = TRUE) %>%
   visLegend(addNodes = list(
     list(label = "Distributor", shape = "square"),
     list(label = "Consumer",    shape = "dot"),
     list(label = "Producer",    shape = "triangle")
   ),
-  useGroups = FALSE, zoom = FALSE)
+  useGroups = FALSE, zoom = FALSE, width=0.05, position = "right")
 
 #nodes <- data.frame(id = 1:3)
 #edges <- data.frame(from = c(1,2), to = c(1,3))
