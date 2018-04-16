@@ -47,8 +47,8 @@ all_info_va <- data$all_info
 si_va       <- data$si
 
 data        <- model_get_data("Cucumbers")
-all_info <- data$all_info
-si    <- data$si
+all_info_cu <- data$all_info
+si_cu    <- data$si
 ```
 
 # Launch the app
