@@ -134,9 +134,7 @@ server <- function(input, output) {
   source("model_linear.R")
   source("build_network.R")
   source("anomaly_detection.R")
-
   source("network_model.R")
-
   source("get_all_info.R")
   source("get_si.R")
   source("anomaly_detection_all.R")
