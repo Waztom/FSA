@@ -3,7 +3,42 @@ require(visNetwork)
 # BEGINNING OF UI
 
 ui <- navbarPage("FSA", fluid = TRUE,
-        tabPanel("Data Exploration",
+        tabPanel("Basic overview",
+                 fluidRow(h1("Select a commodity"),
+                          column(3,
+                                 selectInput("commodity", 
+                                             label = "Commodities",
+                                             choices = c("Cucumbers",
+                                                         "Beer",
+                                                         "Milk",
+                                                         "Vanilla",
+                                                         "Maple syrup"),
+                                             selected = "Cucumbers",
+                                             multiple = FALSE)
+                          )),
+                 fluidRow(h1("General overview"),
+                          column(3,
+                                 selectInput("go_country", 
+                                             label = "Select a countries",
+                                             choices = sort(unique(all_info$node)),
+                                             selected = "United Kingdom",
+                                             multiple = TRUE),
+                                 selectInput("go_xaxis", 
+                                             label = "Select a variable in x axis",
+                                             choices = names(all_info),
+                                             selected = "period_date",
+                                             multiple = FALSE),
+                                 selectInput("go_yaxis", 
+                                             label = "Select a variable in y axis",
+                                             choices = names(all_info),
+                                             selected = "ratio",
+                                             multiple = FALSE)                          
+                          ),
+                          column(9,
+                                 plotOutput("go_plot")
+                          )
+                 )),
+        tabPanel("Trade network",
           fluidRow(h1("The network"),
             column(3,
               sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1),
@@ -12,7 +47,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
                  column(9,
                    visNetworkOutput("network_plot")
                  )
-               ),
+               )),
+        tabPanel("Anomalies",          
           fluidRow(h1("Anomaly detection"),
                    column(3,
                           selectInput("ad_country", 
@@ -23,33 +59,9 @@ ui <- navbarPage("FSA", fluid = TRUE,
                    column(9,
                           plotOutput("ad_plot")
                           )
-               ),
-          fluidRow(h1("General overview"),
-                   column(3,
-                          selectInput("go_country", 
-                                      label = "Select a countries",
-                                      choices = sort(unique(all_info$node)),
-                                      selected = "United Kingdom",
-                                      multiple = TRUE),
-                          selectInput("go_xaxis", 
-                                      label = "Select a variable in x axis",
-                                      choices = names(all_info),
-                                      selected = "period_date",
-                                      multiple = FALSE),
-                          selectInput("go_yaxis", 
-                                      label = "Select a variable in y axis",
-                                      choices = names(all_info),
-                                      selected = "ratio",
-                                      multiple = FALSE)                          
-                   ),
-                   column(9,
-                          plotOutput("go_plot")
-                   )
-          )         
-          
-          
+               )
              ),
-        tabPanel("Modeling",
+        tabPanel("Classifying",
           fluidRow(h1("k-means classification of countries"),
             column(3,
               selectInput("km_country", 
@@ -64,7 +76,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
             column(4,
               plotOutput("km_plot")
             )
-          ),
+          )),
+        tabPanel("Modelling",
           fluidRow(h1("Linear model"),
             column(3,
               sliderInput("deginwei:", "Arriving links",
@@ -107,7 +120,15 @@ server <- function(input, output) {
   source("model_linear.R")
   source("build_network.R")
   source("anomaly_detection.R")
+  source("model_get_data.R")
 
+  #Load the data
+  get_com_data <- reactive({
+    data     <- model_get_data(input$commodity)
+    all_info <- data$all_info
+    si       <- data$si
+  })
+  
   #Kmeans function
   mydata_km <- reactive({
                model_kmeans(all_info,input$km_num_clust,input$km_country)
