@@ -1,23 +1,23 @@
 model_get_data <- function(commodity){
 
 #Set the path
-  pathname <- "../../../data/"
+pathname <- "../../../data/"
 
 #Choose the commodity in a crappy way
 if(commodity == "Cucumbers"){
-  comname = "comtrade_all_cucumber.csv"
+  comname <- "comtrade_all_cucumber.csv"
 }else if(commodity == "Vanilla"){
-  comname = "comtrade_all_vanilla.csv"
+  comname <- "comtrade_all_vanilla.csv"
 }else if(commodity == "Beer"){
-  comname = "comtrade_all_beer.csv"
+  comname <- "comtrade_all_beer.csv"
 }else if(commodity == "Milk"){
   comname = "comtrade_all_milk.csv"
 }else if(commodity == "Maple Syrup"){
-  comname = "comtrade_all_maplesyrup.csv"
+  comname <- "comtrade_all_maplesyrup.csv"
 }
   
 #Build the filename
-  csv_file_name <- paste(pathname,comname)
+  csv_file_name <- paste(pathname,comname,sep="")
   
 # Read the csv file for a commodity
 df <- read.csv(file=csv_file_name, header=TRUE)

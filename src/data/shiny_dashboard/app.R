@@ -20,7 +20,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                           column(3,
                                  selectInput("go_country", 
                                              label = "Select a countries",
-                                             choices = sort(unique(all_info$node)),
+                                           choices = sort(unique(all_info$node)),
                                              selected = "United Kingdom",
                                              multiple = TRUE),
                                  selectInput("go_xaxis", 
@@ -120,14 +120,7 @@ server <- function(input, output) {
   source("model_linear.R")
   source("build_network.R")
   source("anomaly_detection.R")
-  source("model_get_data.R")
 
-  #Load the data
-  get_com_data <- reactive({
-    data     <- model_get_data(input$commodity)
-    all_info <- data$all_info
-    si       <- data$si
-  })
   
   #Kmeans function
   mydata_km <- reactive({
