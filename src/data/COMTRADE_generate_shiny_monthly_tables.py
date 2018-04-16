@@ -33,7 +33,6 @@ args = parser.parse_args()
 # Actual code starts here
 
 percentile=args.percentile
-commodity='pork...'
 commodity_codes=args.com_codes #['0905','0905']
 trade_period=[args.trade_period_start, args.trade_period_end] #['201601', '201612']
 
@@ -54,6 +53,9 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     # Keep only the imports
     trade = trade[trade.trade_flow_code == 1]
     
+    # Create a trade_dump used for the network modeling
+    trade_dump = trade[['partner','period','trade_value_usd']].copy()
+    trade_dump['reporter'] = 'United Kingdom'
     # Sum up trade by partner
 #    trade_network = trade.groupby('partner')[['trade_value_usd']].sum()
     trade_network = trade.groupby(['period','partner'])[['trade_value_usd']].sum()
@@ -66,7 +68,7 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     # Discard partners which are country groups
     for pti in partners_to_ignore:
         if pti in trade_network.index:
-            trade_network = trade_network.drop(pti)    
+            trade_network = trade_network.drop(pti)
     
     # Create initial list of partners to scan
 #    partners_to_scan=trade_network.index.tolist()
@@ -84,14 +86,20 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
         partner_name=partners_to_scan[0]
         
         new_trade = pysqlib.comtrade_sql_request_all_partners( com_codes = commodity_codes, reporter_name = partner_name, start_period = trade_period[0], end_period = trade_period[1])
-        if new_trade is None:
+        if new_trade is None or new_trade.empty:
             print('Error with '+partner_name+' ignoring it for the moment.')
             new_trade = pd.DataFrame([], columns=['trade_value_usd'], index = trade_network.index)
             partner_name_errors.append(partner_name)
         else:
+            new_trade_dump = trade[['partner','period','trade_value_usd']].copy()
+            new_trade_dump['reporter'] = partner_name
+            
             new_trade = new_trade[new_trade.trade_flow_code == 1]
             new_trade = new_trade.groupby(['period','partner'])[['trade_value_usd']].sum()
-            
+        
+        # Concatenate the additional data to the trade dump
+        trade_dump = pd.concat([trade_dump, new_trade_dump])
+        
         # Remove trades which do no reach the cutoff or are NaN
         new_trade = new_trade[~new_trade.trade_value_usd.isnull()]
         new_trade = new_trade[new_trade.trade_value_usd.values > trade_quantile]
@@ -119,10 +127,22 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     
     trade_network.to_pickle('latest_network.pickle')
     # Create python pickle
-    trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'.pickle')
+    trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'_monthly.pickle')
     
     # Create csv
+    trade_network.to_csv(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_monthly.csv')
+    
+    # Aggregate data over all period
+    trade = trade.groupby('partner').sum()
+
+    # Create aggregated python pickle
+    trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'.pickle')
+    
+    # Create aggregated csv
     trade_network.to_csv(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'.csv')
+    
+    # Generate a non-grouped csv
+    trade_dump.to_csv(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump.csv')
     
     print('Total request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     print(trade_network.describe())
