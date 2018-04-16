@@ -110,12 +110,17 @@ ui <- navbarPage("FSA", fluid = TRUE,
       tabPanel("Network model",          
                fluidRow(h1("Predict trade"),
                         column(3,
-                               selectInput("ad_country", 
-                                           label = "Select a country",
+                               sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
+                               selectInput("from_country", 
+                                           label = "Select from country",
+                                           choices = sort(unique(all_info$node)),
+                                           selected = "Spain"),
+                               selectInput("to_country", 
+                                           label = "Select to country",
                                            choices = sort(unique(all_info$node)),
                                            selected = "United Kingdom")
                         ),
-                        column(9,
+                        column(3,
                                textOutput("probability_link")
                         )
                )
@@ -133,6 +138,7 @@ server <- function(input, output) {
   source("model_linear.R")
   source("build_network.R")
   source("anomaly_detection.R")
+  source("network_model.R")
 
   
   #Kmeans function
@@ -188,6 +194,11 @@ server <- function(input, output) {
     ggplot(all_info %>% filter(node %in% input$go_country),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
            geom_point(aes(color=node), size=3, alpha = 0.75)
+  })
+  
+  # Network model output
+  output$probability_link <- renderText({
+    network_model(si,input$month_model,input$from_country,input$to_country)
   })
 }
 

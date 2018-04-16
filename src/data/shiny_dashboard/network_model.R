@@ -1,9 +1,8 @@
 network_model <- function(si,date1,country_from,country_to){
 
-all_months <- as.data.frame(sort(unique(si$period)))
-
 #Get country ids
-df <- si %>% filter(trade_flow != "Re-imports" & trade_flow != "Re-exports" & reporter != "World" & reporter != "EU-27" & partner != "World" & partner != "EU-27")
+df <- si
+df  <- df %>% rename(reporter=destin) %>% rename(partner=origin)
 df$partner  <- as.character(df$partner)
 df$reporter <- as.character(df$reporter)
 
@@ -20,17 +19,15 @@ country_id <- arrange(country_id,label)
 country_id <- country_id %>% rowid_to_column("id")
 
 #Find country id
-country_from <- country_id %>% filter(label==country_from) 
+country_from_id <- country_id %>% filter(label==country_from)
+country_from_id <- country_from_id[[1]][1]
 
+country_to_id <- country_id %>% filter(label==country_to)
+country_to_id <- country_to_id[[1]][1]
 
 #Get probability of link
-prob <- interpret(cucumber_model, type = "tie", i = c(94), j = c(174), t = 24)
-
-#Create linked community object using linkcomm and clustering by edges
-lc <- getLinkCommunities(edges, directed =T, plot = FALSE)
-
-#Creation of plots
-members <- plot(lc, type = "members")
-return(members)
+prob <- interpret(cucumber_model, type = "tie", i = country_from_id, j = country_to_id, t = date1 )
+prob <- as.character(prob)
+return(prob)
 
 }

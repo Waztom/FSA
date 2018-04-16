@@ -111,12 +111,12 @@ dev.off()
 saveRDS(model.1c, "cucumber_network_model_si.rds")
 
 #Test probbility two nodes tied - try UK and Spain. i and j values from country_ids
-interpret(model.1c, type = "tie", i = c(94), j = c(174), t = 24)
+interpret(model.1c, type = "tie", i = c(129), j = c(145), t = 24)
 
 prob_vector <- vector()
 #Loop through to get probability over time
 for (time in 1:nrow(period_summary)){
-  prob_values  <- interpret(model.1c, type = "node", i = c(174), j = c(193,33), t = time)
+  prob_values  <- interpret(model.1c, type = "node", i = c(129), j = c(145,33), t = time)
   prob_dat <- as.data.frame(prob_values,col.names = c("1"))
   prob_vector[time] <- prob_dat[[3,1]]
 }
@@ -124,9 +124,8 @@ for (time in 1:nrow(period_summary)){
 plot(period_summary$period,prob_vector)
 
 #Load model file
-cucumber_model<-readRDS('cucumber_network_model.rds')
+cucumber_model<-readRDS('cucumber_network_model_si.rds')
 
 #Use loaded model for interpretation
-interpret(cucumber_model, type = "tie", i = c(94), j = c(174), t = 24)
-
+interpret(cucumber_model, type = "tie", i = c(15), j = c(113), t = 25)
 ```
