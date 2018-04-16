@@ -134,9 +134,9 @@ server <- function(input, output) {
   source("model_linear.R")
   source("build_network.R")
   source("anomaly_detection.R")
-<<<<<<< HEAD
+
   source("network_model.R")
-=======
+
   source("get_all_info.R")
   source("get_si.R")
   source("anomaly_detection_all.R")
@@ -157,7 +157,7 @@ output$go_sel_country <- renderUI({
               selected = "United Kingdom",
               multiple = TRUE)
   })
->>>>>>> b3f238016a9b5e5c6018fb42c9ab8610fd174774
+
 
 output$go_sel_x <- renderUI({
   all_info <- all_info()
