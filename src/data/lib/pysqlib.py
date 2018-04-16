@@ -46,34 +46,46 @@ def get_partner_code(comtrade_dictionary, country):
     '''
     Search the partner country code
     '''
-    country_code = comtrade_dictionary['partners'][comtrade_dictionary['partners']['text'].str.contains(country)]
+    country_code = comtrade_dictionary['partners'][comtrade_dictionary['partners']['text'].str.match(country)]
     
     if country_code.empty:
         print('ERROR:' + country + ' not found.')
         country_code = None
+    elif len(country_code)>1 and (country_code['text'].str.len()==len(country)).any():
+        country_code =country_code[country_code['text'].str.len()==len(country)]
+        print('Reporter:')
+        print(country_code)
+        print(' ')
+        country_code = country_code['id'].iloc[-1]
     else:
-        #take first one if more than one result\
+        #take last one if more than one as the newest country name comes last
         print('Partner:')
         print(country_code)
         print(' ')
-        country_code = country_code['id'].iloc[0]
+        country_code = country_code['id'].iloc[-1]
     return country_code
     
 def get_reporter_code(comtrade_dictionary, country):
     '''
     Search the reporter country code
     '''
-    country_code = comtrade_dictionary['reporters'][comtrade_dictionary['reporters']['text'].str.contains(country)]
+    country_code = comtrade_dictionary['reporters'][comtrade_dictionary['reporters']['text'].str.match(country)]
     
     if country_code.empty:
         print('ERROR:' + country + ' not found.')
         country_code = None
-    else:
-        #take first one if more than one result
+    elif len(country_code)>1 and (country_code['text'].str.len()==len(country)).any():
+        country_code =country_code[country_code['text'].str.len()==len(country)]
         print('Reporter:')
         print(country_code)
         print(' ')
-        country_code = country_code['id'].iloc[0]
+        country_code = country_code['id'].iloc[-1]
+    else:
+        #take last one if more than one as the newest country name comes last
+        print('Reporter:')
+        print(country_code)
+        print(' ')
+        country_code = country_code['id'].iloc[-1]
     return country_code
         
 def get_commodity_code(comtrade_dictionary, commodity):
