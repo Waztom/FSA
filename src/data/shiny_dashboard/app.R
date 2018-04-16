@@ -127,7 +127,9 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                textOutput("probability_link")
                         )
                )
-      )
+      ),
+      tabPanel("Help",
+               fluidRow(h1("Dashboard Demonstration")))
    )
 # END OF UI
 
