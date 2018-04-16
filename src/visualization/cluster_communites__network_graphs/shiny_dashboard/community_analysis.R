@@ -1,5 +1,5 @@
 #Alex - this is very simmilar (almost identical) to script build_network.R
-#Have changed some bits to convert id to actual name of country and the 
+#Have added some bits to convert id to actual name of country and the 
 #create members plot.
 #Think this would be useful to help user interpret network graphs with low threshold 
 #settings and most powerful if used next to the actual plot.  
