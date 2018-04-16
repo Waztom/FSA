@@ -19,6 +19,7 @@ library(tidygraph)
 library(rlist)
 library(gridExtra)
 library(statnet)
+library(texreg)
 library(xergm)
 library(btergm)
 ```
