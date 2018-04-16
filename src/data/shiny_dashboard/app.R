@@ -42,9 +42,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                fluidRow(h1("Flagged Countries During Specifed Month - SUPER slow - be patient for now"),
                         h4("Identifies countries which deviate from their normal trade patterns for the month specified, to help identify potential risks"),
                         h6("Select a month on the time dial"),
-                        column(3,
-                               sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1
-                               )),
+                        uiOutput("ne_date"),
                         column(9,
                                dataTableOutput("ad_table_all")
                         )
@@ -103,6 +101,24 @@ ui <- navbarPage("FSA", fluid = TRUE,
                fluidRow(h1("Predicting the Probability of Network Connections"),
                         h4("Predicts the probability that two nodes are connected, to help evaluate whether trade is likely to have passed down a particular path"),
                         h6("Enter the name of two countries and the probability will be returned"),
+                        column(3,
+                               sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
+                               selectInput("from_country", 
+                                           label = "Select from country",
+                                           choices = sort(unique(all_info$node)),
+                                           selected = "Spain"),
+                               selectInput("to_country", 
+                                           label = "Select to country",
+                                           choices = sort(unique(all_info$node)),
+                                           selected = "United Kingdom")
+                        ),
+                        column(3,
+                               textOutput("probability_link")
+                        )
+               )
+      ),
+      tabPanel("Network model",          
+               fluidRow(h1("Predict trade"),
                         column(3,
                                sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
                                selectInput("from_country", 
@@ -304,6 +320,7 @@ output$km_sel <- renderUI({
   
   # Network model output
   output$probability_link <- renderText({
+    si <- si()
     network_model(si,input$month_model,input$from_country,input$to_country)
   })
 }
