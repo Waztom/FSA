@@ -50,7 +50,7 @@ if(get_data == 0){
  load('all_shiny_data.RData')
 }else{
  source("model_get_data.R")
- data <- model_get_data('../../../data/comtrade_all_vanilla.csv')
+ data <- model_get_data('../../../data/comtrade_all_maplesyrup.csv')
  all_info <- data$all_info
  si       <- data$si
 }
