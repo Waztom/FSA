@@ -7,7 +7,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
           fluidRow(h1("The network"),
             column(3,
               sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1),
-              sliderInput("threshold_network:", "Threshold",min = 0.3, max = 0.95, value = 0.9,step = 0.05)),
+              sliderInput("threshold_network:", "Threshold",min = 0.3, max = 0.95, value = 0.9,step = 0.05)
+                 ),
                  column(9,
                    visNetworkOutput("network_plot")
                  )
@@ -22,7 +23,31 @@ ui <- navbarPage("FSA", fluid = TRUE,
                    column(9,
                           plotOutput("ad_plot")
                           )
-               )          
+               ),
+          fluidRow(h1("General overview"),
+                   column(3,
+                          selectInput("go_country", 
+                                      label = "Select a countries",
+                                      choices = sort(unique(all_info$node)),
+                                      selected = "United Kingdom",
+                                      multiple = TRUE),
+                          selectInput("go_xaxis", 
+                                      label = "Select a variable in x axis",
+                                      choices = names(all_info),
+                                      selected = "period_date",
+                                      multiple = FALSE),
+                          selectInput("go_yaxis", 
+                                      label = "Select a variable in y axis",
+                                      choices = names(all_info),
+                                      selected = "ratio",
+                                      multiple = FALSE)                          
+                   ),
+                   column(9,
+                          plotOutput("go_plot")
+                   )
+          )         
+          
+          
              ),
         tabPanel("Modeling",
           fluidRow(h1("k-means classification of countries"),
@@ -129,6 +154,13 @@ server <- function(input, output) {
   # Anomaly detection plot
   output$ad_plot <- renderPlot({
     anomaly_detection(all_info,input$ad_country)
+  })
+  
+  # General overview plot
+  output$go_plot <- renderPlot({
+    ggplot(all_info %>% filter(node %in% input$go_country),
+           aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
+           geom_point(aes(color=node), size=3, alpha = 0.75)
   })
 }
 
