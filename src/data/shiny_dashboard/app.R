@@ -49,7 +49,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                  )
                )),
         tabPanel("Identifying Irregular Trading Patterns",
-                 fluidRow(h1("Flagged Countries During Specifed Month"),
+                 fluidRow(h1("Flagged Countries During Specifed Month - SUPER slow - be patient for now"),
                           column(3,
                                  sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1
                                  )),
