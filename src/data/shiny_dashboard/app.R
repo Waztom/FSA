@@ -106,6 +106,19 @@ ui <- navbarPage("FSA", fluid = TRUE,
               plotOutput("lm_plot")
             )
          )
+      ),
+      tabPanel("Network model",          
+               fluidRow(h1("Predict trade"),
+                        column(3,
+                               selectInput("ad_country", 
+                                           label = "Select a country",
+                                           choices = sort(unique(all_info$node)),
+                                           selected = "United Kingdom")
+                        ),
+                        column(9,
+                               textOutput("probability_link")
+                        )
+               )
       )
    )
 # END OF UI
