@@ -42,7 +42,7 @@ library(shiny)
 
 ```{r}
 source("model_get_data.R")
-data <-model_get_data("Cucumbers")
+data <- model_get_data("Cucumbers")
 all_info <- data$all_info
 si       <- data$si
 ```
