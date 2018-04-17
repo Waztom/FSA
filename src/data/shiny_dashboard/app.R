@@ -2,7 +2,20 @@ require(visNetwork)
 
 # BEGINNING OF UI
 
-ui <- navbarPage("FSA", fluid = TRUE,
+ui <- fluidPage(sidebarLayout(
+  sidebarPanel(navlistPanel(
+    widths = c(12, 12), "SidebarMenu",
+    tabPanel(selectizeInput("commodity",
+                            "Select a commodity", 
+                            selected="Cucumbers", 
+                            choices = c("Cucumbers",
+                                        "Vanilla",
+                                        "Beer",
+                                        "Milk",
+                                        "Maple Syrup"),
+                            multiple = FALSE))
+  )),
+  mainPanel(navbarPage("FSA", fluid = TRUE,
         tabPanel("Understanding Trade Patterns",
                  fluidRow(wellPanel(
                           h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
@@ -139,7 +152,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
       ),
       tabPanel("Help",
                fluidRow(h1("Dashboard Demonstration")))
-   )
+   ))))
 
 # END OF UI
 
