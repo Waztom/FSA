@@ -36,7 +36,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                 uiOutput("go_sel_y")
                                 ),
                           column(9,
-                                 plotOutput("go_plot")
+                                 plotOutput("go_plot", width = "1200px", height = "350px")
                           )
                  ))
       ,
@@ -73,7 +73,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                 uiOutput("ad_sel_country")
                          ),
                          column(9,
-                                plotOutput("ad_plot")
+                                plotOutput("ad_plot", width = "1200px", height = "650px")
                          )
                 )
       ),
