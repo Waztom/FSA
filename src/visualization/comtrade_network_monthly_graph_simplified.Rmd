@@ -233,7 +233,27 @@ nodes_nets_summary_shape <- nodes_nets_summary_abs %>% mutate(shape = ifelse(net
 
 #new visual with node size depending on import/export
 ```{r}
-Network <- visNetwork(nodes_nets_summary_shape, edges) %>% 
+visNetwork(nodes_nets_summary_shape, edges) %>% 
+  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visEdges(arrows = "to", color=list(inherit=TRUE)) %>%
+  visNodes(font=list(size=30), shadow = TRUE, scaling=list(min=10, max = 50)) %>%
+  visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
+    nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visLegend(addNodes = list(
+    list(label = "Distributor", shape = "square"),
+    list(label = "Consumer",    shape = "dot"),
+    list(label = "Producer",    shape = "triangle")
+  ),
+  useGroups = FALSE, zoom = FALSE, width = 0.1)
+
+
+
+  #visSave(Network, file = "Phoebe_network.html")
+```
+
+```{r}
+visNetwork(nodes_nets_summary_shape, edges) %>% 
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
   visEdges(arrows = "to",
            color=list(inherit=TRUE)) %>%
@@ -251,6 +271,5 @@ Network <- visNetwork(nodes_nets_summary_shape, edges) %>%
   list(label = "Net Exporter", shape = "square")
  ),
  useGroups = FALSE)
-
-  visSave(Network, file = "Phoebe_network.html")
 ```
+
