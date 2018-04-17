@@ -3,9 +3,7 @@ require(visNetwork)
 # BEGINNING OF UI
 
 ui <- fluidPage(sidebarLayout(
-  sidebarPanel(navlistPanel(
-    widths = c(12, 12),
-    tabPanel(selectizeInput("commodity",
+  sidebarPanel(selectizeInput("commodity",
                             "Select a food product", 
                             selected="Cucumbers", 
                             choices = c("Cucumbers",
@@ -13,8 +11,8 @@ ui <- fluidPage(sidebarLayout(
                                         "Beer",
                                         "Milk",
                                         "Maple Syrup"),
-                            multiple = FALSE))
-  )),
+                            multiple = FALSE)
+  ),
   mainPanel(navbarPage("FSA", fluid = TRUE,
         tabPanel("Understanding Trade Patterns",
                  fluidRow(wellPanel(
