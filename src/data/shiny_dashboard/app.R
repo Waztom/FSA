@@ -4,9 +4,9 @@ require(visNetwork)
 
 ui <- fluidPage(sidebarLayout(
   sidebarPanel(navlistPanel(
-    widths = c(12, 12), "SidebarMenu",
+    widths = c(12, 12),
     tabPanel(selectizeInput("commodity",
-                            "Select a commodity", 
+                            "Select a food product", 
                             selected="Cucumbers", 
                             choices = c("Cucumbers",
                                         "Vanilla",
@@ -27,18 +27,8 @@ ui <- fluidPage(sidebarLayout(
                           h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                           h5(" * Trade modelling:"),
                           h6("       - A linear model to predict the effect of network disturbaces"),
-                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood"),
-                          column(12,
-                                 selectInput("commodity", 
-                                             label = "Select a commodity",
-                                             choices = c("Cucumbers",
-                                                         "Vanilla",
-                                                         "Beer",
-                                                         "Milk",
-                                                         "Maple Syrup"),
-                                             selected = "Cucumbers",
-                                             multiple = FALSE)
-                          ))),
+                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")
+                          )),
                  fluidRow(h4("Country Trade Patterns Over Time"),
                           h5("Select a country and what you want to plot on the x and y axis"),
                           column(3,
