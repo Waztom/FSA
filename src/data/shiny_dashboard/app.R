@@ -109,7 +109,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                 uiOutput("pm_origin"),
                                 uiOutput("pm_destin")
                         ),
-                        column(3,
+                        column(9,
                                textOutput("probability_link")
                         )
                )
@@ -329,7 +329,8 @@ output$km_sel <- renderUI({
   # Network model output
   output$probability_link <- renderText({
     si <- si()
-    network_model(si,input$month_model,input$from_country,input$to_country)
+    paste("Probability of trade link: ", 
+    network_model(si,input$month_model,input$from_country,input$to_country),"%",sep="")
   })
 }
 

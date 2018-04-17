@@ -27,6 +27,7 @@ country_to_id <- country_to_id[[1]][1]
 
 #Get probability of link
 prob <- interpret(cucumber_model, type = "tie", i = country_from_id, j = country_to_id, t = date1+12 )
+prob <- round(prob*100,digits=2) 
 prob <- as.character(prob)
 return(prob)
 
