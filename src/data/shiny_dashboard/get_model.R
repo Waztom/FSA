@@ -9,7 +9,7 @@ if(commodity == "Cucumbers"){
 }else if(commodity == "Milk"){
   model <- milk_model
 }else if(commodity == "Maple Syrup"){
-  model <- maple_syrup_mode
+  model <- maple_syrup_model
 }
 
 return(model)

@@ -18,15 +18,15 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
         tabPanel("Understanding Trade Patterns",
                  fluidRow(wellPanel(
                           h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
-                             Restricted to food commodities, the goal is to obtain a detailed overview of the goods exchage between
+                             Restricted to food commodities, the goal is to obtain a detailed overview of the goods exchanged between
                              countries, detect anomalous events and provide the user with tools to predict the dynamics of the trade network."),
                           h4("Specifically the items presented here are:"),
                           h5(" * Network analysis: a general overview of the data including the trade network."),
                           h5(" * Anomaly detection: analysis of anomaluous data in trade temporal series."),
                           h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                           h5(" * Trade modelling:"),
-                          h6("       - A linear model to predict the effect of network disturbaces"),
-                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")
+                          h6("       - A linear model to predict the effect of network disturbances"),
+                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelihood")
                           )),
                  fluidRow(h4("Country Trade Patterns Over Time"),
                           h5("Select a country and what you want to plot on the x and y axis"),
