@@ -41,6 +41,12 @@ Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>%
   visNodes(font=list(size=20), shadow = TRUE, scaling=list(min=10, max = 30)) %>%
   visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
     nodesIdSelection = TRUE, clickToUse=TRUE) %>%
+  visGroups(groupname = "1", color = "lightgreen") %>%
+  visGroups(groupname = "2", color = "lightblue") %>%
+  visGroups(groupname = "3", color = "lightgrey") %>%
+  visGroups(groupname = "4", color = "grey") %>%
+  visGroups(groupname = "5", color = "mediumgreen") %>%
+  visGroups(groupname = "6", color = "mediumblue") %>%
   visInteraction(navigationButtons = TRUE) %>%
   visLegend(addNodes = list(
     list(label = "Distributor", shape = "square"),
