@@ -32,7 +32,7 @@ source('get_model_nodes.R')
 source('get_trade_attributes_si.R')
 ```
 
-#Attempt at modelling netwrok graphs of trade
+#Prepare network objects as netowork graphs for each month of trade using COMTRADE data for modelling
 ```{r}
 world_data   <- read.csv("si_cu.csv", header = TRUE, sep = ",")
 world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)
