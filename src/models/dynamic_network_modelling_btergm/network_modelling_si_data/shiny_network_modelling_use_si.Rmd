@@ -34,7 +34,7 @@ source('get_trade_attributes_si.R')
 
 #Attempt at modelling netwrok graphs of trade
 ```{r}
-world_data   <- read.csv("si_cu.csv", header = TRUE, sep = ",")
+world_data   <- read.csv("si.csv", header = TRUE, sep = ",")
 world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)
 
 period_list               <- list() #List of months
@@ -59,7 +59,7 @@ for (i in world_monthly_data){
   edges_model             <- get_model_edges(nodes_model,month_data = i)
   
   #Edges for network object
-  only_edges             <- edges_model %>% select(from,to)
+  only_edges             <- edges_model %>% select(c(1,2))
   
   #Create network object
   net <- network(only_edges, matrix.type = "edgelist", directed = T)
@@ -86,7 +86,7 @@ period_summary <- do.call(rbind, Map(data.frame, period=period_list))
 period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
 
 #Simple covariate model without temperal component
-model.1c <- btergm(net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 + memory(type = "stability"), R = 100, parallel = "snow",  ncpus = 2)
+model.1c <- btergm(net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 +  memory(type = "stability") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 2)
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 #See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
@@ -97,14 +97,32 @@ gof.1c <- gof(model.1c, nsim = 5, statistics = c(esp,dsp,nsp,ideg,odeg,geodesic)
 plot(gof.1c)
 dev.off()
 
+#Test model by secting portion of network list and try simulate netwrok and compare to actual to test model. For this dataset there are 25 months worth of data.  
+#1. Get model without most recent network
+model.1d <- btergm(net_list[1:24] ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 +  memory(type = "stability") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 3)
+#2. Test GOF by comparing simulated network with actual network
+gof.1d <- gof(model.1d, nsim = 10, target = net_list[[25]], 
+formula = net_list[1:24] ~edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 +  memory(type = "stability") + timecov(transform = function(t) t),statistics = c(esp,nsp,ideg,odeg))
+
+#Plot comparison
+plot(gof.1d, roc.rgraph = TRUE, pr.rgraph = TRUE)
+dev.off()
+
 #Save model
 saveRDS(model.1c, "cucumber_network_model_si.rds")
 
-#Save net_list
-saveRDS(net_list, "net_list_cu.rds")
-
 #Test probbility two nodes tied - try UK and Spain. i and j values from country_ids
 interpret(model.1c, type = "tie", i = c(53), j = c(145), t = 10)
+
+prob_vector <- vector()
+#Loop through to get probability over time
+for (time in 1:nrow(period_summary)){
+  prob_values  <- interpret(model.1c, type = "node", i = c(140), j = c(113,33), t = time)
+  prob_dat <- as.data.frame(prob_values,col.names = c("1"))
+  prob_vector[time] <- prob_dat[[3,1]]
+}
+
+plot(period_summary$period,prob_vector)
 
 #Load model file
 cucumber_model<-readRDS('cucumber_network_model_si.rds')
