@@ -161,6 +161,7 @@ server <- function(input, output) {
   source("get_all_info.R")
   source("get_si.R")
   source("get_model.R")
+  source("get_ad.R")
   source("anomaly_detection_all.R")
   source("anomaly_detection_all_preloaded.R")
   
