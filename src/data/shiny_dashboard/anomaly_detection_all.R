@@ -17,7 +17,7 @@ a_high <- df2_analysed %>% filter(remainder < remainder_l1) %>% mutate(remainder
 a_low  <- df2_analysed %>% filter(remainder > remainder_l2) %>% mutate(remainder_new = remainder - remainder_l2)
 
 a_total <- rbind(a_high, a_low) %>% mutate(Deviation = abs(remainder_new)) %>% arrange(desc(Deviation)) %>% 
-  select(node, Deviation) %>% rename(Country = node)
+  select(node) %>% rename("Countries (greatest deviation from normal trend at top)" = node)
 
 return(a_total)
 
