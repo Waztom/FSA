@@ -156,6 +156,7 @@ server <- function(input, output) {
   source("network_model.R")
   source("get_all_info.R")
   source("get_si.R")
+  source("get_model.R")
   source("anomaly_detection_all.R")
   
   all_info <- reactive({
@@ -164,6 +165,10 @@ server <- function(input, output) {
   
   si <- reactive({
     get_si(input$commodity)
+  })
+  
+  model <- reactive({
+    get_model(input$commodity)
   })
   
 output$go_sel_country <- renderUI({
@@ -379,15 +384,17 @@ output$km_sel <- renderUI({
   # Network model output
   output$probability_link <- renderText({
     si <- si()
+    model <- model()
     paste("Probability of trade link: ", 
-    network_model(si, input$month_model,input$from_country, 0, input$to_country),"%",sep="")
+    network_model(model,si, input$month_model,input$from_country, 0, input$to_country),"%",sep="")
   })
   
   # Network model links output
   output$probability_links <- renderText({
     si <- si()
+    model <- model()
     paste("Probability of trade via link: ", 
-          network_model(si,input$month_model,input$link_from_country,input$link_middle_country, input$link_to_country),"%",sep="")
+          network_model(model,si,input$month_model,input$link_from_country,input$link_middle_country, input$link_to_country),"%",sep="")
   })
 }
 
