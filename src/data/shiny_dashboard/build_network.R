@@ -36,12 +36,11 @@ nodes_groups_shape_size <- nodes %>% mutate (group = grouping) %>% inner_join(tm
 
 #Creation of network
 Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>% 
-  visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10000) %>%
+  visIgraphLayout(layout = "layout_in_cirle", randomSeed = 10000) %>%
   visEdges(arrows = "to", color=list(inherit=TRUE)) %>%
   visNodes(font=list(size=30), shadow = TRUE, scaling=list(min=10, max = 30)) %>%
   visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
     nodesIdSelection = TRUE, clickToUse=TRUE) %>%
-  visPhysics(solver = "forceAtlas2Based", forceAtlas2Based = list(gravitationalConstant = -500)) %>%
   visInteraction(navigationButtons = TRUE) %>%
   visLegend(addNodes = list(
     list(label = "Distributor", shape = "square"),
@@ -49,7 +48,7 @@ Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>%
     list(label = "Producer",    shape = "triangle")
   ),
   useGroups = FALSE, zoom = FALSE, width=0.2)
-
+#layout.davidson.harel
 
 return(Network)
 
