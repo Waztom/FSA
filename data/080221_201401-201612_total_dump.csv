@@ -1,4 +1,4 @@
-,partner,period,trade_value_usd,reporter,period_date
+,origin,period,trade_value_usd,destin,period_date
 1,France,201401,84,United Kingdom,2014-01-01
 2,Ireland,201401,987,United Kingdom,2014-01-01
 3,Italy,201401,1308,United Kingdom,2014-01-01
