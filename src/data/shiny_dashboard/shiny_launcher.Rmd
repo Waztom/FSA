@@ -42,7 +42,7 @@ library(btergm)
 
 ```{r}
 cucumber_model  <- readRDS("cucumber_network_model_si.rds")
-net_list     <- readRDS("net_list_cu.rds")
+net_list        <- readRDS("net_list_cu.rds")
 ```
 
 #This is the pre-load.
