@@ -57,23 +57,23 @@ maple_syrup_net_list  <- readRDS("maple_syrup_net_list.rds")
 #As it is right now is horrifying and should be replaced by RData
 ```{r}
 source("model_get_data.R")
-#data        <- model_get_data("Vanilla")
+#data       <- model_get_data("Vanilla")
 all_info_va <- readRDS("all_info_va.rds")
 si_va       <- readRDS("si_va.rds")
 
-#data        <- model_get_data("Cucumbers")
+#data       <- model_get_data("Cucumbers")
 all_info_cu <- readRDS("all_info_cu.rds")
 si_cu       <- readRDS("si_cu.rds")
 
-#data        <- model_get_data("Beer")
+#data       <- model_get_data("Beer")
 all_info_be <- readRDS("all_info_be.rds")
 si_be       <- readRDS("si_be.rds")
 
-#data        <- model_get_data("Milk")
+#data       <- model_get_data("Milk")
 all_info_mi <- readRDS("all_info_mi.rds")
 si_mi       <- readRDS("si_mi.rds")
 
-#data        <- model_get_data("Maple Syrup")
+#data       <- model_get_data("Maple Syrup")
 all_info_ms <- readRDS("all_info_ms.rds")
 si_ms       <- readRDS("si_ms.rds")
 ```
