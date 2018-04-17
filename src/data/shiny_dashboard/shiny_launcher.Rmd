@@ -51,6 +51,11 @@ milk_model            <- readRDS("milk_model_si.rds")
 milk_net_list         <- readRDS("milk_net_list.rds")
 maple_syrup_model     <- readRDS("maple_syrup_model_si.rds")
 maple_syrup_net_list  <- readRDS("maple_syrup_net_list.rds")
+ad_be <- readRDS("ad_be.rds")
+ad_cu <- readRDS("ad_cu.rds")
+ad_mi <- readRDS("ad_mi.rds")
+ad_ms <- readRDS("ad_ms.rds")
+ad_va <- readRDS("ad_va.rds")
 ```
 
 #This is the pre-load.

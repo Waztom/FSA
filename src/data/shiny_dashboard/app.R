@@ -56,14 +56,14 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                 ))
       ,
       tabPanel("Irregular Trading Patterns",
-               fluidRow(h1("Flagged Countries During Specifed Month - SUPER slow - be patient for now"),
+               fluidRow(h1("Flagged Countries During Specifed Month"),
                         h4("Identifies countries which deviate from their normal trade patterns for the month specified, to help identify potential risks"),
                         h6("Select a month on the time dial"),
                         column(3,
                                uiOutput("ad_date")
                                )
                                ,
-                        column(9,
+                        column(6,
                               dataTableOutput("ad_table_all")
                         )
                )
@@ -162,6 +162,7 @@ server <- function(input, output) {
   source("get_si.R")
   source("get_model.R")
   source("anomaly_detection_all.R")
+  source("anomaly_detection_all_preloaded.R")
   
   all_info <- reactive({
     get_all_info(input$commodity)
@@ -173,6 +174,10 @@ server <- function(input, output) {
   
   model <- reactive({
     get_model(input$commodity)
+  })
+  
+  ad <- reactive({
+    get_ad(input$commodity)
   })
   
 output$go_sel_country <- renderUI({
@@ -367,8 +372,8 @@ output$km_sel <- renderUI({
 
   # Anomalous countries at a point in time
   output$ad_table_all <-  renderDataTable({
-    all_info <- all_info()
-    anomaly_detection_all(all_info,input$ad_date)
+    ad <- ad()
+    anomaly_detection_all_preloaded(ad,input$ad_date)
   })
   
   # Plot of trade pattern for specified country, with irregularities highlighted
