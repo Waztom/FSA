@@ -14,10 +14,10 @@ ui <- navbarPage("FSA", fluid = TRUE,
                           h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                           h5(" * Trade modelling:"),
                           h6("       - A linear model to predict the effect of network disturbaces"),
-                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood"),
+                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")),
                           column(12,
                                  selectInput("commodity", 
-                                             label = "Select a commodity",
+                                             label = "First, select a commodity",
                                              choices = c("Cucumbers",
                                                          "Vanilla",
                                                          "Beer",
@@ -25,9 +25,10 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                                          "Maple Syrup"),
                                              selected = "Cucumbers",
                                              multiple = FALSE)
-                          ))),
-                 fluidRow(h4("Country Trade Patterns Over Time"),
-                          h5("Select a country and what you want to plot on the x and y axis"),
+                          )),
+                 fluidRow(wellPanel(
+                          h4("General Overview"),
+                          h5("Pick countries from the drop-down menu and select the axis variables to be displayed."),
                           column(3,
                                 uiOutput("go_sel_country"),
                                 uiOutput("go_sel_x"),
@@ -36,7 +37,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                           column(9,
                                  plotOutput("go_plot")
                           )
-                 ))
+                 )))
       ,
          tabPanel("The Wider Network",
            fluidRow(h1("Trade Network"),
@@ -156,7 +157,7 @@ server <- function(input, output) {
 output$go_sel_country <- renderUI({
   all_info <- all_info()
   selectInput("go_country", 
-              label = "Select a countries",
+              label = "Select countries",
               choices = sort(unique(all_info$node)),
               selected = "United Kingdom",
               multiple = TRUE)
@@ -167,7 +168,15 @@ output$go_sel_x <- renderUI({
   all_info <- all_info()
   selectInput("go_xaxis", 
               label = "Select a variable in x axis",
-              choices = names(all_info),
+              choices = names(all_info %>%
+                                select(deg_out_wei, deg_in_wei,ratio,bet_val,period_date,overall_flux) %>%
+                                rename(Leaving_connections = deg_out_wei,
+                                       Arriving_connections = deg_out_wei,
+                                       Leaving_connections = deg_in_wei,
+                                       Ratio = ratio,
+                                       Betweenness_centrality = bet_val,
+                                       Overall_trade = overall_flux
+                                       )),
               selected = "period_date",
               multiple = FALSE)
 })
@@ -176,7 +185,15 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info),
+              choices = names(all_info %>%
+                                select(deg_out_wei, deg_in_wei,ratio,bet_val,period_date,overall_flux) %>%
+                                rename(Leaving_connections = deg_out_wei,
+                                       Arriving_connections = deg_out_wei,
+                                       Leaving_connections = deg_in_wei,
+                                       Ratio = ratio,
+                                       Betweenness_centrality = bet_val,
+                                       Overall_trade = overall_flux
+                                       )),
               selected = "ratio",
               multiple = FALSE)
 })
@@ -334,7 +351,16 @@ output$km_sel <- renderUI({
   # General overview plot
   output$go_plot <- renderPlot({
     all_info <- all_info()
-    ggplot(all_info %>% filter(node %in% input$go_country),
+    ggplot(all_info %>% 
+           select(node,deg_out_wei, deg_in_wei,ratio,bet_val,period_date,overall_flux) %>%
+           rename(Leaving_connections = deg_out_wei,
+                  Arriving_connections = deg_out_wei,
+                  Leaving_connections = deg_in_wei,
+                  Ratio = ratio,
+                  Betweenness_centrality = bet_val,
+                  Overall_trade = overall_flux
+                  ) %>%
+           filter(node %in% input$go_country),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
            geom_point(aes(color=node), size=3, alpha = 0.75)
   })
