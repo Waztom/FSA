@@ -2,7 +2,18 @@ require(visNetwork)
 
 # BEGINNING OF UI
 
-ui <- navbarPage("FSA", fluid = TRUE,
+ui <- fluidPage(sidebarLayout(
+  sidebarPanel(selectizeInput("commodity",
+                            "Select a food product", 
+                            selected="Cucumbers", 
+                            choices = c("Cucumbers",
+                                        "Vanilla",
+                                        "Beer",
+                                        "Milk",
+                                        "Maple Syrup"),
+                            multiple = FALSE)
+  ),
+  mainPanel(navbarPage("FSA", fluid = TRUE,
         tabPanel("Understanding Trade Patterns",
                  fluidRow(wellPanel(
                           h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
@@ -14,18 +25,8 @@ ui <- navbarPage("FSA", fluid = TRUE,
                           h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                           h5(" * Trade modelling:"),
                           h6("       - A linear model to predict the effect of network disturbaces"),
-                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood"),
-                          column(12,
-                                 selectInput("commodity", 
-                                             label = "Select a commodity",
-                                             choices = c("Cucumbers",
-                                                         "Vanilla",
-                                                         "Beer",
-                                                         "Milk",
-                                                         "Maple Syrup"),
-                                             selected = "Cucumbers",
-                                             multiple = FALSE)
-                          ))),
+                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")
+                          )),
                  fluidRow(h4("Country Trade Patterns Over Time"),
                           h5("Select a country and what you want to plot on the x and y axis"),
                           column(3,
@@ -139,7 +140,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
       ),
       tabPanel("Help",
                fluidRow(h1("Dashboard Demonstration")))
-   )
+   ))))
 
 # END OF UI
 
@@ -174,7 +175,7 @@ server <- function(input, output) {
 output$go_sel_country <- renderUI({
   all_info <- all_info()
   selectInput("go_country", 
-              label = "Select a countries",
+              label = "Select a country",
               choices = sort(unique(all_info$node)),
               selected = "United Kingdom",
               multiple = TRUE)

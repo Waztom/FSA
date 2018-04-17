@@ -189,7 +189,7 @@ anomaly_summary <-Chicken_data_simple %>%
 anomaly_summary %>% filter(node == "Netherlands") %>% ungroup %>% plot_anomaly_decomposition 
 
 anomaly_summary %>% time_recompose() %>%
-  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "purple", color_yes = "orange", alpha_ribbon = 1)
+  plot_anomalies(time_recomposed = TRUE, ncol=3, color_no = "darkgreen", color_yes = "lightgreen", alpha_ribbon = 1)
 ```
 
 
