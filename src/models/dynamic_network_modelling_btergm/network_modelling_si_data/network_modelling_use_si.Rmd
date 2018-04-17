@@ -19,7 +19,6 @@ library(tidygraph)
 library(rlist)
 library(gridExtra)
 library(statnet)
-library(texreg)
 library(xergm)
 library(btergm)
 ```
@@ -38,7 +37,7 @@ world_data   <- read.csv("si_cu.csv", header = TRUE, sep = ",")
 world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)
 
 period_list               <- list() #List of months
-net_list                  <- list() #Find network objects by index eg. net_list[[24]]
+cucumber_net_list                  <- list() #Find network objects by index eg. net_list[[24]]
 
 #Get data into months stored in list
 world_monthly_data <- get_Comtrade_monthly_data_si(world_data)
@@ -75,7 +74,7 @@ for (i in world_monthly_data){
 
   #Append features to respective lists
   period_list   <- list.append(period_list, month)
-  net_list      <- list.append(net_list, net)
+  cucumber_net_list      <- list.append(cucumber_net_list, net)
   
 }
 
@@ -86,7 +85,7 @@ period_summary <- do.call(rbind, Map(data.frame, period=period_list))
 period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
 
 #Simple covariate model without temperal component
-model.1c <- btergm(net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 + memory(type = "stability"), R = 100, parallel = "snow",  ncpus = 2)
+model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 + memory(type = "stability"), R = 100, parallel = "snow",  ncpus = 2)
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 #See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
@@ -101,5 +100,5 @@ dev.off()
 saveRDS(model.1c, "cucumber_network_model_si.rds")
 
 #Save net_list
-saveRDS(net_list, "net_list_cu.rds")
+saveRDS(cucumber_net_list, "cucumber_net_list.rds")
 ```
