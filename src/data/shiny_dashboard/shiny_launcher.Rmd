@@ -62,11 +62,11 @@ si_be    <- data$si
 
 data        <- model_get_data("Milk")
 all_info_mi <- data$all_info
-si_mi    <- data$si
+si_mi       <- data$si
 
 data        <- model_get_data("Maple Syrup")
 all_info_ms <- data$all_info
-si_ms    <- data$si
+si_ms       <- data$si
 ```
 
 # Launch the app
