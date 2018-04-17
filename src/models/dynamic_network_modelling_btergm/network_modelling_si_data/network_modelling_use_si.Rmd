@@ -102,13 +102,4 @@ saveRDS(model.1c, "cucumber_network_model_si.rds")
 
 #Save net_list
 saveRDS(net_list, "net_list_cu.rds")
-
-#Test probbility two nodes tied - try UK and Spain. i and j values from country_ids
-interpret(model.1c, type = "tie", i = c(53), j = c(145), t = 10)
-
-#Load model file
-cucumber_model<-readRDS('cucumber_network_model_si.rds')
-
-#Use loaded model for interpretation
-interpret(cucumber_model, type = "tie", i = c(15), j = c(113), t = 25)
 ```
