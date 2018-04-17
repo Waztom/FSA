@@ -41,15 +41,15 @@ library(btergm)
 ```
 
 ```{r}
-vanilla_model         <- readRDS("vanilla_model_si.rds")
+vanilla_model         <- readRDS("vanilla_network_model_si.rds")
 vanilla_net_list      <- readRDS("vanilla_net_list.rds")
-cucumber_model        <- readRDS("cucumber_model_si.rds")
+cucumber_model        <- readRDS("cucumber_network_model_si.rds")
 cucumber_net_list     <- readRDS("cucumber_net_list.rds")
-beer_model            <- readRDS("beer_model_si.rds")
+beer_model            <- readRDS("beer_network_model_si.rds")
 beer_net_list         <- readRDS("beer_net_list.rds")
-milk_model            <- readRDS("milk_model_si.rds")
+milk_model            <- readRDS("milk_network_model_si.rds")
 milk_net_list         <- readRDS("milk_net_list.rds")
-maple_syrup_model     <- readRDS("maple_syrup_model_si.rds")
+maple_syrup_model     <- readRDS("maple_syrup_network_model_si.rds")
 maple_syrup_net_list  <- readRDS("maple_syrup_net_list.rds")
 ```
 
