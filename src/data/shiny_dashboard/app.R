@@ -169,7 +169,7 @@ server <- function(input, output) {
 output$go_sel_country <- renderUI({
   all_info <- all_info()
   selectInput("go_country", 
-              label = "Select a countries",
+              label = "Select a country",
               choices = sort(unique(all_info$node)),
               selected = "United Kingdom",
               multiple = TRUE)
