@@ -1,0 +1,132 @@
+---
+title: "Network model attempt"
+author: "Warren Thompson"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+library(statnet)
+library(texreg)
+library(xergm)
+library(btergm)
+```
+
+```{r}
+source('get_Comtrade_monthly_data_si.R')
+source('get_country_ids_si.R')
+source('get_model_edges.R')
+source('get_model_nodes.R')
+source('get_trade_attributes_si.R')
+```
+
+#Attempt at modelling netwrok graphs of trade
+```{r}
+world_data   <- read.csv("si.csv", header = TRUE, sep = ",")
+world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)
+
+period_list               <- list() #List of months
+net_list                  <- list() #Find network objects by index eg. net_list[[24]]
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data_si(world_data)
+
+#get unique ID for each country - use for nodes and edges later, prevent renaming of country with different ID each time loop runs
+country_ids <-get_country_ids_si(world_data)
+index = 0
+
+for (i in world_monthly_data){
+  index = index + 1
+  
+  #Get some nett trade attributes 
+  month_trade_attributes  <- get_trade_attributes_si(i)
+  
+  #Get nodes and edges for model
+  nodes_model             <- get_model_nodes(month_data = i, month_trade_attributes,country_ids)
+  nodes_model$nett_trade  <- as.numeric(scale(nodes_model$nett_trade))
+  edges_model             <- get_model_edges(nodes_model,month_data = i)
+  
+  #Edges for network object
+  only_edges             <- edges_model %>% select(c(1,2))
+  
+  #Create network object
+  net <- network(only_edges, matrix.type = "edgelist", directed = T)
+  
+  #Add edge attributes
+  net <- set.edge.attribute(net,"trade_value",edges_model$trade_value_usd)
+  
+  #Add some node attributes 
+  net <- set.vertex.attribute(net, "nett_trade",nodes_model$nett_trade)
+  
+  #Capture period
+  month               <- unique(i$period)
+
+  #Append features to respective lists
+  period_list   <- list.append(period_list, month)
+  net_list      <- list.append(net_list, net)
+  
+}
+
+#Combine lists into dataframe
+period_summary <- do.call(rbind, Map(data.frame, period=period_list))
+
+#Convert period to date type
+period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Simple covariate model without temperal component
+model.1c <- btergm(net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 +  memory(type = "stability") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 2)
+
+#See parameter estimates etc with 95% CI - how do we interpret these values?
+#See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
+summary(model.1c, level = 0.95)
+
+#Goodness of fit test
+gof.1c <- gof(model.1c, nsim = 5, statistics = c(esp,dsp,nsp,ideg,odeg,geodesic))
+plot(gof.1c)
+dev.off()
+
+#Test model by secting portion of network list and try simulate netwrok and compare to actual to test model. For this dataset there are 25 months worth of data.  
+#1. Get model without most recent network
+model.1d <- btergm(net_list[1:24] ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 +  memory(type = "stability") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 3)
+#2. Test GOF by comparing simulated network with actual network
+gof.1d <- gof(model.1d, nsim = 10, target = net_list[[25]], 
+formula = net_list[1:24] ~edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 +  memory(type = "stability") + timecov(transform = function(t) t),statistics = c(esp,nsp,ideg,odeg))
+
+#Plot comparison
+plot(gof.1d, roc.rgraph = TRUE, pr.rgraph = TRUE)
+dev.off()
+
+#Save model
+saveRDS(model.1c, "cucumber_network_model_si.rds")
+
+#Test probbility two nodes tied - try UK and Spain. i and j values from country_ids
+interpret(model.1c, type = "tie", i = c(53), j = c(145), t = 10)
+
+prob_vector <- vector()
+#Loop through to get probability over time
+for (time in 1:nrow(period_summary)){
+  prob_values  <- interpret(model.1c, type = "node", i = c(140), j = c(113,33), t = time)
+  prob_dat <- as.data.frame(prob_values,col.names = c("1"))
+  prob_vector[time] <- prob_dat[[3,1]]
+}
+
+plot(period_summary$period,prob_vector)
+
+#Load model file
+cucumber_model<-readRDS('cucumber_network_model_si.rds')
+
+#Use loaded model for interpretation
+interpret(cucumber_model, type = "tie", i = c(15), j = c(113), t = 25)
+```
