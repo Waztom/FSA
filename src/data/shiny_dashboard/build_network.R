@@ -47,7 +47,7 @@ Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>%
     list(label = "Consumer",    shape = "dot"),
     list(label = "Producer",    shape = "triangle")
   ),
-  useGroups = FALSE, zoom = FALSE, width=0.5, position = "right")
+  useGroups = FALSE, zoom = FALSE, width=0.2)
 
 
 return(Network)
