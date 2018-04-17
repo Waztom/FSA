@@ -16,6 +16,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                , width = 2),
   mainPanel(navbarPage("Select a tab to explore", fluid = TRUE,
 <<<<<<< HEAD
+<<<<<<< HEAD
                 tabPanel("Introduction",
                            fluidRow(wellPanel(
                              h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
@@ -38,18 +39,32 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                  fluidRow(wellPanel(
                           h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
                              Restricted to food commodities, the goal is to obtain a detailed overview of the goods exchanged between
+=======
+        tabPanel("Understanding Trade Patterns",
+                 fluidRow(wellPanel(
+                          h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
+                             Restricted to food commodities, the goal is to obtain a detailed overview of the goods exchage between
+>>>>>>> parent of afb5f6c... added introduction tab
                              countries, detect anomalous events and provide the user with tools to predict the dynamics of the trade network."),
                           h4("Specifically the items presented here are:"),
                           h5(" * Network analysis: a general overview of the data including the trade network."),
                           h5(" * Anomaly detection: analysis of anomaluous data in trade temporal series."),
                           h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                           h5(" * Trade modelling:"),
+<<<<<<< HEAD
                           h6("       - A linear model to predict the effect of network disturbances"),
                           h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelihood")
                           )),
                  fluidRow(h4("Country Trade Patterns Over Time"),
                           h5("Select a country and what you want to plot on the x and y axis"),
 >>>>>>> 6679847bcdeddea4a252a7ffe7f8033d58c5d5fa
+=======
+                          h6("       - A linear model to predict the effect of network disturbaces"),
+                          h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")
+                          )),
+                 fluidRow(h4("Country Trade Patterns Over Time"),
+                          h5("Select a country and what you want to plot on the x and y axis"),
+>>>>>>> parent of afb5f6c... added introduction tab
                           column(3,
                                 uiOutput("go_sel_country"),
                                 uiOutput("go_sel_x"),
@@ -400,11 +415,7 @@ output$km_sel <- renderUI({
     all_info <- all_info()
     ggplot(all_info %>% filter(node %in% input$go_country),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
-           geom_point(aes(color=node), size=3, alpha = 0.75) +
-      theme(axis.text=element_text(size=12), 
-            axis.title=element_text(size=14,face="bold"), 
-            legend.text=element_text(size=14), 
-            legend.title=element_text(size=14))
+           geom_point(aes(color=node), size=3, alpha = 0.75)
   })
   
   # Network model output
