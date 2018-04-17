@@ -9,16 +9,16 @@ library("tidygraph")
 
 #magrittr
 
-# option_list = list(
-#   make_option(c("-f", "--file"), type="character", default=NULL, 
-#               help="dataset file name", metavar="character")
-# ); 
-# 
-# opt_parser = OptionParser(option_list=option_list);
-# opt = parse_args(opt_parser);
-# filename = opt$file
+option_list = list(
+  make_option(c("-f", "--file"), type="character", default=NULL,
+              help="dataset file name", metavar="character")
+);
 
-filename = '080221_201401-201612_total_dump.RData'
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+filename = opt$file
+
+#filename = '080221_201401-201612_total_dump.RData'
 # Read si filename to process
 load(filename)
 
@@ -158,7 +158,7 @@ all_info <- all_info %>% group_by(period) %>%
 #Double check
 all_info <- all_info[complete.cases(all_info),]
 
-data <- list("all_info" = all_info, "si" = si, "commodit_description" = commodity_description)
+data <- list("all_info" = all_info, "si" = si, "commodit_description" = commodity_description, "commodity_code" = commodity_code)
 
 rdataname <- c("all_data", filename)
 

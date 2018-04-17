@@ -49,7 +49,8 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     partners_to_ignore=['World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes']
 
     comtrade_dict = pysqlib.load_comtrade_info()
-    commodity_description = comtrade_dict['comcodes']['text'][comtrade_dict['comcodes']['id']=='080221']
+    # Taking only the first comcode to retrieve the description
+    commodity_description = comtrade_dict['comcodes']['text'][comtrade_dict['comcodes']['id']==commodity_codes[0]]
     
     if not commodity_description.empty:
         commodity_description = commodity_description.iloc[0]
@@ -158,7 +159,9 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     r_si = pandas2ri.py2ri(trade_dump)
     robjects.r.assign("si", r_si)
     robjects.r.assign("commodity_description", commodity_description)
-    robjects.r("save(si, commodity_description, file='{}')".format(rdata_filename))
+    # Only storing the first commodity code
+    robjects.r.assign("commodity_code", commodity_codes[0])
+    robjects.r("save(si, commodity_description, commodity_code, file='{}')".format(rdata_filename))
 
     print('Total request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     print(trade_network.describe())
