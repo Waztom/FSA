@@ -2,18 +2,19 @@ require(visNetwork)
 
 # BEGINNING OF UI
 
-ui <- fluidPage(sidebarLayout(
+ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
+  sidebarLayout(
   sidebarPanel(selectizeInput("commodity",
                             "Select a food product", 
-                            selected="Cucumbers", 
+                            selected="Milk", 
                             choices = c("Cucumbers",
                                         "Vanilla",
                                         "Beer",
                                         "Milk",
                                         "Maple Syrup"),
                             multiple = FALSE)
-  ),
-  mainPanel(navbarPage("FSA", fluid = TRUE,
+               , width = 2),
+  mainPanel(navbarPage("Select a tab to explore", fluid = TRUE,
         tabPanel("Understanding Trade Patterns",
                  fluidRow(wellPanel(
                           h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
@@ -35,7 +36,7 @@ ui <- fluidPage(sidebarLayout(
                                 uiOutput("go_sel_y")
                                 ),
                           column(9,
-                                 plotOutput("go_plot")
+                                 plotOutput("go_plot", width = "1200px", height = "350px")
                           )
                  ))
       ,
@@ -48,7 +49,7 @@ ui <- fluidPage(sidebarLayout(
                sliderInput("threshold_network:", "Network Complexity",min = 0.3, max = 0.95, value = 0.9,step = 0.05)
                   ),
                   column(9,
-                    visNetworkOutput("network_plot", width = "1200px", height = "750px")
+                    visNetworkOutput("network_plot", width = "1200px", height = "650px")
                   )
                 ))
       ,
@@ -72,7 +73,7 @@ ui <- fluidPage(sidebarLayout(
                                 uiOutput("ad_sel_country")
                          ),
                          column(9,
-                                plotOutput("ad_plot")
+                                plotOutput("ad_plot", width = "1200px", height = "650px")
                          )
                 )
       ),
