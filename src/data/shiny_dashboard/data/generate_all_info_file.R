@@ -9,15 +9,16 @@ library("tidygraph")
 
 #magrittr
 
-option_list = list(
-  make_option(c("-f", "--file"), type="character", default=NULL, 
-              help="dataset file name", metavar="character")
-); 
+# option_list = list(
+#   make_option(c("-f", "--file"), type="character", default=NULL, 
+#               help="dataset file name", metavar="character")
+# ); 
+# 
+# opt_parser = OptionParser(option_list=option_list);
+# opt = parse_args(opt_parser);
+# filename = opt$file
 
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
-filename = opt$file
-
+filename = '080221_201401-201612_total_dump.RData'
 # Read si filename to process
 load(filename)
 
@@ -136,10 +137,14 @@ dfs <- list("degree_val" = dat1, "bet_val" = dat2, "tri_no" = dat3, "eigen_val" 
 metrics <- as.data.frame(dfs)
 
 all_info <- full_join(net_flux,metrics,by=c("node","period"))
-all_info[is.nan(all_info$ave_in_wei),]$max_in_wei   = 0
-all_info[is.nan(all_info$ave_out_wei),]$max_out_wei = 0
-all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei   = 0
-all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
+
+if (sum(is.nan(all_info$ave_in_wei))>0) {
+  all_info[is.nan(all_info$ave_in_wei),]$max_in_wei   = 0
+  all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei   = 0}
+
+if (sum(is.nan(all_info$ave_out_wei))>0) {
+  all_info[is.nan(all_info$ave_out_wei),]$max_out_wei = 0
+  all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0}
 
 all_info <- all_info %>% group_by(period) %>%
   mutate(tot_in_wei_n = tot_in_wei/mean(tot_in_wei)) %>%
@@ -153,7 +158,8 @@ all_info <- all_info %>% group_by(period) %>%
 #Double check
 all_info <- all_info[complete.cases(all_info),]
 
-data <- list("all_info" = all_info, "si" = si)
+data <- list("all_info" = all_info, "si" = si, "commodit_description" = commodity_description)
 
-filename <- c("all_data", args)
-save(data, file = paste(filename, sep="_"))
+rdataname <- c("all_data", filename)
+
+save(data, file = paste(rdataname, collapse="_"))

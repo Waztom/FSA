@@ -15,7 +15,6 @@ import time, datetime
 import argparse
 from rpy2 import robjects
 from rpy2.robjects import pandas2ri
-pandas2ri.activate()
 import subprocess
 
 
@@ -41,14 +40,7 @@ if len(commodity_codes)==1:
     commodity_codes=[commodity_codes[0],commodity_codes[0]]
     
 # write pandas dataframe to an .RData file
-def save_si_rdata_file(df, filename):
-    '''
-    Writes a pandas dataframe to an .RData file
-    '''
-    
-    r_data = pandas2ri.py2ri(df)
-    robjects.r.assign("si", r_data)
-    robjects.r("save(si, file='{}')".format(filename))
+
 
 def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['201601', '201612']):
     '''
@@ -56,6 +48,17 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     '''
     partners_to_ignore=['World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes']
 
+    comtrade_dict = pysqlib.load_comtrade_info()
+    commodity_description = comtrade_dict['comcodes']['text'][comtrade_dict['comcodes']['id']=='080221']
+    
+    if not commodity_description.empty:
+        commodity_description = commodity_description.iloc[0]
+    else:
+        print("Commodity code doesn't seem to be linked to an actual commodity.")
+        commodity_description = 'Unknown'
+        
+    print('Retrieving: '+commodity_description )
+    
     t0 = time.perf_counter()
     # Download all trade data between UK and Brazil for commodities containing 'Meat of bovine' in description
     trade = pysqlib.comtrade_sql_request_all_partners( com_codes = commodity_codes, reporter_name = 'United Kingdom', start_period = trade_period[0], end_period = trade_period[1])
@@ -146,33 +149,21 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     trade_network.to_pickle('latest_network.pickle')
     # Create python pickle
     trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'_monthly.pickle')
-    
-    # Create csv
-    trade_network.to_csv(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_monthly.csv')
-    
-    # Aggregate data over all period
-    trade = trade.groupby('partner').sum()
+  
 
-    # Create aggregated python pickle
-    trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'.pickle')
-    
-    # Create aggregated csv
-    trade_network.to_csv(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'.csv')
-    
-    # Rename reporter and partner to destination and origin
-    
-    
-    # Generate a non-grouped csv, pickle, and RData file
-    trade_dump.to_csv(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump.csv')
-    trade_dump.to_pickle(commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump.pickle')
-    
     rdata_filename = commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump.RData'
-    save_si_rdata_file(trade_dump, rdata_filename) 
-    
+
+    pandas2ri.activate()
+
+    r_si = pandas2ri.py2ri(trade_dump)
+    robjects.r.assign("si", r_si)
+    robjects.r.assign("commodity_description", commodity_description)
+    robjects.r("save(si, commodity_description, file='{}')".format(rdata_filename))
+
     print('Total request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     print(trade_network.describe())
 
-    subprocess.call (['./generate_all_info_file.','-f ', rdata_filename])
+    subprocess.call (['./generate_all_info_file.R','-f ', rdata_filename])
 
 if __name__ == '__main__':
     download_comtrade_data( commodity_codes = commodity_codes, trade_period = trade_period )
