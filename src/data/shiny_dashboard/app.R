@@ -50,19 +50,20 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                )
                                ,
                         column(9,
-                               dataTableOutput("ad_table_all")
+                              dataTableOutput("ad_table_all")
                         )
-               ),
-               fluidRow(h1("Country Trade Pattern and Irregularities"),
-                        h4("Shows regular trade pattern for the country selected, including seasonal and overall trends. Plus detects deviations from normal trend to help highlight potential risks"),
-                        h6("Select a country in the drop down menu"),
-                        column(3,
-                        uiOutput("ad_sel_country")
-                        ),
-                        column(9,
-                               plotOutput("ad_plot")
-                        )
-               )
+               )##PIECE OF SHIT NEXT
+               ,
+                fluidRow(h1("Country Trade Pattern and Irregularities"),
+                         h4("Shows regular trade pattern for the country selected, including seasonal and overall trends. Plus detects deviations from normal trend to help highlight potential risks"),
+                         h6("Select a country in the drop down menu"),
+                         column(3,
+                                uiOutput("ad_sel_country")
+                         ),
+                         column(9,
+                                plotOutput("ad_plot")
+                         )
+                )
       ),
          tabPanel("Classifying Countries",
            fluidRow(h1("Identifying Similar Countries"),
@@ -109,7 +110,7 @@ ui <- navbarPage("FSA", fluid = TRUE,
                                 uiOutput("pm_origin"),
                                 uiOutput("pm_destin")
                         ),
-                        column(3,
+                        column(9,
                                textOutput("probability_link")
                         )
                )
@@ -213,16 +214,16 @@ sliderInput("ratio:", "Ratio",
 })
 
 output$ad_date <- renderUI({
-  si <- si()
-  sliderInput("date_network:", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1)
+  all_info <- all_info()
+  sliderInput("ad_date:", "Month from Jan. 2014", min = 1, max = length(unique(all_info$period)), value = 1, step = 1)
 })
 
 output$ad_sel_country <- renderUI({
   all_info <- all_info()
-  selectInput("ad_country", 
+  selectInput("ad_sel_country:",
             label = "Select a country",
             choices = sort(unique(all_info$node)),
-            selected = "United Kingdom")
+            selected = "Germany")
 })
 
 output$pm_origin <- renderUI({
@@ -309,13 +310,15 @@ output$km_sel <- renderUI({
   })
 
   # Anomalous countries at a point in time
-  output$ad_table_all <- renderDataTable({
-    anomaly_detection_all(all_info,input$date_network)
+  output$ad_table_all <-  renderDataTable({
+    all_info <- all_info()
+    anomaly_detection_all(all_info,input$ad_date)
   })
   
   # Plot of trade pattern for specified country, with irregularities highlighted
   output$ad_plot <- renderPlot({
-    anomaly_detection(all_info,input$ad_country)
+    all_info <- all_info()
+    anomaly_detection(all_info,input$ad_sel_country)
   })
 
   # General overview plot
@@ -329,7 +332,8 @@ output$km_sel <- renderUI({
   # Network model output
   output$probability_link <- renderText({
     si <- si()
-    network_model(si,input$month_model,input$from_country,input$to_country)
+    paste("Probability of trade link: ", 
+    network_model(si,input$month_model,input$from_country,input$to_country),"%",sep="")
   })
 }
 
