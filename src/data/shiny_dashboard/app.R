@@ -268,7 +268,7 @@ output$pm_origin_1 <- renderUI({
 output$pm_middle <- renderUI({
   all_info <- all_info()
   selectInput("link_middle_country", 
-              label = "Select middle country",
+              label = "Select connecting country",
               choices = sort(unique(all_info$node)),
               selected = "Netherlands")
 })
