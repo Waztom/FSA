@@ -48,7 +48,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                     h6("Adjust the time dial to see changes to the network over time and simplify the network with the complexity dial. Select a country to see their trade network"),
              column(3,
                uiOutput("ne_date"),
-               sliderInput("threshold_network:", "Network Complexity",min = 0.3, max = 0.95, value = 0.9,step = 0.05)
+               sliderInput("threshold_network:", "Level of detail",min = 5, max = 75, value = 20,step = 2.5, post="%", ticks=FALSE)
                   ),
                   column(9,
                     visNetworkOutput("network_plot", width = "1200px", height = "650px")
