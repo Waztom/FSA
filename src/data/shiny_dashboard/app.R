@@ -195,7 +195,7 @@ output$go_sel_x <- renderUI({
   all_info <- all_info()
   selectInput("go_xaxis", 
               label = "Select a variable in x axis",
-              choices = names(all_info),
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date)),
               selected = "period_date",
               multiple = FALSE)
 })
@@ -204,7 +204,7 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info),
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date)),
               selected = "ratio",
               multiple = FALSE)
 })
