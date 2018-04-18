@@ -195,7 +195,13 @@ output$go_sel_x <- renderUI({
   all_info <- all_info()
   selectInput("go_xaxis", 
               label = "Select a variable in x axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date)),
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date) %>%
+                                rename(leaving_links   = deg_out_wei,
+                                       arriving_links  = deg_in_wei,
+                                       total_links     = degree_val,
+                                       betweenness     = bet_val,
+                                       total_trade_USd = overall_flux)
+                                ),
               selected = "period_date",
               multiple = FALSE)
 })
@@ -204,7 +210,13 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date)),
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date) %>%
+                                rename(leaving_links   = deg_out_wei,
+                                       arriving_links  = deg_in_wei,
+                                       total_links     = degree_val,
+                                       betweenness     = bet_val,
+                                       total_trade_USd = overall_flux)
+                                ),
               selected = "ratio",
               multiple = FALSE)
 })
@@ -386,7 +398,12 @@ output$km_sel <- renderUI({
   # General overview plot
   output$go_plot <- renderPlot({
     all_info <- all_info()
-    ggplot(all_info %>% filter(node %in% input$go_country),
+    ggplot(all_info %>% filter(node %in% input$go_country) %>%
+             rename(leaving_links   = deg_out_wei,
+                    arriving_links  = deg_in_wei,
+                    total_links     = degree_val,
+                    betweenness     = bet_val,
+                    total_trade_USd = overall_flux),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
            geom_point(aes(color=node), size=3, alpha = 0.75) +
       theme(axis.text=element_text(size=12), 
