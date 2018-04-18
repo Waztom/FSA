@@ -181,9 +181,12 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
 
 #BEGINNING OF SERVER
 
+
+
 server <- function(input, output) {
 
 #BEGIN THE PRELOADING
+  the_whole_data <- reactive({
   vanilla_model         <- readRDS("vanilla_network_model_si.rds")
   vanilla_net_list      <- readRDS("vanilla_net_list.rds")
   cucumber_model        <- readRDS("cucumber_network_model_si.rds")
@@ -210,6 +213,11 @@ server <- function(input, output) {
   si_mi       <- readRDS("si_mi.rds")
   all_info_ms <- readRDS("all_info_ms.rds")
   si_ms       <- readRDS("si_ms.rds")
+  
+  })
+  
+
+  
 #END THE PRELOADING  
   
 #Functions
