@@ -38,8 +38,13 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                 uiOutput("go_sel_y")
                                 ),
                           column(9,
-                                 plotOutput("go_plot", width = "1200px", height = "350px")
-                          )
+                                 plotOutput("go_plot", width = "800px", height = "350px")
+                          ),
+                          h5("Legend: Normalized_net_trade is defined as (Imports - Exports) / (Imports + Exports) in trade value.
+                             It is possible to classify a country according to this parameter as:"),
+                          h5("Consumer:    ~(+1)"),
+                          h5("Producer:    ~(-1)"),
+                          h5("Distributor: ~ 0  ")
                  ))
       ,
          tabPanel("The Wider Network",
@@ -205,12 +210,7 @@ output$go_sel_x <- renderUI({
   all_info <- all_info()
   selectInput("go_xaxis", 
               label = "Select a variable in x axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date) %>%
-                                rename(leaving_links   = deg_out_wei,
-                                       arriving_links  = deg_in_wei,
-                                       total_links     = degree_val,
-                                       betweenness     = bet_val,
-                                       total_trade_USd = overall_flux)
+              choices = names(all_info %>% select(period_date)
                                 ),
               selected = "period_date",
               multiple = FALSE)
@@ -220,14 +220,13 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date) %>%
-                                rename(leaving_links   = deg_out_wei,
-                                       arriving_links  = deg_in_wei,
-                                       total_links     = degree_val,
-                                       betweenness     = bet_val,
-                                       total_trade_USd = overall_flux)
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,overall_flux) %>%
+                                rename(Number_import_connections = deg_out_wei,
+                                       Number_export_connections = deg_in_wei,
+                                       Total_trade_in_USD        = overall_flux,
+                                       Normalized_net_trade      = ratio)
                                 ),
-              selected = "ratio",
+              selected = "Normalized_net_trade",
               multiple = FALSE)
 })
   
@@ -409,17 +408,17 @@ output$km_sel <- renderUI({
   output$go_plot <- renderPlot({
     all_info <- all_info()
     ggplot(all_info %>% filter(node %in% input$go_country) %>%
-             rename(leaving_links   = deg_out_wei,
-                    arriving_links  = deg_in_wei,
-                    total_links     = degree_val,
-                    betweenness     = bet_val,
-                    total_trade_USd = overall_flux),
+             rename(Number_import_connections = deg_out_wei,
+                    Number_export_connections = deg_in_wei,
+                    Total_trade_in_USD        = overall_flux,
+                    Normalized_net_trade      = ratio),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
-           geom_point(aes(color=node), size=3, alpha = 0.75) +
-      theme(axis.text=element_text(size=12), 
-            axis.title=element_text(size=14,face="bold"), 
-            legend.text=element_text(size=14), 
-            legend.title=element_text(size=14))
+           geom_point(aes(color=node), size=5, alpha = 0.75) +
+           geom_line(aes(color=node), size=3, alpha = 0.75) +
+      theme(axis.text=element_text(size=17), 
+            axis.title=element_text(size=20,face="bold"), 
+            legend.text=element_text(size=20), 
+            legend.title=element_text(size=20))
   })
   
   # Network model output
