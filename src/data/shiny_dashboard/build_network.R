@@ -37,7 +37,7 @@ nodes_groups_shape_size <- nodes %>% mutate (group = grouping) %>% inner_join(tm
 
 #Creation of network alternative layout could be: layout_with_fr
 Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>% 
-  visIgraphLayout(layout = "layout_circle", randomSeed = 10000) %>%
+  visIgraphLayout(layout = "layout_in_circle", randomSeed = 10000) %>%
   visEdges(arrows = "to", color=list(color="#a7d8de", background ="#eaebe6", highlight="#68a0b0")) %>%
   visNodes(font=list(size=20), shadow = TRUE, scaling=list(min=10, max = 30), color=list(background = "#68a0b0", highlight = "#82919a")) %>%
   visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
