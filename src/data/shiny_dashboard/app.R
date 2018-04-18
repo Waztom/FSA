@@ -117,10 +117,11 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
              column(5,
                wellPanel(htmlOutput("lm_prediction")),
                h3("Residuals squared for each variable:"),
-               wellPanel(textOutput("lm_fit"))),
-             column(4,
-               plotOutput("lm_plot")
-             )
+               wellPanel(textOutput("lm_fit")))
+             #,
+             #column(4,
+             #   plotOutput("lm_plot")
+             #)
           )
        ),
       tabPanel("Predictive Model 2",          
@@ -381,9 +382,9 @@ output$km_sel <- renderUI({
                           paste("Prediction of overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
                           mydata_lm()$lm_prediction,"</b></font>",sep="")
   })
-  output$lm_plot <- renderPlot({
-                    mydata_lm()$lm_plot
-  })
+  #output$lm_plot <- renderPlot({
+  #                  mydata_lm()$lm_plot
+  #})
 
   # Network plot
   output$network_plot <- renderVisNetwork({
