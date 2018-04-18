@@ -108,7 +108,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
              #)
            ))
       ,
-         tabPanel("Predictive Model 1",
+         tabPanel("Country Trade Flow Prediction",
            fluidRow(h1("We used a linear model to characterize the impact of a perturbation on the total trade."),
                     h4("Use the dials to perturb the trade."),
                     h6("Type of perturbations include the number of arriving connections, ratio, centrality in the trade network..."),
@@ -130,10 +130,10 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
              )
           )
        ),
-      tabPanel("Predictive Model 2",          
-               fluidRow(h1("Predicting the Probability of Network Connections"),
-                        h4("Predicts the probability that trade occured between two countries"),
-                        h6("Enter the name of two countries and the probability will be returned"),
+      tabPanel("Estimating trade probability",          
+               fluidRow(h1("Estimating the Probability of Network Connections"),
+                        h4("Estimates the probability that trade occured between two countries"),
+                        h6("Enter the name of two countries and select the month. An estimate for the probability of trade occuring that month will be returned"),
                         column(3,
                                 sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
                                 uiOutput("pm_origin"),
@@ -143,7 +143,8 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                textOutput("probability_link")
                         )
                       ),
-               fluidRow(h4("Predicts the probability that trade occured via connected nodes, to assess likelihood of trade along path"),
+               fluidRow(h4("Estimates the probability that trade occured via connected nodes."),
+                        h4("*To assess likelihood of trade along a path"),
                         h6("Enter the names of the countries and the probability will be returned"),
                         column(3,
                                sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
