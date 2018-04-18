@@ -113,14 +113,14 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                     h4("Use the dials to perturb the trade."),
                     h6("Type of perturbations include the number of arriving connections, ratio, centrality in the trade network..."),
              column(3,
+                uiOutput("lm_country"),
+                uiOutput("lm_date"),
                 uiOutput("lm_var1"),
-                uiOutput("lm_var2"),
-                uiOutput("lm_var3"),
-                uiOutput("lm_var4"),
-                uiOutput("lm_var5"),
-                uiOutput("lm_var6")),
+                uiOutput("lm_var2")),
              column(5,
                wellPanel(htmlOutput("lm_prediction"))
+               ,
+               wellPanel(htmlOutput("lm_observed"))
                #,
                #h3("Residuals squared for each variable:"),
                #wellPanel(textOutput("lm_fit")))
@@ -234,44 +234,20 @@ output$go_sel_y <- renderUI({
   
 output$lm_var1 <- renderUI({
   all_info <- all_info()
-sliderInput("deginwei:", "Number of import routes",
-            min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = max(all_info$deg_in_wei),
+  all_months_lm <- sort(unique(all_info$period))
+  x1 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country)
+sliderInput("deginwei", "Number of import routes",
+            min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = x1$deg_in_wei,
             step = 1)
 })
 
 output$lm_var2 <- renderUI({
   all_info <- all_info()
-sliderInput("degoutwei:", "Number of export routes",
-            min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = floor(median(all_info$deg_out_wei)),
+  all_months_lm <- sort(unique(all_info$period))
+  x2 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country) %>% select(deg_out_wei)
+sliderInput("degoutwei", "Number of export routes",
+            min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = x2$deg_out_wei,
             step = 1)
-})
-
-output$lm_var3 <- renderUI({
-  all_info <- all_info()
-sliderInput("betval:", "Node centrality",
-            min = min(all_info$bet_val),     max = max(all_info$bet_val),     value = floor(median(all_info$bet_val)),
-            step = 1)
-})
-
-output$lm_var4 <- renderUI({
-  all_info <- all_info()
-sliderInput("trino:", "Number of triangles",
-            min = min(all_info$tri_no),      max = max(all_info$tri_no),      value = floor(median(all_info$tri_no)),
-            step = 1)
-})
-
-output$lm_var5 <- renderUI({
-  all_info <- all_info()
-sliderInput("eigenval:", "Eigenvalue",
-            min = min(all_info$eigen_val),   max = max(all_info$eigen_val),   value = floor(median(all_info$eigen_val)),
-            step = 0.1)
-})
-
-output$lm_var6 <- renderUI({
-  all_info <- all_info()
-sliderInput("ratio:", "Ratio",
-            min = min(all_info$ratio), max = max(all_info$ratio),             value = floor(median(all_info$ratio)),
-            step = 0.1)
 })
 
 output$ad_date <- renderUI({
@@ -340,6 +316,21 @@ output$an_country <- renderUI({
             selected = "United Kingdom")
 })
 
+##
+output$lm_date <- renderUI({
+  si <- si()
+  sliderInput("lm_date", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1)
+})
+
+output$lm_country <- renderUI({
+  all_info <- all_info()
+  selectInput("lm_country", 
+              label = "Select a country",
+              choices = sort(unique(all_info$node)),
+              selected = "Denmark")
+})
+###
+
 output$km_sel <- renderUI({
   all_info <- all_info()
    selectInput("km_country", 
@@ -357,13 +348,12 @@ output$km_sel <- renderUI({
   #Linear model function
   mydata_lm <- reactive({
     all_info <- all_info()
-               model_linear(all_info,
+#
+    all_months_lm <- sort(unique(all_info$period))
+    x3 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country)
+                 model_linear(all_info,
                  input$deginwei,
-                 input$degoutwei,
-                 input$betval,
-                 input$trino,
-                 input$eigenval,
-                 input$ratio)
+                 input$degoutwei,x3$bet_val,x3$tri_no,x3$eigen_val,x3$ratio)
   })
 #   
 # #Generating output
@@ -384,6 +374,23 @@ output$km_sel <- renderUI({
                           paste("Prediction of overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
                           round(mydata_lm()$lm_prediction,digits=2),"</b></font>",sep="")
   })
+  
+  ####
+  #Linear model function
+  mydata_lmo <- reactive({
+    all_info <- all_info()
+    all_months_lm <- sort(unique(all_info$period))
+    all_info %>% filter(period == all_months_lm[input$lm_date]) %>%
+                                  filter(node==input$lm_country) %>%
+                                  mutate(overall_flux_musd = overall_flux/1e6) %>%
+                                  select(overall_flux_musd)
+  })
+  
+  output$lm_observed <- renderText({
+    paste("Observed overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
+          round(mydata_lmo(),digits=2),"</b></font>",sep="")
+  })
+  ####
   #output$lm_plot <- renderPlot({
   #                  mydata_lm()$lm_plot
   #})
