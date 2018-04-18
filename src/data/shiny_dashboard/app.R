@@ -80,16 +80,22 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                 )
       ),
          tabPanel("Classifying Countries",
-           fluidRow(h1("Identifying Similar Countries"),
-                    h4("Identifies countries which have similar trade patterns to the country selected. Incorporates value of trade and network connectivity"),
+           fluidRow(h1("Country classification based on trade variables and network metrics"),
+                    h4("The clustering algorithm allows to determine what countries are the most similar to our candidate in terms of both trade characteristics and
+                       network metrics. The potential uses for this tool could be:"),
+                    h4("* What is the best potential replacement for a given supplier?"),
+                    h4("* How many countries share a given trade pattern?"),
                     h6("Select a country in the drop down menu"),
              column(3,
                uiOutput("km_sel")
                #,
                #sliderInput("km_num_clust", "Number of clusters", min = 15, max = 25, value = 15)
              ),
-             column(5,
+             column(9,
+                    h4("For your selection, the most similar countries are:"),
+                    wellPanel(
                dataTableOutput("km_data")
+                    )
              )
              #,
              #column(4,
