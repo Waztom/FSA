@@ -1,5 +1,6 @@
 build_network <- function(si,date1,threshold){
 
+threshold <- 1-threshold/100
 
 all_months <- sort(unique(si$period))
 
