@@ -18,15 +18,15 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                 tabPanel("Introduction",
                            fluidRow(wellPanel(
                              h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
-                                Restricted to food commodities, the goal is to obtain a detailed overview of the goods exchage between
+                                Restricted to food commodities, the goal is to obtain a detailed overview of the trade between
                                 countries, detect anomalous events and provide the user with tools to predict the dynamics of the trade network."),
                              h4("Specifically the items presented here are:"),
                              h5(" * Network analysis: a general overview of the data including the trade network."),
-                             h5(" * Anomaly detection: analysis of anomaluous data in trade temporal series."),
+                             h5(" * Anomaly detection: analysis of anomalous data in trade temporal series."),
                              h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                              h5(" * Trade modelling:"),
-                             h6("       - A linear model to predict the effect of network disturbaces"),
-                             h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")
+                             h6("       - A linear model to predict the effect of network disturbances"),
+                             h6("       - Temporal Exponential Random Graph Models aimed to estimate a trade likelihood")
                              ))),
                 tabPanel("Understanding Trade Patterns",
                  fluidRow(h1("Country Trade Patterns"),
@@ -131,10 +131,10 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
           )
        ),
       tabPanel("Estimate Trade Probability",          
-               fluidRow(h1("Estimating the Probability of Network Connections"),
-                        h4("Estimates the probability that trade occured between two countries"),
+               fluidRow(h1("Estimating the Probability of Trade Connections"),
+                        h4("Estimate the probability of trade between two countries"),
                         h6("*Enter the name of two countries and select a month"),
-                        h6("*An estimate for the probability of trade occuring that month will be returned"),
+                        h6("*An estimate for the probability of trade for that month will be returned"),
                         column(3,
                                 sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
                                 uiOutput("pm_origin"),
@@ -144,9 +144,9 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                textOutput("probability_link")
                         )
                       ),
-               fluidRow(h4("Estimates the probability that trade occured via connected nodes"),
+               fluidRow(h4("Estimate the probability of trade via connected nodes"),
                         h6("*Enter the names of the countries and select a month"),
-                        h6("*An estimate for the probability of trade occuring along the linked countries will be returned"),
+                        h6("*An estimate for the probability of trade for that month along the linked countries will be returned"),
                         column(3,
                                sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
                                uiOutput("pm_origin_1"),
