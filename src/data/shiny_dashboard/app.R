@@ -103,7 +103,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
              #)
            ))
       ,
-         tabPanel("Predictive Model 1",
+         tabPanel("Country Trade Flow Prediction",
            fluidRow(h1("We used a linear model to characterize the impact of a perturbation on the total trade."),
                     h4("Use the dials to perturb the trade."),
                     h6("Type of perturbations include the number of arriving connections, ratio, centrality in the trade network..."),
@@ -125,7 +125,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
              )
           )
        ),
-      tabPanel("Predictive Model 2",          
+      tabPanel("Trading Routes Prediction",          
                fluidRow(h1("Predicting the Probability of Network Connections"),
                         h4("Predicts the probability that trade occured between two countries"),
                         h6("Enter the name of two countries and the probability will be returned"),
