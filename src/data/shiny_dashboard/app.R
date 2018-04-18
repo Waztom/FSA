@@ -1,4 +1,26 @@
-require(visNetwork)
+library(tidyverse)
+library(dbplyr)
+library(lubridate)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(gridExtra)
+library(network)
+library(ggraph)
+library(visNetwork)
+library(networkD3)
+library(igraph)
+library(tidygraph)
+library(cluster) 
+library(fpc)
+library(plotly)
+library(cluster)
+library(factoextra)
+library(anomalize)
+library(boot)
+library(leaps)
+library(shiny)
+library(btergm)
 
 # BEGINNING OF UI
 
@@ -161,6 +183,35 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
 
 server <- function(input, output) {
 
+#BEGIN THE PRELOADING
+  vanilla_model         <- readRDS("vanilla_network_model_si.rds")
+  vanilla_net_list      <- readRDS("vanilla_net_list.rds")
+  cucumber_model        <- readRDS("cucumber_network_model_si.rds")
+  cucumber_net_list     <- readRDS("cucumber_net_list.rds")
+  beer_model            <- readRDS("beer_network_model_si.rds")
+  beer_net_list         <- readRDS("beer_net_list.rds")
+  milk_model            <- readRDS("milk_network_model_si.rds")
+  milk_net_list         <- readRDS("milk_net_list.rds")
+  maple_syrup_model     <- readRDS("maple_syrup_network_model_si.rds")
+  maple_syrup_net_list  <- readRDS("maple_syrup_net_list.rds")
+  ad_be <- readRDS("ad_be.rds")
+  ad_cu <- readRDS("ad_cu.rds")
+  ad_mi <- readRDS("ad_mi.rds")
+  ad_ms <- readRDS("ad_ms.rds")
+  ad_va <- readRDS("ad_va.rds")
+  
+  all_info_va <- readRDS("all_info_va.rds")
+  si_va       <- readRDS("si_va.rds")
+  all_info_cu <- readRDS("all_info_cu.rds")
+  si_cu       <- readRDS("si_cu.rds")
+  all_info_be <- readRDS("all_info_be.rds")
+  si_be       <- readRDS("si_be.rds")
+  all_info_mi <- readRDS("all_info_mi.rds")
+  si_mi       <- readRDS("si_mi.rds")
+  all_info_ms <- readRDS("all_info_ms.rds")
+  si_ms       <- readRDS("si_ms.rds")
+#END THE PRELOADING  
+  
 #Functions
   
   source("model_kmeans.R")
