@@ -234,21 +234,21 @@ output$go_sel_y <- renderUI({
   
 output$lm_var1 <- renderUI({
   all_info <- all_info()
-sliderInput("deginwei:", "Arriving links",
+sliderInput("deginwei:", "Number of import routes",
             min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = max(all_info$deg_in_wei),
             step = 1)
 })
 
 output$lm_var2 <- renderUI({
   all_info <- all_info()
-sliderInput("degoutwei:", "Leaving links",
+sliderInput("degoutwei:", "Number of export routes",
             min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = floor(median(all_info$deg_out_wei)),
             step = 1)
 })
 
 output$lm_var3 <- renderUI({
   all_info <- all_info()
-sliderInput("betval:", "Betweeness",
+sliderInput("betval:", "Node centrality",
             min = min(all_info$bet_val),     max = max(all_info$bet_val),     value = floor(median(all_info$bet_val)),
             step = 1)
 })
@@ -382,7 +382,7 @@ output$km_sel <- renderUI({
   #})
   output$lm_prediction <- renderText({
                           paste("Prediction of overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
-                          mydata_lm()$lm_prediction,"</b></font>",sep="")
+                          round(mydata_lm()$lm_prediction,digits=2),"</b></font>",sep="")
   })
   #output$lm_plot <- renderPlot({
   #                  mydata_lm()$lm_plot
