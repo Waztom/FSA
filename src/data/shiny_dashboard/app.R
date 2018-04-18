@@ -84,15 +84,17 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                     h4("Identifies countries which have similar trade patterns to the country selected. Incorporates value of trade and network connectivity"),
                     h6("Select a country in the drop down menu"),
              column(3,
-               uiOutput("km_sel"),
-               sliderInput("km_num_clust", "Number of clusters", min = 15, max = 25, value = 15)
+               uiOutput("km_sel")
+               #,
+               #sliderInput("km_num_clust", "Number of clusters", min = 15, max = 25, value = 15)
              ),
              column(5,
                dataTableOutput("km_data")
-             ),
-             column(4,
-               plotOutput("km_plot")
              )
+             #,
+             #column(4,
+             #  plotOutput("km_plot")
+             #)
            ))
       ,
          tabPanel("Predictive Model 1",
@@ -340,7 +342,7 @@ output$km_sel <- renderUI({
   #Kmeans function
   mydata_km <- reactive({
     all_info <- all_info()
-               model_kmeans(all_info,input$km_num_clust,input$km_country)
+               model_kmeans(all_info,15,input$km_country)
   })
 
   #Linear model function
@@ -361,9 +363,9 @@ output$km_sel <- renderUI({
   output$km_data <- renderDataTable({
                     mydata_km()$km_data
   })
-  output$km_plot <- renderPlot({
-                    mydata_km()$km_plot
-  })
+  #output$km_plot <- renderPlot({
+  #                  mydata_km()$km_plot
+  #})
 
   # Linear model
   output$lm_fit <- renderPrint({
