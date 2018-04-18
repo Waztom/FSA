@@ -104,9 +104,9 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
            ))
       ,
          tabPanel("Predictive Model 1",
-           fluidRow(h1("Predicting the Impact of Adding/Removing Connections"),
-                    h4("Predicts the trade value if connections are added/removed, to help understand the financial impact of changes to trade connectivity"),
-                    h6("Adjust the number of connections with the dial"),
+           fluidRow(h1("We used a linear model to characterize the impact of a perturbation on the total trade."),
+                    h4("Use the dials to perturb the trade."),
+                    h6("Type of perturbations include the number of arriving connections, ratio, centrality in the trade network..."),
              column(3,
                 uiOutput("lm_var1"),
                 uiOutput("lm_var2"),
@@ -115,13 +115,14 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                 uiOutput("lm_var5"),
                 uiOutput("lm_var6")),
              column(5,
-               wellPanel(htmlOutput("lm_prediction")),
-               h3("Residuals squared for each variable:"),
-               wellPanel(textOutput("lm_fit")))
+               wellPanel(htmlOutput("lm_prediction"))
+               #,
+               #h3("Residuals squared for each variable:"),
+               #wellPanel(textOutput("lm_fit")))
              #,
              #column(4,
              #   plotOutput("lm_plot")
-             #)
+             )
           )
        ),
       tabPanel("Predictive Model 2",          
@@ -375,9 +376,9 @@ output$km_sel <- renderUI({
   #})
 
   # Linear model
-  output$lm_fit <- renderPrint({
-                   mydata_lm()$lm_fit
-  })
+  #output$lm_fit <- renderPrint({
+  #                 mydata_lm()$lm_fit
+  #})
   output$lm_prediction <- renderText({
                           paste("Prediction of overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
                           mydata_lm()$lm_prediction,"</b></font>",sep="")

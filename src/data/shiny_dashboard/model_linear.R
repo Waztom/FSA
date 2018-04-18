@@ -58,5 +58,5 @@ ratio       = x7
 
 predd <- predict(lm.best,querydata,type ="response")
 
-return(data_lm <- list("lm_fit" = reg.summary$rsq, "lm_prediction" = 1000 * predd, "lm_plot" = p1))
+return(data_lm <- list("lm_fit" = lm.best$r.squared, "lm_prediction" = 1000 * predd, "lm_plot" = p1))
 }

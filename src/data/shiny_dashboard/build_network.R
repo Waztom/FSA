@@ -54,3 +54,5 @@ Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>%
 return(Network)
 
 }
+
+
