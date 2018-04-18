@@ -32,22 +32,16 @@ undirected_network <- tbl_graph(nodes = nodes, edges = edges, directed = FALSE)
 communities        <- edge.betweenness.community(undirected_network)
 grouping           <- membership(communities)
 
-nodes_groups_shape_size <- nodes %>% mutate (group = grouping) %>% inner_join(tmp,by="label") %>% select(id, label, group, value, shape)
+nodes_groups_shape_size <- nodes %>% mutate (group = grouping) %>% inner_join(tmp,by="label") %>% select(id, label, value, shape)
 
 
 #Creation of network
 Network <- visNetwork(nodes_groups_shape_size, edges, width = "150%") %>% 
   visIgraphLayout(layout = "layout_in_circle", randomSeed = 10000) %>%
-  visEdges(arrows = "to", color=list(inherit=TRUE)) %>%
-  visNodes(font=list(size=20), shadow = TRUE, scaling=list(min=10, max = 30)) %>%
+  visEdges(arrows = "to", color=list(color="#a7d8de", background ="#eaebe6", highlight="#68a0b0")) %>%
+  visNodes(font=list(size=20), shadow = TRUE, scaling=list(min=10, max = 30), color=list(background = "#68a0b0", highlight = "#82919a")) %>%
   visOptions(highlightNearest = list(enabled = TRUE, degree=list(to=1, from=1), algorithm="hierarchical"), 
     nodesIdSelection = TRUE, clickToUse=TRUE) %>%
-  visGroups(groupname = "1", color = "lightgreen") %>%
-  visGroups(groupname = "2", color = "lightblue") %>%
-  visGroups(groupname = "3", color = "lightgrey") %>%
-  visGroups(groupname = "4", color = "grey") %>%
-  visGroups(groupname = "5", color = "mediumgreen") %>%
-  visGroups(groupname = "6", color = "mediumblue") %>%
   visInteraction(navigationButtons = TRUE) %>%
   visLegend(addNodes = list(
     list(label = "Distributor", shape = "square"),

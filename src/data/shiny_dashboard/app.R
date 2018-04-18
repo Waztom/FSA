@@ -80,19 +80,27 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                 )
       ),
          tabPanel("Classifying Countries",
-           fluidRow(h1("Identifying Similar Countries"),
-                    h4("Identifies countries which have similar trade patterns to the country selected. Incorporates value of trade and network connectivity"),
+           fluidRow(h1("Country classification based on trade variables and network metrics"),
+                    h4("The clustering algorithm allows to determine what countries are the most similar to our candidate in terms of both trade characteristics and
+                       network metrics. The potential uses for this tool could be:"),
+                    h4("* What is the best potential replacement for a given supplier?"),
+                    h4("* How many countries share a given trade pattern?"),
                     h6("Select a country in the drop down menu"),
              column(3,
-               uiOutput("km_sel"),
-               sliderInput("km_num_clust", "Number of clusters", min = 15, max = 25, value = 15)
+               uiOutput("km_sel")
+               #,
+               #sliderInput("km_num_clust", "Number of clusters", min = 15, max = 25, value = 15)
              ),
-             column(5,
+             column(9,
+                    h4("For your selection, the most similar countries are:"),
+                    wellPanel(
                dataTableOutput("km_data")
-             ),
-             column(4,
-               plotOutput("km_plot")
+                    )
              )
+             #,
+             #column(4,
+             #  plotOutput("km_plot")
+             #)
            ))
       ,
          tabPanel("Predictive Model 1",
@@ -195,7 +203,13 @@ output$go_sel_x <- renderUI({
   all_info <- all_info()
   selectInput("go_xaxis", 
               label = "Select a variable in x axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date)),
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date) %>%
+                                rename(leaving_links   = deg_out_wei,
+                                       arriving_links  = deg_in_wei,
+                                       total_links     = degree_val,
+                                       betweenness     = bet_val,
+                                       total_trade_USd = overall_flux)
+                                ),
               selected = "period_date",
               multiple = FALSE)
 })
@@ -204,7 +218,13 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date)),
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,degree_val,bet_val,overall_flux,period_date) %>%
+                                rename(leaving_links   = deg_out_wei,
+                                       arriving_links  = deg_in_wei,
+                                       total_links     = degree_val,
+                                       betweenness     = bet_val,
+                                       total_trade_USd = overall_flux)
+                                ),
               selected = "ratio",
               multiple = FALSE)
 })
@@ -328,7 +348,7 @@ output$km_sel <- renderUI({
   #Kmeans function
   mydata_km <- reactive({
     all_info <- all_info()
-               model_kmeans(all_info,input$km_num_clust,input$km_country)
+               model_kmeans(all_info,15,input$km_country)
   })
 
   #Linear model function
@@ -349,9 +369,9 @@ output$km_sel <- renderUI({
   output$km_data <- renderDataTable({
                     mydata_km()$km_data
   })
-  output$km_plot <- renderPlot({
-                    mydata_km()$km_plot
-  })
+  #output$km_plot <- renderPlot({
+  #                  mydata_km()$km_plot
+  #})
 
   # Linear model
   output$lm_fit <- renderPrint({
@@ -386,7 +406,12 @@ output$km_sel <- renderUI({
   # General overview plot
   output$go_plot <- renderPlot({
     all_info <- all_info()
-    ggplot(all_info %>% filter(node %in% input$go_country),
+    ggplot(all_info %>% filter(node %in% input$go_country) %>%
+             rename(leaving_links   = deg_out_wei,
+                    arriving_links  = deg_in_wei,
+                    total_links     = degree_val,
+                    betweenness     = bet_val,
+                    total_trade_USd = overall_flux),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
            geom_point(aes(color=node), size=3, alpha = 0.75) +
       theme(axis.text=element_text(size=12), 
