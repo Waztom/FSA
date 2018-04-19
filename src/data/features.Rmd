@@ -41,7 +41,7 @@ library(leaps)
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
 ```{r}
-get_file = 2
+get_file = 1
 #
 if(get_file == 0){
 source("get_Comtrade_data_all.R")

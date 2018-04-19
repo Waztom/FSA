@@ -223,8 +223,8 @@ output$go_sel_y <- renderUI({
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
               choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,tot_out_wei,tot_in_wei) %>%
-                                rename(Number_import_connections = deg_out_wei,
-                                       Number_export_connections = deg_in_wei,
+                                rename(Leaving_trade_routes  = deg_out_wei,
+                                       Arriving_trade_routes = deg_in_wei,
                                        Total_Exports_USD         = tot_out_wei,
                                        Total_Imports_USD         = tot_in_wei,
                                        Normalized_net_trade      = ratio)
@@ -237,7 +237,7 @@ output$lm_var1 <- renderUI({
   all_info <- all_info()
   all_months_lm <- sort(unique(all_info$period))
   x1 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country)
-sliderInput("deginwei", "Number of import routes",
+sliderInput("deginwei", "Number of arriving routes",
             min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = x1$deg_in_wei,
             step = 1)
 })
@@ -246,7 +246,7 @@ output$lm_var2 <- renderUI({
   all_info <- all_info()
   all_months_lm <- sort(unique(all_info$period))
   x2 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country) %>% select(deg_out_wei)
-sliderInput("degoutwei", "Number of export routes",
+sliderInput("degoutwei", "Number of leaving routes",
             min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = x2$deg_out_wei,
             step = 1)
 })
@@ -418,8 +418,8 @@ output$km_sel <- renderUI({
   output$go_plot <- renderPlot({
     all_info <- all_info()
     ggplot(all_info %>% filter(node %in% input$go_country) %>%
-             rename(Number_import_connections = deg_out_wei,
-                    Number_export_connections = deg_in_wei,
+             rename(Leaving_trade_routes  = deg_out_wei,
+                    Arriving_trade_routes = deg_in_wei,
                     Total_Exports_USD         = tot_out_wei,
                     Total_Imports_USD         = tot_in_wei,
                     Normalized_net_trade      = ratio),
