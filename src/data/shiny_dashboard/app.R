@@ -222,10 +222,11 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,overall_flux) %>%
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,tot_out_wei,tot_in_wei) %>%
                                 rename(Number_import_connections = deg_out_wei,
                                        Number_export_connections = deg_in_wei,
-                                       Total_trade_in_USD        = overall_flux,
+                                       Total_Exports_USD         = tot_out_wei,
+                                       Total_Imports_USD         = tot_in_wei,
                                        Normalized_net_trade      = ratio)
                                 ),
               selected = "Normalized_net_trade",
@@ -419,7 +420,8 @@ output$km_sel <- renderUI({
     ggplot(all_info %>% filter(node %in% input$go_country) %>%
              rename(Number_import_connections = deg_out_wei,
                     Number_export_connections = deg_in_wei,
-                    Total_trade_in_USD        = overall_flux,
+                    Total_Exports_USD         = tot_out_wei,
+                    Total_Imports_USD         = tot_in_wei,
                     Normalized_net_trade      = ratio),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
            geom_point(aes(color=node), size=5, alpha = 0.75) +
