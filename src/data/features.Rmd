@@ -41,7 +41,7 @@ library(leaps)
 # Choose whether to read data from file or import via SQL
 Set the variable to TRUE for importing *fresh* data from Comtrade via SQL setting the commodity code and time period.
 ```{r}
-get_file = 2
+get_file = 1
 #
 if(get_file == 0){
 source("get_Comtrade_data_all.R")
@@ -265,7 +265,7 @@ mydata_s <- scale(mydata) # Data must be scaled!!
 ```
 
 ```{r}
-tmp_dat <- all_info %>% filter(period == 201401) %>% 
+tmp_dat <- all_info %>% filter(period == 201401) %>% filter(overall_flux > quantile(overall_flux,0.75)) %>% 
   select(node, degree_val, degree_net, ratio, bet_val, overall_flux, deg_in_wei, deg_out_wei)
 tmp_dat <- tmp_dat %>% transform(degree_net = as.numeric(degree_net))
 tmp_dat <- tmp_dat %>% transform(deg_in_wei = as.numeric(deg_in_wei))
@@ -274,9 +274,9 @@ tmp_dat2 <- tmp_dat[,-1]
 rownames(tmp_dat2) <- tmp_dat[,1]
 tmp_dat <- scale(tmp_dat2)
 distance <- get_dist(tmp_dat)
-fviz_dist(distance, gradient = list(low = "#0677FF", mid = "white", high = "#FF3333"),lab_size = 4) +
-  labs(title="K-means distance for the top 70% percentile of countries in terms of overall trade value flux",
-       subtitle = "The blueish, the closer")
+fviz_dist(distance, gradient = list(low = "#FF3333", mid = "white", high = "#0677FF"),lab_size = 12) +
+  labs(title="Similarity between most relevant countries in terms of trade value (cucumbers)",
+       subtitle = "The reder, the closer") + theme(legend.position="none")
 ```
 
 

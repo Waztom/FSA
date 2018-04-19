@@ -18,15 +18,15 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                 tabPanel("Introduction",
                            fluidRow(wellPanel(
                              h4("This dashboard allows to explore the International trade flows according to UN Comtrade database.
-                                Restricted to food commodities, the goal is to obtain a detailed overview of the goods exchage between
+                                Restricted to food commodities, the goal is to obtain a detailed overview of the trade between
                                 countries, detect anomalous events and provide the user with tools to predict the dynamics of the trade network."),
                              h4("Specifically the items presented here are:"),
                              h5(" * Network analysis: a general overview of the data including the trade network."),
-                             h5(" * Anomaly detection: analysis of anomaluous data in trade temporal series."),
+                             h5(" * Anomaly detection: analysis of anomalous data in trade temporal series."),
                              h5(" * Country classification: clustering of the countries based on combined network metrics and trade data."),
                              h5(" * Trade modelling:"),
-                             h6("       - A linear model to predict the effect of network disturbaces"),
-                             h6("       - Temporal Exponential Random Graph Models aimed to predict a trade likelyhood")
+                             h6("       - A linear model to predict the effect of network disturbances"),
+                             h6("       - Temporal Exponential Random Graph Models aimed to estimate a trade likelihood")
                              ))),
                 tabPanel("Understanding Trade Patterns",
                  fluidRow(h1("Country Trade Patterns"),
@@ -113,14 +113,14 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                     h4("Use the dials to perturb the trade."),
                     h6("Type of perturbations include the number of arriving connections, ratio, centrality in the trade network..."),
              column(3,
+                uiOutput("lm_country"),
+                uiOutput("lm_date"),
                 uiOutput("lm_var1"),
-                uiOutput("lm_var2"),
-                uiOutput("lm_var3"),
-                uiOutput("lm_var4"),
-                uiOutput("lm_var5"),
-                uiOutput("lm_var6")),
+                uiOutput("lm_var2")),
              column(5,
                wellPanel(htmlOutput("lm_prediction"))
+               ,
+               wellPanel(htmlOutput("lm_observed"))
                #,
                #h3("Residuals squared for each variable:"),
                #wellPanel(textOutput("lm_fit")))
@@ -130,10 +130,11 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
              )
           )
        ),
-      tabPanel("Estimating trade probability",          
-               fluidRow(h1("Estimating the Probability of Network Connections"),
-                        h4("Estimates the probability that trade occured between two countries"),
-                        h6("Enter the name of two countries and select the month. An estimate for the probability of trade occuring that month will be returned"),
+      tabPanel("Estimate Trade Probability",          
+               fluidRow(h1("Estimating the Probability of Trade Connections"),
+                        h4("Estimate the probability of trade between two countries"),
+                        h6("*Enter the name of two countries and select a month"),
+                        h6("*An estimate for the probability of trade for that month will be returned"),
                         column(3,
                                 sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
                                 uiOutput("pm_origin"),
@@ -143,9 +144,9 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                textOutput("probability_link")
                         )
                       ),
-               fluidRow(h4("Estimates the probability that trade occured via connected nodes."),
-                        h4("*To assess likelihood of trade along a path"),
-                        h6("Enter the names of the countries and the probability will be returned"),
+               fluidRow(h4("Estimate the probability of trade via connected nodes"),
+                        h6("*Enter the names of the countries and select a month"),
+                        h6("*An estimate for the probability of trade for that month along the linked countries will be returned"),
                         column(3,
                                sliderInput("month_model:", "Month from Jan.", min = 1, max = 12, value = 1, step = 1),
                                uiOutput("pm_origin_1"),
@@ -221,10 +222,11 @@ output$go_sel_y <- renderUI({
   all_info <- all_info()
   selectInput("go_yaxis", 
               label = "Select a variable in y axis",
-              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,overall_flux) %>%
-                                rename(Number_import_connections = deg_out_wei,
-                                       Number_export_connections = deg_in_wei,
-                                       Total_trade_in_USD        = overall_flux,
+              choices = names(all_info %>% select(deg_out_wei,deg_in_wei,ratio,tot_out_wei,tot_in_wei) %>%
+                                rename(Leaving_trade_routes  = deg_out_wei,
+                                       Arriving_trade_routes = deg_in_wei,
+                                       Total_Exports_USD         = tot_out_wei,
+                                       Total_Imports_USD         = tot_in_wei,
                                        Normalized_net_trade      = ratio)
                                 ),
               selected = "Normalized_net_trade",
@@ -233,44 +235,20 @@ output$go_sel_y <- renderUI({
   
 output$lm_var1 <- renderUI({
   all_info <- all_info()
-sliderInput("deginwei:", "Arriving links",
-            min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = max(all_info$deg_in_wei),
+  all_months_lm <- sort(unique(all_info$period))
+  x1 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country)
+sliderInput("deginwei", "Number of arriving routes",
+            min = min(all_info$deg_in_wei),  max = max(all_info$deg_in_wei),  value = x1$deg_in_wei,
             step = 1)
 })
 
 output$lm_var2 <- renderUI({
   all_info <- all_info()
-sliderInput("degoutwei:", "Leaving links",
-            min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = floor(median(all_info$deg_out_wei)),
+  all_months_lm <- sort(unique(all_info$period))
+  x2 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country) %>% select(deg_out_wei)
+sliderInput("degoutwei", "Number of leaving routes",
+            min = min(all_info$deg_out_wei), max = max(all_info$deg_out_wei), value = x2$deg_out_wei,
             step = 1)
-})
-
-output$lm_var3 <- renderUI({
-  all_info <- all_info()
-sliderInput("betval:", "Betweeness",
-            min = min(all_info$bet_val),     max = max(all_info$bet_val),     value = floor(median(all_info$bet_val)),
-            step = 1)
-})
-
-output$lm_var4 <- renderUI({
-  all_info <- all_info()
-sliderInput("trino:", "Number of triangles",
-            min = min(all_info$tri_no),      max = max(all_info$tri_no),      value = floor(median(all_info$tri_no)),
-            step = 1)
-})
-
-output$lm_var5 <- renderUI({
-  all_info <- all_info()
-sliderInput("eigenval:", "Eigenvalue",
-            min = min(all_info$eigen_val),   max = max(all_info$eigen_val),   value = floor(median(all_info$eigen_val)),
-            step = 0.1)
-})
-
-output$lm_var6 <- renderUI({
-  all_info <- all_info()
-sliderInput("ratio:", "Ratio",
-            min = min(all_info$ratio), max = max(all_info$ratio),             value = floor(median(all_info$ratio)),
-            step = 0.1)
 })
 
 output$ad_date <- renderUI({
@@ -339,6 +317,21 @@ output$an_country <- renderUI({
             selected = "United Kingdom")
 })
 
+##
+output$lm_date <- renderUI({
+  si <- si()
+  sliderInput("lm_date", "Month from Jan. 2014", min = 1, max = length(unique(si$period)), value = 1, step = 1)
+})
+
+output$lm_country <- renderUI({
+  all_info <- all_info()
+  selectInput("lm_country", 
+              label = "Select a country",
+              choices = sort(unique(all_info$node)),
+              selected = "Czech Rep.")
+})
+###
+
 output$km_sel <- renderUI({
   all_info <- all_info()
    selectInput("km_country", 
@@ -356,13 +349,12 @@ output$km_sel <- renderUI({
   #Linear model function
   mydata_lm <- reactive({
     all_info <- all_info()
-               model_linear(all_info,
+#
+    all_months_lm <- sort(unique(all_info$period))
+    x3 <- all_info %>% filter(period == all_months_lm[input$lm_date]) %>% filter(node==input$lm_country)
+                 model_linear(all_info,
                  input$deginwei,
-                 input$degoutwei,
-                 input$betval,
-                 input$trino,
-                 input$eigenval,
-                 input$ratio)
+                 input$degoutwei,x3$bet_val,x3$tri_no,x3$eigen_val,x3$ratio)
   })
 #   
 # #Generating output
@@ -381,8 +373,25 @@ output$km_sel <- renderUI({
   #})
   output$lm_prediction <- renderText({
                           paste("Prediction of overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
-                          mydata_lm()$lm_prediction,"</b></font>",sep="")
+                          round(mydata_lm()$lm_prediction,digits=2),"</b></font>",sep="")
   })
+  
+  ####
+  #Linear model function
+  mydata_lmo <- reactive({
+    all_info <- all_info()
+    all_months_lm <- sort(unique(all_info$period))
+    all_info %>% filter(period == all_months_lm[input$lm_date]) %>%
+                                  filter(node==input$lm_country) %>%
+                                  mutate(overall_flux_musd = overall_flux/1e6) %>%
+                                  select(overall_flux_musd)
+  })
+  
+  output$lm_observed <- renderText({
+    paste("Observed overall trade flux (M$US): ","<font color=\"#FF0000\"><b>",
+          round(mydata_lmo(),digits=2),"</b></font>",sep="")
+  })
+  ####
   #output$lm_plot <- renderPlot({
   #                  mydata_lm()$lm_plot
   #})
@@ -409,9 +418,10 @@ output$km_sel <- renderUI({
   output$go_plot <- renderPlot({
     all_info <- all_info()
     ggplot(all_info %>% filter(node %in% input$go_country) %>%
-             rename(Number_import_connections = deg_out_wei,
-                    Number_export_connections = deg_in_wei,
-                    Total_trade_in_USD        = overall_flux,
+             rename(Leaving_trade_routes  = deg_out_wei,
+                    Arriving_trade_routes = deg_in_wei,
+                    Total_Exports_USD         = tot_out_wei,
+                    Total_Imports_USD         = tot_in_wei,
                     Normalized_net_trade      = ratio),
            aes_string(x=input$go_xaxis,y=input$go_yaxis)) +
            geom_point(aes(color=node), size=5, alpha = 0.75) +

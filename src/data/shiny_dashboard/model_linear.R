@@ -45,7 +45,7 @@ p1 <- ggplot(rsq,aes(x=rowid,y=rsq)) + geom_point() + geom_line() + labs(x="Numb
 querydata <- data.frame(
 deg_in_wei  = x1,
 deg_out_wei = x2,
-degree_net  = x1+x2,
+degree_net  = x2-x1,
 bet_val     = x4,
 tri_no      = x5,
 eigen_val   = x6,
