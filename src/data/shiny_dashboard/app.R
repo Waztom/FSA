@@ -327,7 +327,7 @@ output$lm_country <- renderUI({
   selectInput("lm_country", 
               label = "Select a country",
               choices = sort(unique(all_info$node)),
-              selected = "Denmark")
+              selected = "Czech Rep.")
 })
 ###
 
