@@ -169,17 +169,17 @@ server <- function(input, output) {
 
 #Functions
   
-  source("model_kmeans.R")
-  source("model_linear.R")
-  source("build_network.R")
-  source("anomaly_detection.R")
-  source("network_model.R")
-  source("get_all_info.R")
-  source("get_si.R")
-  source("get_model.R")
-  source("get_ad.R")
-  source("anomaly_detection_all.R")
-  source("anomaly_detection_all_preloaded.R")
+  source("functions/model_kmeans.R")
+  source("functions/model_linear.R")
+  source("functions/build_network.R")
+  source("functions/anomaly_detection.R")
+  source("functions/network_model.R")
+  source("functions/get_all_info.R")
+  source("functions/get_si.R")
+  source("functions/get_model.R")
+  source("functions/get_ad.R")
+  source("functions/anomaly_detection_all.R")
+  source("functions/anomaly_detection_all_preloaded.R")
   
   all_info <- reactive({
     get_all_info(input$commodity)
