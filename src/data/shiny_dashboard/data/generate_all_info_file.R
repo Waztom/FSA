@@ -158,7 +158,7 @@ all_info <- all_info %>% group_by(period) %>%
 #Double check
 all_info <- all_info[complete.cases(all_info),]
 
-data <- list("all_info" = all_info, "si" = si, "commodit_description" = commodity_description, "commodity_code" = commodity_code)
+data <- list("all_info" = all_info, "si" = si, "commodity_description" = commodity_description, "commodity_code" = commodity_code)
 
 rdataname <- c("all_data", filename)
 

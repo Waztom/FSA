@@ -24,6 +24,9 @@ parser.add_argument('--trade_period_start', action="store", dest="trade_period_s
 parser.add_argument('--trade_period_end', action="store", dest="trade_period_end",  default='201612', help='Give the end date of the trade period to download in YYYYMM format.')
 parser.add_argument('--percentile',action="store", dest="percentile", type=float, default=0.5,    
                     help="Percentile at which to stop exploring for partners based on initial trade values incoming UK.")
+parser.add_argument('--commodity_name_pattern', action="store", dest="com_pattern", help='Type in commodity name to search for the code, for example "anilla" to search for Vanilla. \
+                    --commodties has to be set to 0 to enable the search.')
+
 
 args = parser.parse_args()
 
@@ -35,8 +38,13 @@ percentile=args.percentile
 commodity_codes=args.com_codes #['0905','0905']
 trade_period=[args.trade_period_start, args.trade_period_end] #['201601', '201612']
 
+if int(commodity_codes[0]) == 0:
+    # Search for the commodity code based on a pattern
+    comtrade_dictionary = pysqlib.load_comtrade_info()
+    pysqlib.get_commodity_codes(comtrade_dictionary, args.com_pattern)
+    sys.exit(0)
 # Duplicate commodity if there is only one in order to have a commoditiy list
-if len(commodity_codes)==1:
+elif len(commodity_codes)==1:
     commodity_codes=[commodity_codes[0],commodity_codes[0]]
     
 # write pandas dataframe to an .RData file
@@ -103,12 +111,13 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
         if new_trade is None or new_trade.empty:
             print('Error with '+partner_name+' ignoring it for the moment.')
             new_trade = pd.DataFrame([], columns=['trade_value_usd'], index = trade_network.index)
+            new_trade_dump = pd.DataFrame([], columns=['period', 'partner','trade_value_usd'])
             partner_name_errors.append(partner_name)
         else:
-            new_trade_dump = trade[['partner','period','trade_value_usd']].copy()
-            new_trade_dump['reporter'] = partner_name
-            
             new_trade = new_trade[new_trade.trade_flow_code == 1]
+            new_trade_dump = new_trade[['partner','period','trade_value_usd']].copy()
+            new_trade_dump['reporter'] = partner_name
+                
             new_trade = new_trade.groupby(['period','partner'])[['trade_value_usd']].sum()
         
         # Concatenate the additional data to the trade dump
@@ -140,7 +149,9 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     trade_dump = trade_dump[trade_dump.partner != 'World']
     
     # Add a coolumn with first day of the given period month
-#    trade_dump['period_date'] = trade_dump.apply(lambda row: str(row.period)[:4]+'-'+str(row.period)[-2:]+'-01' , axis=1)
+    # trade_dump['period_date'] = trade_dump.apply(lambda row: str(row.period)[:4]+'-'+str(row.period)[-2:]+'-01' , axis=1)
+    trade_dump.to_pickle('tesdump.pickle')
+    
     trade_dump['period_date'] =pd.to_datetime(trade_dump['period'], format='%Y%m')
     trade_dump = trade_dump.rename(columns={'partner': 'origin', 'reporter': 'destin'})
     
@@ -151,9 +162,10 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     # Create python pickle
     trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'_monthly.pickle')
   
-
     rdata_filename = commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump.RData'
-
+    
+    trade_dump.to_pickle(rdata_filename+'.pickle')
+    
     pandas2ri.activate()
 
     r_si = pandas2ri.py2ri(trade_dump)
@@ -166,7 +178,7 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     print('Total request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     print(trade_network.describe())
 
-    subprocess.call (['./generate_all_info_file.R','-f ', rdata_filename])
+    subprocess.call (['./generate_all_info_file.R',' -f ', rdata_filename])
 
 if __name__ == '__main__':
     download_comtrade_data( commodity_codes = commodity_codes, trade_period = trade_period )
