@@ -50,7 +50,8 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
          tabPanel("The Wider Network",
            fluidRow(h1("Trade Network"),
                     h4("Visualises trade network over time, to help understanding of patterns and connectivity"),
-                    h6("Adjust the time dial to see changes to the network over time and simplify the network with the complexity dial. Select a country to see their trade network"),
+                    h5("Adjust the time dial to see changes to the network over time and simplify the network with the complexity dial. Select a country to see their trade network - either use the dropdown menu or click on the country"),
+                    h6("The shape of the country classifies if they are a producer/distributor/consumer. The shape and arrow size represent the level of trade."),
              column(3,
                uiOutput("ne_date"),
                sliderInput("threshold_network:", "Level of detail",min = 5, max = 75, value = 20,step = 2.5, post="%", ticks=FALSE)
@@ -157,9 +158,7 @@ ui <- fluidPage(titlePanel(title = "FSA - Global Trade Patterns and Networks"),
                                textOutput("probability_links")
                         )
                ) 
-      ),
-      tabPanel("Help",
-               fluidRow(h1("Dashboard Demonstration")))
+      )
    ))))
 
 # END OF UI
