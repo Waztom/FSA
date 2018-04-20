@@ -1,11 +1,15 @@
+#Function to detect anomalies for a given country
 anomaly_detection <- function(all_info, ad_country){
-  
+
+#removing countries with fewer than 15 entries as the time decomposition doesn't work if there are limited entries. 
+#selecting country of interest
+#needs to be ungrouped for time decomposition to work
 df2 <- all_info %>% group_by(node) %>% filter(n() > 15) %>% select(period_date, ratio, node) %>% filter(node == ad_country) %>% ungroup()
   
-#time decomposition via stl and anomaly detection via iqr  
+#time decomposition via stl and anomaly detection via iqr - we found these methods worked better than twitter and gesd. Adjust alpha to make the acceptable range broader/narrower. You can set the seasonal frequency to one year but we found this didnt work so well
 df2_analysed <- df2 %>% time_decompose(ratio, method = "stl") %>% anomalize(remainder, alpha = 0.5, method = "iqr") 
 
-#create list of anomalous data points  
+#create list of anomalous data points  - not currently an output of the function
 df2_anomalies <- df2_analysed %>% filter(anomaly == "Yes")
 
 #Recomposing time
