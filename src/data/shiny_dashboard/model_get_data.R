@@ -23,6 +23,7 @@ if(commodity == "Cucumbers"){
 df <- read.csv(file=csv_file_name, header=TRUE)
 
 # Clean the missing data
+#This will remove rows that have Na values for weight as well! 
 df <- df[complete.cases(df),]
 
 # Prepare data
