@@ -1,0 +1,90 @@
+---
+title: Shiny dashborad
+author: "FSA team"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, echo=FALSE)
+```
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+library(RPostgreSQL)
+library(tidyverse)
+library(dbplyr)
+library(rjson)
+library(DBI)
+library(lubridate)
+library(tibble)
+library(ggplot2)
+library(stringr)
+library(gridExtra)
+library(network)
+library(ggraph)
+library(visNetwork)
+library(networkD3)
+library(igraph)
+library(tidygraph)
+library(cluster) 
+library(fpc)
+library(plotly)
+library(cluster)
+library(factoextra)
+library(anomalize)
+library(boot)
+library(leaps)
+library(shiny)
+library(btergm)
+```
+
+```{r}
+vanilla_model         <- readRDS("rds_files/vanilla_network_model_si.rds")
+vanilla_net_list      <- readRDS("rds_files/vanilla_net_list.rds")
+cucumber_model        <- readRDS("rds_files/cucumber_network_model_si.rds")
+cucumber_net_list     <- readRDS("rds_files/cucumber_net_list.rds")
+beer_model            <- readRDS("rds_files/beer_network_model_si.rds")
+beer_net_list         <- readRDS("rds_files/beer_net_list.rds")
+milk_model            <- readRDS("rds_files/milk_network_model_si.rds")
+milk_net_list         <- readRDS("rds_files/milk_net_list.rds")
+maple_syrup_model     <- readRDS("rds_files/maple_syrup_network_model_si.rds")
+maple_syrup_net_list  <- readRDS("rds_files/maple_syrup_net_list.rds")
+ad_be <- readRDS("rds_files/ad_be.rds")
+ad_cu <- readRDS("rds_files/ad_cu.rds")
+ad_mi <- readRDS("rds_files/ad_mi.rds")
+ad_ms <- readRDS("rds_files/ad_ms.rds")
+ad_va <- readRDS("rds_files/ad_va.rds")
+```
+
+#This is the pre-load.
+#As it is right now is horrifying and should be replaced by RData
+```{r}
+source("functions/model_get_data.R")
+#data        <- model_get_data("Vanilla")
+all_info_va <- readRDS("rds_files/all_info_va.rds")
+si_va       <- readRDS("rds_files/si_va.rds")
+
+#data        <- model_get_data("Cucumbers")
+all_info_cu <- readRDS("rds_files/all_info_cu.rds")
+si_cu       <- readRDS("rds_files/si_cu.rds")
+
+#data        <- model_get_data("Beer")
+all_info_be <- readRDS("rds_files/all_info_be.rds")
+si_be       <- readRDS("rds_files/si_be.rds")
+
+#data        <- model_get_data("Milk")
+all_info_mi <- readRDS("rds_files/all_info_mi.rds")
+si_mi       <- readRDS("rds_files/si_mi.rds")
+
+#data        <- model_get_data("Maple Syrup")
+all_info_ms <- readRDS("rds_files/all_info_ms.rds")
+si_ms       <- readRDS("rds_files/si_ms.rds")
+```
+
+# Launch the app
+```{r}
+runApp("./")
+```
+

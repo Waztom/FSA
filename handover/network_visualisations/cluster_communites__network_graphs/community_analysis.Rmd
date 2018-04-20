@@ -1,0 +1,133 @@
+---
+title: "Community anlysis"
+author: "Warren Thompson"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+source('get_trade_attribute.R')
+source('get_nodes.R')
+source('get_network_links.R')
+source('get_edges.R')
+source('get_Comtrade_monthly_data.R')
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(igraph)
+library(visNetwork)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+library(linkcomm)
+```
+
+#Access comtrade database - look for cucumber info for world
+```{r}
+#source("get_Comtrade_data_network_graph.R")
+#world_data   <- get_Comtrade_data_network_graph(201401,201601,"default","070700")
+```
+
+#Access comtrade database saved as csv file
+```{r}
+world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",")
+```
+
+#Monthly link analysis exploration using linkcomm
+```{r}
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+lc_list               <- list() #List of plots
+cluster_list          <- list() #List nested communities 
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data(world_data)
+
+for (i in world_monthly_data){
+  #Call to function to calculate nett trade
+  month_trade_attribute  <- get_trade_attribute(i,"abs_nett")
+  
+  #Determine crdue thresholding via quantiles 
+  month_quantiles   <- quantile(i$trade_value_usd)
+  trade_threshold   <- month_quantiles[2]
+  
+  #Starting with starting_node above, get links that are connected to this node
+  month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
+  
+  #Get nodes and edges
+  nodes             <- get_nodes(trade.flow,month_links,month_trade_attribute)
+  edges             <- get_edges(trade.flow,nodes,month_links)
+  
+  #Need to do some complicated conversions to get from ID to name of country again
+  edges<-edges%>%rename(id=to)%>%left_join(nodes,edges,by="id") %>%select(from,width_trade_value,label)%>%rename(id=from)%>%left_join(nodes,edges,by="id") %>% select(c(3,4,2,5))
+  
+#Note column selection for edge attribute in getLink Communities below! In this case have chosen to only look at edges, so who talks to one another. possible to include attributes: width_trade_value(change select call above) and trade attribute (flux or nett trade depending on call to get_trade_attributes). Options to play. Check edges output above to be sure of atrribute selection.
+  lc <- getLinkCommunities(edges[,c(1,2)], directed =T)
+  lc_list <- list.append(lc_list,lc)
+  
+}
+
+```
+
+#Plot sumamry data as clustered communities with highest membership. 
+```{r}
+#Plot sumamry data
+for (lc in lc_list){
+  plot(lc, type = "members")
+}
+dev.off()
+```
+
+#Yearly link analysis exploration using linkcomm
+```{r}
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+#Choose start and end dates for analysis
+year_start_month   <- as.Date("20140101", "%Y%m%d")
+year_end_month    <- as.Date("20141201",  "%Y%m%d")
+
+#Convert period to date type
+world_data_year <- world_data %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Collect data into year
+world_data_year <- world_data_year %>% filter(period <= year_end_month & period >= year_start_month)%>% select(period,trade_flow,reporter,partner,netweight_kg,trade_value_usd) 
+
+#Call to function to calculate trade attribute for
+year_trade_attribute  <- get_trade_attribute(world_data_year,"nett")
+  
+#Determine crude thresholding via quantiles 
+year_quantiles   <- quantile(world_data_year$trade_value_usd)
+trade_threshold   <- year_quantiles[3]
+  
+#Starting with starting_node above, get links that are connected to this node
+year_links       <- get_network_links(trade.flow,starting_node,trade_threshold,world_data_year)
+  
+#Get nodes and edges
+nodes             <- get_nodes(trade.flow,year_links,year_trade_attribute)
+edges             <- get_edges(trade.flow,nodes,year_links)
+  
+#Need to do some complicated conversions to get from ID to name of country again
+edges<-edges%>%rename(id=to)%>%left_join(nodes,edges,by="id") %>%select(from,width_trade_value,label)%>%rename(id=from)%>%left_join(nodes,edges,by="id") %>% select(c(2,3,4))
+
+#In this example have only chosen to look at communities that are connected so no edge attribute included here. Which of the main communities talk to one another for a year's worth of cucumber trade. See above chunk for same getLinkCommunities call to see more info.
+lc <- getLinkCommunities(edges[,c(2,3)], directed =T)
+
+#Plot lc data showing main community clusters and membership
+plot(lc, type = "members")
+#Plot linked communites - show how clusters interact
+plot(lc, type = "graph", layout = "spencer.circle", shownodesin = 2)
+
+```

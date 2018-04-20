@@ -1,0 +1,112 @@
+---
+title: "Network model attempt"
+author: "Warren Thompson"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+library(statnet)
+library(texreg)
+library(xergm)
+library(btergm)
+```
+
+#Attempt at modelling netwrok graphs of trade
+```{r}
+world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",")
+
+#Ouput from Alex's features.Rmd script
+features <- read.csv("all_features.csv", header = TRUE, sep =",")
+
+trade.flow    <- "Imports"
+starting_node <- "United Kingdom"
+quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
+
+period_list               <- list() #List of months
+net_list                  <- list() #Find networkk objects by index eg. net_list[[24]]
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data(world_data)
+
+#Get month features
+world_monthly_features <- get_features_monthly_data(features)
+
+#get unique ID for each country - use for nodes and edges later, prevent renaming of country with different ID each time loop runs
+country_ids <-get_country_ids(world_data)
+
+for (i in world_monthly_data){
+  for (f in world_monthly_features){
+    print(f)
+  
+  #Get nodes and edges for model. reminder - NA generatedinvalid factor level     message result of get_model_nodes call, need to see what is casuing this and fix 
+  nodes_model             <- get_model_nodes_and_features(trade.flow, month_data = i, month_features = f,country_ids)
+  edges_model             <- get_model_edges(trade.flow,nodes_model,month_data = i)
+  
+  #Edges for network object
+  only_edges             <- edges_model %>% select(c(2,1))
+  
+  #Create newtrok object
+  net <- network(only_edges, matrix.type = "edgelist", directed = T)
+  
+  #Add edge attributes
+  net <- set.edge.attribute(net,"trade_value_width",edges_model$width_trade_value)
+  net <- set.edge.attribute(net, "trade_weight_width", edges_model$width_netweight_kg)
+  
+  #Add some node attributes 
+  net <- set.vertex.attribute(net, "degree",nodes_model$degree_val)
+  net <- set.vertex.attribute(net, "betweeness",nodes_model$bet_val)
+  net <- set.vertex.attribute(net, "eigen_value",nodes_model$eigen_val)
+  
+  #capture period
+  month               <- unique(i$period)
+
+  #Append features to respective lists
+  period_list   <- list.append(period_list, month)
+  net_list      <- list.append(net_list, net)
+  
+  }}
+
+
+#Combine lists into dataframe
+period_summary <- do.call(rbind, Map(data.frame, period=period_list))
+
+#Convert period to date type
+period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+#Try covariate model without temperal component - very rough attempt, can have a look at including/dropping terms
+model.1a <- btergm(net_list ~ edges + nodecov("degree"), R = 25, parallel = "snow",  ncpus = 2)
+
+#See parameter estimates etc with 95% CI - how do we interpret these values?
+summary(model.1a, level = 0.95)
+
+#Goodness of fit test
+gof.1a <- gof(model.1a, nsim = 5, statistics = c(esp,ideg))
+plot(gof.1a)
+dev.off()
+
+#Try covariate model with temporal component - how to make list index a date? 
+model.1b <- btergm(net_list ~ edges + mutual + transitiveties + nodeicov("trade_value_width") + nodecov("nett_trade") + nodecov("trade_flux") +nodecov("nett_weight") + timecov(transform = function(t) t), R = 50, parallel = "snow",  ncpus = 2)
+
+#See parameter estimates etc with 95% CI
+summary(model.1b, level = 0.95)
+
+#Goodness of fit test
+gof.1b <- gof(model.1b, nsim = 5, statistics = c(esp, geodesic, deg))
+plot(gof.1b)
+dev.off()
+
+#Still pending - predict links between nodes and general network behaviour using the btergm packages for Micro-level interpretation of ERGMs and TERGMs
+```

@@ -227,7 +227,7 @@ all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
 
 # Write a csv
 ```{r}
-write.csv(all_info,"all_features.csv")
+write.csv(all_info,"new_vanilla.csv")
 ```
 
 # Normalize total influx and outflux by the period mean

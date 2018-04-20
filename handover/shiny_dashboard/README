@@ -1,0 +1,4 @@
+Execute shiny_launcher.Rmd to run the shiny dashboard.
+Current version still needs:
+1. Preload the data in the app.R
+2. Add comments and clean up app.R
