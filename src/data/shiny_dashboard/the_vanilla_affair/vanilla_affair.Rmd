@@ -1,5 +1,5 @@
 ---
-title: The vanilla affair: a mysterious trade in the Intenational Arena
+title: "The vanilla affair"
 author: "Àlex Fabregat"
 output:
   html_document: default
@@ -192,7 +192,7 @@ all_info <- all_info %>% mutate(period_date = ymd(paste(as.character(period),"01
 
 #SOMETHING REALLY COOKIE HERE
 ```{r}
-wtf <- si %>% filter(origin %in% c("Madagascar","India","Mexico")) %>% filter(period == 201401)
+wth <- si %>% filter(origin %in% c("Madagascar","India","Mexico")) %>% filter(period == 201401)
 ```
 
 ```{r}
