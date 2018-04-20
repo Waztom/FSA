@@ -11,8 +11,8 @@ knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
 
 ```{r}
-source("get_HMRC_aux_data.R")
-source("get_HMRC_data.R")
+source("functions/get_HMRC_aux_data.R")
+source("functions/get_HMRC_data.R")
 ```
 
 #Required libraries

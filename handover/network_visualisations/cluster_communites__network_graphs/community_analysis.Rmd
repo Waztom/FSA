@@ -10,11 +10,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-source('get_trade_attribute.R')
-source('get_nodes.R')
-source('get_network_links.R')
-source('get_edges.R')
-source('get_Comtrade_monthly_data.R')
+source('functions/get_trade_attribute.R')
+source('functions/get_nodes.R')
+source('functions/get_network_links.R')
+source('functions/get_edges.R')
+source('functions/get_Comtrade_monthly_data.R')
 ```
 
 #Required libraries
@@ -39,7 +39,7 @@ library(linkcomm)
 
 #Access comtrade database saved as csv file
 ```{r}
-world_data   <- read.csv("world_cucumber_weight.csv", header = TRUE, sep = ",")
+world_data   <- read.csv("data/world_cucumber_weight.csv", header = TRUE, sep = ",")
 ```
 
 #Monthly link analysis exploration using linkcomm

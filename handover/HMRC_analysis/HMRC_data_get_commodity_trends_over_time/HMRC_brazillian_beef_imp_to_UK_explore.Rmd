@@ -11,8 +11,8 @@ knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
 
 ```{r}
-source("get_HMRC_aux_data.R")
-source("get_HMRC_data.R")
+source("functions/get_HMRC_aux_data.R")
+source("functions/get_HMRC_data.R")
 ```
 
 #Required libraries
@@ -46,7 +46,7 @@ HMRC_EU_import_food_data_all <- get_HMRC_data_imports(imports)
 
 #Get HMRC import data  (imports df - new column headings)
 ```{r}
-source("get_HMRC_data_imports.R")
+source("functions/get_HMRC_data_imports.R")
 HMRC_EU_import_food_data <- get_HMRC_data_imports(imports)
 names(HMRC_EU_import_food_data) <- c("Comcode", "Standard_International_Trade_Classification", "Record_Type", "Country_of_Dispatch_Seq", "Country_of_Dispatch", "Country_of_Origin_Seq", "Country_of_Origin", "Date", "Port_Seq", "Port", "Flag_of_Ship_Seq", "Flag_of_Ship", "Country_of_Origin_Impure_Seq", "Country_of_Origin_Impure", "Type_of_Trade", "Container", "Mode_of_Transport", "Inland_Mode_of_Transport", "Location_Seq", "Location_Alpha", "Suite_Indicator", "Procedure_Code",  "CB_Code", "Value", "Quantity_1", "Quantity_2")
 (col_names               <- t(as.data.frame(colnames(HMRC_EU_import_food_data))))
