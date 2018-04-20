@@ -1,0 +1,1 @@
+Can explore cost/kg, cost, net weight and number of consignments of the commodity over time¥ R markdown scripts for exploring HMRC data¥ Data is accessed via SQL request - see get_HMRC_aux_data.R and get_HMRC_data.R for request details¥ Script can be edited to explore other commcodes and country imports into the Uk 
