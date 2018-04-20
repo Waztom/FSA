@@ -154,6 +154,8 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     
     trade_dump['period_date'] =pd.to_datetime(trade_dump['period'], format='%Y%m')
     trade_dump = trade_dump.rename(columns={'partner': 'origin', 'reporter': 'destin'})
+    trade_dump['com_description'] = commodity_description
+    trade_dump['commodity_code'] = commodity_codes[0]
     
     if not len(partner_name_errors)==0:
         print('Encountered errors on the following partner_names: '+str(partner_name_errors))
@@ -162,23 +164,24 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     # Create python pickle
     trade_network.to_pickle(commodity_codes[0]+'_network_'+trade_period[0]+'-'+trade_period[1]+'_monthly.pickle')
   
-    rdata_filename = commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump.RData'
+    dump_filename = commodity_codes[0]+'_'+trade_period[0]+'-'+trade_period[1]+'_total_dump'
     
-    trade_dump.to_pickle(rdata_filename+'.pickle')
+    trade_dump.to_pickle(dump_filename+'.pickle')
+    trade_dump.to_csv(dump_filename+'.csv')
     
-    pandas2ri.activate()
-
-    r_si = pandas2ri.py2ri(trade_dump)
-    robjects.r.assign("si", r_si)
-    robjects.r.assign("commodity_description", commodity_description)
-    # Only storing the first commodity code
-    robjects.r.assign("commodity_code", commodity_codes[0])
-    robjects.r("save(si, commodity_description, commodity_code, file='{}')".format(rdata_filename))
+#    pandas2ri.activate()
+#
+#    r_si = pandas2ri.py2ri(trade_dump)
+#    robjects.r.assign("si", r_si)
+#    robjects.r.assign("commodity_description", commodity_description)
+#    # Only storing the first commodity code
+#    robjects.r.assign("commodity_code", commodity_codes[0])
+#    robjects.r("save(si, commodity_description, commodity_code, file='{}')".format(rdata_filename))
 
     print('Total request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     print(trade_network.describe())
 
-    subprocess.call (['./generate_all_info_file.R',' -f ', rdata_filename])
+    subprocess.call(['./generate_all_info_file.R','-f', dump_filename+'.csv'])
 
 if __name__ == '__main__':
     download_comtrade_data( commodity_codes = commodity_codes, trade_period = trade_period )
