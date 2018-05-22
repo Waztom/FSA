@@ -13,8 +13,6 @@ import pandas as pd
 import itertools
 import time, datetime
 import argparse
-from rpy2 import robjects
-from rpy2.robjects import pandas2ri
 import subprocess
 
 
@@ -177,7 +175,7 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
 #    # Only storing the first commodity code
 #    robjects.r.assign("commodity_code", commodity_codes[0])
 #    robjects.r("save(si, commodity_description, commodity_code, file='{}')".format(rdata_filename))
-    print(trade_network.summary())
+    print(trade_network.describe())
     print('Total request took: ' +str(datetime.timedelta(seconds=t1-t0)))
 
     subprocess.call(['./generate_all_info_file.R','-f', dump_filename+'.csv'])
