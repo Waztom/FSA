@@ -193,9 +193,9 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine
     t1 = time.perf_counter()
     print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     
-    # Closing the connection
+    # Closing the cursor and the connection
     cur.close()
-    
+    conn.close()
     return trade_data
 
 
@@ -245,10 +245,69 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
     t1 = time.perf_counter()
     print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
     
-    # Closing the connection
+    # Closing the cursor and the connection
     cur.close()
+    conn.close()
     
     # Correct partner names if needed
     trade_data.partner = trade_data.partner.apply(correct_country_name)
 
     return trade_data
+
+def comtrade_sql_request_all_partners_singlecon(conn = None, com_codes=['070700','070700'], reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+    '''
+    SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
+    '''
+    
+    if conn is None:
+        ################################################################
+        ## Connect to the SQLdatabase
+        print('Connecting to comtrade server')
+        conn = psycopg2.connect(
+                         dbname = "comtrade", # could also be "hmrc"
+                         host = "data-science-pgsql-dev-01.c8kuuajkqmsb.eu-west-2.rds.amazonaws.com",
+                         user = "trade_read",
+                         password = "2fs@9!^43g")
+        
+    cur = conn.cursor()
+    
+    
+    ################################################################
+    ## Lookup the needed comtrade codes for the SQL request
+    
+    comtrade_dict = load_comtrade_info()
+    
+    reporter_code = get_reporter_code(comtrade_dict, reporter_name)
+            
+    if reporter_code is None or com_codes is None:
+        print('An error occured fetching a comtrade code.')
+        return None, None
+        
+    # Check if com_code was found
+    if com_codes is None:
+        print('WARNING: No commodity code found.')
+        return None, None
+    
+    ################################################################
+    ## Download the comtrade data and put it into a pandas DataFrame
+    # Start timer to see how long the request takes
+    t0 = time.perf_counter()
+                
+    
+    cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
+                "period  BETWEEN 201401 AND 201612"\
+                "AND commodity_code = ANY(%(comcodes)s)"\
+                "AND reporter_code = %(reporter)s", {'comcodes': com_codes, 'reporter': reporter_code})
+#    print(cur.fetchall())
+    
+    trade_data = pd.DataFrame(cur.fetchall(), columns=requested_columns)
+    t1 = time.perf_counter()
+    print('Request took: ' +str(datetime.timedelta(seconds=t1-t0)))
+    
+    # Closing the cursor 
+    cur.close()
+    
+    # Correct partner names if needed
+    trade_data.partner = trade_data.partner.apply(correct_country_name)
+
+    return trade_data, conn

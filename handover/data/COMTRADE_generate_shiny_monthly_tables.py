@@ -68,8 +68,13 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     
     t0 = time.perf_counter()
     # Download all trade data between UK and Brazil for commodities containing 'Meat of bovine' in description
-    trade = pysqlib.comtrade_sql_request_all_partners( com_codes = commodity_codes, reporter_name = 'United Kingdom', start_period = trade_period[0], end_period = trade_period[1])
+    trade , connection= pysqlib.comtrade_sql_request_all_partners_singlecon( conn = None, com_codes = commodity_codes, reporter_name = 'United Kingdom', start_period = trade_period[0], end_period = trade_period[1])
     
+    if trade.empty:
+        print('UK did not report an imports of:')
+        print(commodity_description)
+        connection.close()
+        sys.exit(0)
     # Keep only the imports
     trade = trade[trade.trade_flow_code == 1]
     
@@ -105,7 +110,7 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
         print(partners_to_scan)
         partner_name=partners_to_scan[0]
         
-        new_trade = pysqlib.comtrade_sql_request_all_partners( com_codes = commodity_codes, reporter_name = partner_name, start_period = trade_period[0], end_period = trade_period[1])
+        new_trade, connection = pysqlib.comtrade_sql_request_all_partners_singlecon( conn = connection, com_codes = commodity_codes, reporter_name = partner_name, start_period = trade_period[0], end_period = trade_period[1])
         if new_trade is None or new_trade.empty:
             print('Error with '+partner_name+' ignoring it for the moment.')
             new_trade = pd.DataFrame([], columns=['trade_value_usd'], index = trade_network.index)
@@ -142,6 +147,9 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
             break # Break out of the loop
             
     t1 = time.perf_counter()
+    
+    # Closing the SQL connection
+    connection.close()
     
     # Get rid of the "World" is the data
     trade_dump = trade_dump[trade_dump.partner != 'World']

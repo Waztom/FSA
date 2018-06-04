@@ -157,6 +157,7 @@ all_info <- all_info[complete.cases(all_info),]
 
 data <- list("all_info" = all_info, "si" = si)
 
-rdataname <- c("all_data", substr(filename, 1, nchar(filename)-4), '.RData')
+rdataname <- c("all_data_", substr(filename, 1, nchar(filename)-4), '.RData')
 
 save(data, file = paste(rdataname, collapse="_"))
+#save(data, file = paste(rdataname, collapse= NULL))

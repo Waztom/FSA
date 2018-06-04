@@ -5,7 +5,13 @@ select distinct period from comtrade
 select distinct commodity from comtrade 
 
 -- Print out all available reporters
-select distinct reporter from comtrade WHERE period = 201401
+select distinct reporter, reporter_code from comtrade WHERE period = 201401
+
+-- Print out all available partner
+select distinct partner from comtrade WHERE period = 201401
+
+-- Print out all available reporters and partners
+select distinct reporter, reporter_code , partner_code, partner from comtrade WHERE period = 201401
 
 -- Search period range
 select max(period), min(period) from comtrade 
