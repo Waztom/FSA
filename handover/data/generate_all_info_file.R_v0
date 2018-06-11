@@ -6,6 +6,9 @@ library("lubridate")
 library("igraph")
 library("tidygraph")
 
+
+#magrittr
+
 option_list = list(
   make_option(c("-f", "--file"), type="character", default=NULL,
               help="dataset file name", metavar="character")
@@ -15,29 +18,31 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 filename = opt$file
 
-edge_data <- read.csv(file=filename, header=TRUE, sep=",")
+#filename = '080221_201401-201612_total_dump.RData'
+# Read si filename to process
+# load(filename)
+si <- read.csv(file=filename, header=TRUE, sep=",")
 
-month_list <- sort(unique(edge_data$period))
+month_list <- sort(unique(si$period))
 
 i <- 1
 j <- 1
 mylist <- list() #create an empty list to store the node data
 numc   <- list() #create an empty list to store the # of countries per period
-
 for (cur_month in month_list){
-  temp           <- edge_data %>% filter(period == cur_month) %>% transform(trade_value_usd  = as.numeric(trade_value_usd))
-  origin_country <- unique(temp$origin)
-  destin_country <- unique(temp$destin)
+  sity <- si %>% filter(period == cur_month) %>% transform(trade_value_usd  = as.numeric(trade_value_usd))
+  origin_country <- unique(sity$origin)
+  destin_country <- unique(sity$destin)
   all_country    <- union(origin_country,destin_country)
-  numc[[j]]      <- length(all_country)
+  numc[[j]] <- length(all_country)
   j <- j + 1
 #
   for (cur_count in all_country) {
-    for_origin <- temp %>% filter(origin==cur_count) %>% summarize(a1 = sum(trade_value_usd),
+    for_origin <- sity %>% filter(origin==cur_count) %>% summarize(a1 = sum(trade_value_usd),
                                                                    b1 = n(),
                                                                    c1 = mean(trade_value_usd),
                                                                    d1 = max(trade_value_usd))
-    for_destin <- temp %>% filter(destin==cur_count) %>% summarize(a2 = sum(trade_value_usd),
+    for_destin <- sity %>% filter(destin==cur_count) %>% summarize(a2 = sum(trade_value_usd),
                                                                    b2 = n(),
                                                                    c2 = mean(trade_value_usd),
                                                                    d2 = max(trade_value_usd))
@@ -66,21 +71,21 @@ net_flux <- data.frame(matrix(unlist(net_flux), nrow=i, byrow=F),stringsAsFactor
 
 net_flux <- net_flux %>% rename(node   = X1)
 net_flux <- net_flux %>% rename(period = X2)
-net_flux <- net_flux %>% transform(X3  = as.integer(X3))  %>% rename( links_out   = X3)
-net_flux <- net_flux %>% transform(X4  = as.numeric(X4))  %>% rename( tot_outflux = X4)
-net_flux <- net_flux %>% transform(X5  = as.numeric(X5))  %>% rename( ave_outflux = X5)
-net_flux <- net_flux %>% transform(X6  = as.numeric(X6))  %>% rename( max_outflux = X6)
-net_flux <- net_flux %>% transform(X7  = as.integer(X7))  %>% rename( links_in    = X7)
-net_flux <- net_flux %>% transform(X8  = as.numeric(X8))  %>% rename( tot_influx  = X8)
-net_flux <- net_flux %>% transform(X9  = as.numeric(X9))  %>% rename( ave_influx  = X9)
-net_flux <- net_flux %>% transform(X10 = as.numeric(X10)) %>% rename( max_influx  = X10)
+net_flux <- net_flux %>% transform(X3  = as.integer(X3))  %>% rename( deg_out_wei = X3)
+net_flux <- net_flux %>% transform(X4  = as.numeric(X4))  %>% rename( tot_out_wei = X4)
+net_flux <- net_flux %>% transform(X5  = as.numeric(X5))  %>% rename( ave_out_wei = X5)
+net_flux <- net_flux %>% transform(X6  = as.numeric(X6))  %>% rename( max_out_wei = X6)
+net_flux <- net_flux %>% transform(X7  = as.integer(X7))  %>% rename( deg_in_wei  = X7)
+net_flux <- net_flux %>% transform(X8  = as.numeric(X8))  %>% rename( tot_in_wei  = X8)
+net_flux <- net_flux %>% transform(X9  = as.numeric(X9))  %>% rename( ave_in_wei  = X9)
+net_flux <- net_flux %>% transform(X10 = as.numeric(X10)) %>% rename( max_in_wei  = X10)
 
-net_flux <- net_flux %>% mutate(ratio = (tot_influx-tot_outflux)/(tot_influx + tot_outflux))
+net_flux <- net_flux %>% mutate(ratio = (tot_in_wei-tot_out_wei)/(tot_in_wei + tot_out_wei))
 
 numc_per_period <- list("period" = month_list, "country_num" = unlist(numc))
 numc_per_period <- as.data.frame(numc_per_period) %>% mutate(period_date = ymd(paste(as.character(period),"01")))
 
-time_history <- sort(unique(edge_data$period))
+time_history <- sort(unique(si$period))
 
 i <- 1
 dat1 <- integer(1)
@@ -92,25 +97,24 @@ dat6 <- character(1)
 dat7 <- character(1)
 
 #Strictly positive
-edge_data <- edge_data %>% filter(trade_value_usd > 0)
+si <- si %>% filter(trade_value_usd > 0)
 
 for (cur_time in time_history){
-  netdf1        <- edge_data %>% filter(period == cur_time) %>% select(origin,destin,trade_value_usd)
-  sources1      <- netdf1    %>% distinct(origin)           %>% rename(label     = origin)
-  destinations1 <- netdf1    %>% distinct(destin)           %>% rename(label     = destin)
-  per_route1    <- netdf1    %>% group_by(origin,destin)    %>% summarise(weight = sum(trade_value_usd)/1e6) %>% ungroup()
-
+  netdf1 <- si %>% filter(period == cur_time) %>% select(origin,destin,trade_value_usd)
+  sources1 <-      netdf1 %>% distinct(origin) %>% rename(label = origin)
+  destinations1 <- netdf1 %>% distinct(destin) %>% rename(label = destin)
+  per_route1 <- netdf1 %>% group_by(origin,destin) %>% summarise(weight = sum(trade_value_usd)/1e6) %>% ungroup()
   nodes1 <- full_join(sources1,destinations1,by="label")
   nodes1 <- nodes1 %>% rowid_to_column("id")
   edges1 <- per_route1 %>% left_join(nodes1,by=c("origin" = "label")) %>% rename(from = id)
   edges1 <- edges1     %>% left_join(nodes1,by=c("destin" = "label")) %>% rename(to   = id)
   edges1 <- select(edges1,from,to,weight)
   g <- tbl_graph(nodes = nodes1, edges = edges1, directed = TRUE)
-    links_tot  <- degree(g)
-    betweeness <- betweenness(g)
-    triangles  <- count_triangles(g)
-#    eigen   <- eigen_centrality(g, weights = NA) #Unweighted eigenvalue
-    eigen      <- eigen_centrality(g)
+    degree_val  <- degree(g)
+    bet_val     <- betweenness(g)
+    tri_no      <- count_triangles(g)
+#    eigen_val   <- eigen_centrality(g, weights = NA)
+    eigen_val   <- eigen_centrality(g)
     undirected_network <- tbl_graph(nodes = nodes1, edges = edges1, directed = FALSE)
     communities <- edge.betweenness.community(undirected_network)
     net_groups  <- membership(communities)
@@ -118,10 +122,10 @@ for (cur_time in time_history){
     all_country <- unique(nodes1$label)
     for (cur_country in all_country){
       this_one <- nodes1[nodes1$label==cur_country,1]######
-      dat1[i] <- links_tot[this_one]
-      dat2[i] <- betweeness[this_one]
-      dat3[i] <- triangles[this_one]
-      dat4[i] <- eigen$vector[this_one]
+      dat1[i] <- degree_val[this_one]
+      dat2[i] <- bet_val[this_one]
+      dat3[i] <- tri_no[this_one]
+      dat4[i] <- eigen_val$vector[this_one]
       dat5[i] <- net_groups[this_one]
       dat6[i] <- cur_country
       dat7[i] <- cur_time
@@ -130,28 +134,28 @@ for (cur_time in time_history){
 #
 }
 
-dfs <- list("links_tot" = dat1, "betweeness" = dat2, "triangles" = dat3, "eigen" = dat4, "net_group" = dat5, "node" = dat6, "period" = dat7)
+dfs <- list("degree_val" = dat1, "bet_val" = dat2, "tri_no" = dat3, "eigen_val" = dat4, "net_group" = dat5, "node" = dat6, "period" = dat7)
 metrics <- as.data.frame(dfs)
 
-node_data <- full_join(net_flux,metrics,by=c("node","period"))
-node_data[is.nan(node_data$ave_influx),]$max_influx   = 0
-node_data[is.nan(node_data$ave_outflux),]$max_outflux = 0
-node_data[is.nan(node_data$ave_influx),]$ave_influx   = 0
-node_data[is.nan(node_data$ave_outflux),]$ave_outflux = 0
+all_info <- full_join(net_flux,metrics,by=c("node","period"))
+all_info[is.nan(all_info$ave_in_wei),]$max_in_wei   = 0
+all_info[is.nan(all_info$ave_out_wei),]$max_out_wei = 0
+all_info[is.nan(all_info$ave_in_wei),]$ave_in_wei   = 0
+all_info[is.nan(all_info$ave_out_wei),]$ave_out_wei = 0
 
-node_data <- node_data %>% group_by(period) %>%
-  mutate(tot_influx_n  = tot_influx/mean(tot_influx)) %>%
-  mutate(tot_outflux_n = tot_outflux/mean(tot_outflux)) %>%
-  mutate(period_date   = ymd(paste(as.character(period),"01",sep=""))) %>%
-  mutate(links_net     = links_in - links_out) %>%
-  mutate(overall_flux  = tot_outflux + tot_influx) %>%
-  mutate(month         = month(period_date)) %>%
+all_info <- all_info %>% group_by(period) %>%
+  mutate(tot_in_wei_n = tot_in_wei/mean(tot_in_wei)) %>%
+  mutate(tot_out_wei_n = tot_out_wei/mean(tot_out_wei)) %>%
+  mutate(period_date = ymd(paste(as.character(period),"01",sep=""))) %>%
+  mutate(degree_net = deg_out_wei - deg_in_wei) %>%
+  mutate(overall_flux = tot_out_wei + tot_in_wei) %>%
+  mutate(month = month(period_date)) %>%
   ungroup()
 
 #Double check
-node_data <- node_data[complete.cases(node_data),]
+all_info <- all_info[complete.cases(all_info),]
 
-data <- list("node_data" = node_data, "edge_data" = edge_data)
+data <- list("all_info" = all_info, "si" = si)
 
 rdataname <- c("all_data_", substr(filename, 1, nchar(filename)-4), '.RData')
 

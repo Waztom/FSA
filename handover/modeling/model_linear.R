@@ -1,0 +1,62 @@
+model_linear <- function(all_info){
+
+# Model assessment via bootstrapping
+# Scale the _overall_flux_ in \$US into _overall_flux_busd_ in billions of \$US
+linmodel <- all_info %>% select(
+                   overall_flux,
+                   links_out,
+                   tot_outflux,
+                   ave_outflux,
+                   max_outflux,
+                   links_in,
+                   tot_influx,
+                   ave_influx,
+                   max_influx,
+                   ratio,
+                   links_tot,
+                   betweeness,
+                   triangles,
+                   eigen,
+                   net_group,
+                   links_net)
+
+# Make a functin for strapping that returns the linear model coefficients
+boot.fn = function(data,index){
+return(coef(lm(overall_flux ~ .,data = linmodel, subset = index)))
+}
+
+print(boot(linmodel, boot.fn, 100))
+return(summary(lm(overall_flux~., data=linmodel))$coef)
+}
+#
+#linmodel <- all_info %>% mutate(overall_flux_busd = overall_flux/1e9) %>%
+#            select(overall_flux_busd, deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
+#lm.best <- lm(overall_flux_busd ~
+#              poly(deg_in_wei,2) +
+#              poly(deg_out_wei,3) +
+#              poly(degree_net,2) +
+#              poly(bet_val,3) +
+#              poly(tri_no,3) +
+#              poly(eigen_val,3) +
+#              ratio,
+#              data = linmodel)
+#summary(lm.best)
+#
+#regfit.full = regsubsets(overall_flux_busd~
+#              poly(deg_in_wei,2) +
+#              poly(deg_out_wei,3) +
+#              poly(degree_net,2) +
+#              poly(bet_val,3) +
+#              poly(tri_no,3) +
+#              poly(eigen_val,3) +
+#              ratio,
+#              linmodel,nvmax=19)
+#(reg.summary <- summary(regfit.full))
+#rsq <- reg.summary$rsq
+#rsq <- rowid_to_column(as.data.frame(rsq))
+##ggplot(rsq,aes(x=rowid,y=rsq)) + geom_point() + geom_line() + labs("Number of variables", y="R^2",
+##                                                                 title="Varaible selection analysis",
+##                                                                 subtitle="EIGENVALUE WITHOUT WEIGHTED-EDGES")
+#
+#return(lm.best)
+#}
