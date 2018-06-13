@@ -140,11 +140,16 @@ node_data[is.nan(node_data$ave_influx),]$ave_influx   = 0
 node_data[is.nan(node_data$ave_outflux),]$ave_outflux = 0
 
 node_data <- node_data %>% group_by(period) %>%
-  mutate(tot_influx_n  = tot_influx/mean(tot_influx)) %>%
+  mutate(tot_influx_n  = tot_influx /mean(tot_influx)) %>%
   mutate(tot_outflux_n = tot_outflux/mean(tot_outflux)) %>%
+  mutate(ave_influx_n  = ave_influx /mean(ave_influx)) %>%
+  mutate(ave_outflux_n = ave_outflux/mean(ave_outflux)) %>%
+  mutate(max_influx_n  = max_influx /mean(max_influx)) %>%
+  mutate(max_outflux_n = max_outflux/mean(max_outflux)) %>%
   mutate(period_date   = ymd(paste(as.character(period),"01",sep=""))) %>%
   mutate(links_net     = links_in - links_out) %>%
   mutate(overall_flux  = tot_outflux + tot_influx) %>%
+  mutate(overall_flux_n= tot_outflux_n + tot_influx_n) %>%
   mutate(month         = month(period_date)) %>%
   ungroup()
 
