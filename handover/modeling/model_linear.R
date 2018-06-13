@@ -1,62 +1,85 @@
-model_linear <- function(all_info){
+model_linear <- function(node_data){
 
-# Model assessment via bootstrapping
-# Scale the _overall_flux_ in \$US into _overall_flux_busd_ in billions of \$US
-linmodel <- all_info %>% select(
-                   overall_flux,
-                   links_out,
-                   tot_outflux,
-                   ave_outflux,
-                   max_outflux,
-                   links_in,
-                   tot_influx,
-                   ave_influx,
-                   max_influx,
-                   ratio,
-                   links_tot,
-                   betweeness,
-                   triangles,
-                   eigen,
-                   net_group,
-                   links_net)
+maxp <- 1
+lm.basic <- lm(overall_flux_n ~ 
+                 poly(max_influx_n,maxp) +
+                 poly(max_outflux_n,maxp) +
+                 poly(ratio,maxp) +
+                 poly(links_tot,maxp) +
+                 poly(betweeness,maxp) +
+                 poly(eigen,maxp) +
+                 poly(links_net,maxp),
+                 data = node_data)
+lm.basic.sum <- summary(lm.basic)
 
-# Make a functin for strapping that returns the linear model coefficients
-boot.fn = function(data,index){
-return(coef(lm(overall_flux ~ .,data = linmodel, subset = index)))
-}
+regfit.basic = regsubsets(overall_flux_n ~
+                            poly(max_influx_n,maxp) +
+                            poly(max_outflux_n,maxp) +
+                            poly(ratio,maxp) +
+                            poly(links_tot,maxp) +
+                            poly(betweeness,maxp) +
+                            poly(eigen,maxp) +
+                            poly(links_net,maxp),
+                            node_data,nvmax=9)
+lm.basic.reg <- summary(regfit.basic)
 
-print(boot(linmodel, boot.fn, 100))
-return(summary(lm(overall_flux~., data=linmodel))$coef)
-}
-#
-#linmodel <- all_info %>% mutate(overall_flux_busd = overall_flux/1e9) %>%
-#            select(overall_flux_busd, deg_in_wei, deg_out_wei, degree_net, bet_val, tri_no, eigen_val, ratio)
-#lm.best <- lm(overall_flux_busd ~
-#              poly(deg_in_wei,2) +
-#              poly(deg_out_wei,3) +
-#              poly(degree_net,2) +
-#              poly(bet_val,3) +
-#              poly(tri_no,3) +
-#              poly(eigen_val,3) +
-#              ratio,
-#              data = linmodel)
-#summary(lm.best)
-#
-#regfit.full = regsubsets(overall_flux_busd~
-#              poly(deg_in_wei,2) +
-#              poly(deg_out_wei,3) +
-#              poly(degree_net,2) +
-#              poly(bet_val,3) +
-#              poly(tri_no,3) +
-#              poly(eigen_val,3) +
-#              ratio,
-#              linmodel,nvmax=19)
-#(reg.summary <- summary(regfit.full))
-#rsq <- reg.summary$rsq
-#rsq <- rowid_to_column(as.data.frame(rsq))
-##ggplot(rsq,aes(x=rowid,y=rsq)) + geom_point() + geom_line() + labs("Number of variables", y="R^2",
-##                                                                 title="Varaible selection analysis",
-##                                                                 subtitle="EIGENVALUE WITHOUT WEIGHTED-EDGES")
-#
-#return(lm.best)
+maxp <- 2
+lm.square <- lm(overall_flux_n ~ 
+               poly(max_influx_n,maxp) +
+               poly(max_outflux_n,maxp) +
+               poly(ratio,maxp) +
+               poly(links_tot,maxp) +
+               poly(betweeness,maxp) +
+               poly(eigen,maxp) +
+               poly(links_net,maxp),
+               data = node_data)
+lm.square.sum <- summary(lm.square)
+
+regfit.square = regsubsets(overall_flux_n ~
+                             poly(max_influx_n,maxp) +
+                             poly(max_outflux_n,maxp) +
+                             poly(ratio,maxp) +
+                             poly(links_tot,maxp) +
+                             poly(betweeness,maxp) +
+                             poly(eigen,maxp) +
+                             poly(links_net,maxp),
+                             node_data,nvmax=18)
+lm.square.reg <- reg.summary <- summary(regfit.square)
+
+maxp <- 3
+lm.cubic <- lm(overall_flux_n ~ 
+               poly(max_influx_n,maxp) +
+               poly(max_outflux_n,maxp) +
+               poly(ratio,maxp) +
+               poly(links_tot,maxp) +
+               poly(betweeness,maxp) +
+               poly(eigen,maxp) +
+               poly(links_net,maxp),
+               data = node_data)
+lm.cubic.sum <- summary(lm.cubic)
+
+regfit.cubic = regsubsets(overall_flux_n ~
+                            poly(max_influx_n,maxp) +
+                            poly(max_outflux_n,maxp) +
+                            poly(ratio,maxp) +
+                            poly(links_tot,maxp) +
+                            poly(betweeness,maxp) +
+                            poly(eigen,maxp) +
+                            poly(links_net,maxp),
+                            node_data,nvmax=27)
+lm.cubic.reg <- summary(regfit.cubic)
+
+## Make a functin for strapping that returns the linear model coefficients
+#boot.fn = function(data,index){
+##return(coef(lm(overall_flux_n ~ .,data = linmodel, subset = index)))
+#return(coef(lm(overall_flux_n ~ .,data = linmodel[index,])))
 #}
+#
+#print(boot(linmodel, boot.fn, 100))
+#return(summary(lm(overall_flux_n~., data=linmodel))$coef)
+#}
+
+lm.results <- list(lm.basic.sum,lm.basic.reg,lm.square.sum,lm.square.reg,lm.cubic.sum,lm.cubic.reg)
+
+return(lm.results)
+}

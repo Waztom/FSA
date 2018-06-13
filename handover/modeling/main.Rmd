@@ -34,7 +34,8 @@ library(leaps)
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #filename <- 'all_data__210500_201601-201602_total_dump_.RData'
-filename <- 'all_data__090300_201401-201602_total_dump_.RData'
+filename <- 'all_data__090300_201401-201602_total_dump_00.RData'
+#filename <- 'mate2.RData'
 route <- paste(pathname,filename,sep='')
 load(route)
 
@@ -45,13 +46,32 @@ edge_data <- data$edge_data#old "si"
 ```{r}
 source("/home/alex/S2DS/FSA/handover/modeling/build_network.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear.R")
+source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
 ```{r}
-aa <- model_linear(node_data)
+lm.results <- model_linear(node_data)
 ```
 
-
 #```{r}
-#build_network(edge_data,1,70)
+#build_network(edge_data,1,30)
 #```
+
+```{r}
+pp <- '/home/alex/Dropbox/pivigo/report/'
+#
+ff <- 'lm_sum_mate_00_pow1.txt'
+dump_lm_sum(pp,ff,lm.results[1])
+ff <- 'lm_sum_mate_00_pow2.txt'
+dump_lm_sum(pp,ff,lm.results[3])
+ff <- 'lm_sum_mate_00_pow3.txt'
+dump_lm_sum(pp,ff,lm.results[5])
+#
+ff <- 'lm_reg_mate_00_pow1.txt'
+dump_lm_sum(pp,ff,lm.results[2])
+ff <- 'lm_reg_mate_00_pow2.txt'
+dump_lm_sum(pp,ff,lm.results[4])
+ff <- 'lm_reg_mate_00_pow3.txt'
+dump_lm_sum(pp,ff,lm.results[6])
+```
+<!-- #sink() -->
