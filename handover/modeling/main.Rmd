@@ -83,9 +83,9 @@ grid.arrange(p1,p2,p3,p4,nrow=2)
 lm.results <- model_linear(node_data)
 ```
 
-```{r}
-lm.results <- model_linear_reduced(node_data)
-```
+#```{r}
+#lm.results2 <- model_linear_reduced(node_data)
+#```
 
 
 #```{r}
@@ -102,5 +102,4 @@ stargazer(t(lm.results[[4]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, sing
 stargazer(  lm.results[[5]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow3.tex',sep=''))
 stargazer(t(lm.results[[6]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow3.tex',sep=''))
 }
-
 ```
