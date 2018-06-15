@@ -34,7 +34,8 @@ library(stargazer)
 
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
-filename <- 'all_data__090300_201401-201602_total_dump_00.RData'
+filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
+dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
 
@@ -45,6 +46,7 @@ edge_data <- data$edge_data#old "si"
 ```{r}
 source("/home/alex/S2DS/FSA/handover/modeling/build_network.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear.R")
+source("/home/alex/S2DS/FSA/handover/modeling/model_linear_reduced.R")
 source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
@@ -81,28 +83,24 @@ grid.arrange(p1,p2,p3,p4,nrow=2)
 lm.results <- model_linear(node_data)
 ```
 
+```{r}
+lm.results <- model_linear_reduced(node_data)
+```
+
+
 #```{r}
 #build_network(edge_data,1,90)
 #```
 
 ```{r}
-stargazer(lm.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,          out='/home/alex/Dropbox/pivigo/report/data/lm_sum_00_pow1.tex')
-stargazer(t(lm.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out='/home/alex/Dropbox/pivigo/report/data/lm_reg_00_pow1.tex')
+if(dump_files){
+pp <- '/home/alex/Dropbox/pivigo/report/data/'
+stargazer(  lm.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow1.tex',sep=''))
+stargazer(t(lm.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow1.tex',sep=''))
+stargazer(  lm.results[[3]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow2.tex',sep=''))
+stargazer(t(lm.results[[4]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow2.tex',sep=''))
+stargazer(  lm.results[[5]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow3.tex',sep=''))
+stargazer(t(lm.results[[6]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow3.tex',sep=''))
+}
+
 ```
-
-#```{r}
-#pp <- '/home/alex/Dropbox/pivigo/report/data/'
-#ff <- 'lm_sum_mate_05_pow1.txt'
-#dump_lm_sum(pp,ff,lm.results[1])
-#ff <- 'lm_sum_mate_05_pow2.txt'
-#dump_lm_sum(pp,ff,lm.results[3])
-#ff <- 'lm_sum_mate_05_pow3.txt'
-#dump_lm_sum(pp,ff,lm.results[5])
-#ff <- 'lm_reg_mate_05_pow1.txt'
-#dump_lm_sum(pp,ff,t(lm.results[[2]]$outmat))
-#ff <- 'lm_reg_mate_05_pow2.txt'
-#dump_lm_sum(pp,ff,t(lm.results[[4]]$outmat))
-#ff <- 'lm_reg_mate_05_pow3.txt'
-#dump_lm_sum(pp,ff,t(lm.results[[6]]$outmat))
-#```
-
