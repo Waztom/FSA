@@ -29,13 +29,12 @@ library(factoextra)
 library(anomalize)
 library(boot)
 library(leaps)
+library(stargazer)
 ```
 
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
-#filename <- 'all_data__210500_201601-201602_total_dump_.RData'
 filename <- 'all_data__090300_201401-201602_total_dump_00.RData'
-#filename <- 'mate2.RData'
 route <- paste(pathname,filename,sep='')
 load(route)
 
@@ -50,28 +49,60 @@ source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
 ```{r}
+p1 <- ggplot(data = node_data) + geom_point(mapping = aes(
+      y=overall_flux_n,
+      x=max_influx_n,color=ratio),
+      size=0.75) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Maximum influx')
+p2 <- ggplot(data = node_data) + geom_point(mapping = aes(
+      y=overall_flux_n,
+      x=max_outflux_n,color=ratio),
+      size=0.75) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Maximum outflux')
+p3 <- ggplot(data = node_data) + geom_point(mapping = aes(
+      y=overall_flux_n,
+      x=ave_influx_n,color=ratio),
+      size=0.75) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Average influx')
+p4 <- ggplot(data = node_data) + geom_point(mapping = aes(
+      y=overall_flux_n,
+      x=ave_outflux_n,color=ratio),
+      size=0.75) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Average outflux')
+grid.arrange(p1,p2,p3,p4,nrow=2)
+```
+
+
+```{r}
 lm.results <- model_linear(node_data)
 ```
 
 #```{r}
-#build_network(edge_data,1,30)
+#build_network(edge_data,1,90)
 #```
 
 ```{r}
-pp <- '/home/alex/Dropbox/pivigo/report/'
-#
-ff <- 'lm_sum_mate_00_pow1.txt'
-dump_lm_sum(pp,ff,lm.results[1])
-ff <- 'lm_sum_mate_00_pow2.txt'
-dump_lm_sum(pp,ff,lm.results[3])
-ff <- 'lm_sum_mate_00_pow3.txt'
-dump_lm_sum(pp,ff,lm.results[5])
-#
-ff <- 'lm_reg_mate_00_pow1.txt'
-dump_lm_sum(pp,ff,lm.results[2])
-ff <- 'lm_reg_mate_00_pow2.txt'
-dump_lm_sum(pp,ff,lm.results[4])
-ff <- 'lm_reg_mate_00_pow3.txt'
-dump_lm_sum(pp,ff,lm.results[6])
+stargazer(lm.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,          out='/home/alex/Dropbox/pivigo/report/data/lm_sum_00_pow1.tex')
+stargazer(t(lm.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out='/home/alex/Dropbox/pivigo/report/data/lm_reg_00_pow1.tex')
 ```
-<!-- #sink() -->
+
+#```{r}
+#pp <- '/home/alex/Dropbox/pivigo/report/data/'
+#ff <- 'lm_sum_mate_05_pow1.txt'
+#dump_lm_sum(pp,ff,lm.results[1])
+#ff <- 'lm_sum_mate_05_pow2.txt'
+#dump_lm_sum(pp,ff,lm.results[3])
+#ff <- 'lm_sum_mate_05_pow3.txt'
+#dump_lm_sum(pp,ff,lm.results[5])
+#ff <- 'lm_reg_mate_05_pow1.txt'
+#dump_lm_sum(pp,ff,t(lm.results[[2]]$outmat))
+#ff <- 'lm_reg_mate_05_pow2.txt'
+#dump_lm_sum(pp,ff,t(lm.results[[4]]$outmat))
+#ff <- 'lm_reg_mate_05_pow3.txt'
+#dump_lm_sum(pp,ff,t(lm.results[[6]]$outmat))
+#```
+

@@ -90,7 +90,6 @@ dat4 <- numeric(1)
 dat5 <- integer(1)
 dat6 <- character(1)
 dat7 <- character(1)
-dat8 <- numeric(1)
 
 #Strictly positive
 edge_data <- edge_data %>% filter(trade_value_usd > 0)
@@ -110,7 +109,7 @@ for (cur_time in time_history){
     links_tot  <- degree(g)
     between    <- betweenness(g)
     triangles  <- count_triangles(g)
-    eigen_u    <- eigen_centrality(g, weights = NA) #Unweighted eigenvalue
+#    eigen_u    <- eigen_centrality(g, weights = NA) #Unweighted eigenvalue
     eigen_w    <- eigen_centrality(g)
     undirected_network <- tbl_graph(nodes = nodes1, edges = edges1, directed = FALSE)
     communities <- edge.betweenness.community(undirected_network)
@@ -126,13 +125,13 @@ for (cur_time in time_history){
       dat5[i] <- net_groups[this_one]
       dat6[i] <- cur_country
       dat7[i] <- cur_time
-      dat8[i] <- eigen_u$vector[this_one]
+#      dat8[i] <- eigen_u$vector[this_one]
       i <- i + 1
   }
 #
 }
 
-dfs <- list("links_tot" = dat1, "between" = dat2, "triangles" = dat3, "eigen_w" = dat4, "net_group" = dat5, "node" = dat6, "period" = dat7, "eigen_u" = dat8)
+dfs <- list("links_tot" = dat1, "between" = dat2, "triangles" = dat3, "eigen_w" = dat4, "net_group" = dat5, "node" = dat6, "period" = dat7)
 metrics <- as.data.frame(dfs)
 
 node_data <- full_join(net_flux,metrics,by=c("node","period"))
