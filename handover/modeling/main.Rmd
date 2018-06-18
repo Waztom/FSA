@@ -35,7 +35,8 @@ library(stargazer)
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
 filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
-dump_files <- FALSE
+filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
+dump_files <- TRUE
 route <- paste(pathname,filename,sep='')
 load(route)
 
@@ -51,55 +52,66 @@ source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
 ```{r}
+toplim <- 25
 p1 <- ggplot(data = node_data) + geom_point(mapping = aes(
       y=overall_flux_n,
       x=max_influx_n,color=ratio),
       size=0.75) +
-      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,toplim) + ylim(0,toplim) +
       ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Maximum influx')
 p2 <- ggplot(data = node_data) + geom_point(mapping = aes(
       y=overall_flux_n,
       x=max_outflux_n,color=ratio),
       size=0.75) +
-      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,toplim) + ylim(0,toplim) +
       ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Maximum outflux')
 p3 <- ggplot(data = node_data) + geom_point(mapping = aes(
       y=overall_flux_n,
       x=ave_influx_n,color=ratio),
       size=0.75) +
-      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,toplim) + ylim(0,toplim) +
       ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Average influx')
 p4 <- ggplot(data = node_data) + geom_point(mapping = aes(
       y=overall_flux_n,
       x=ave_outflux_n,color=ratio),
       size=0.75) +
-      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,40) + ylim(0,40) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,toplim) + ylim(0,toplim) +
       ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Average outflux')
 grid.arrange(p1,p2,p3,p4,nrow=2)
 ```
 
 
 ```{r}
-lm.results <- model_linear(node_data)
+lmf.results <- model_linear(node_data)
 ```
 
-#```{r}
-#lm.results2 <- model_linear_reduced(node_data)
-#```
+```{r}
+lmr.results <- model_linear_reduced(node_data)
+```
 
 
-#```{r}
-#build_network(edge_data,1,90)
-#```
+```{r}
+build_network(edge_data,1,50)
+```
 
 ```{r}
 if(dump_files){
-pp <- '/home/alex/Dropbox/pivigo/report/data/'
-stargazer(  lm.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow1.tex',sep=''))
-stargazer(t(lm.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow1.tex',sep=''))
-stargazer(  lm.results[[3]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow2.tex',sep=''))
-stargazer(t(lm.results[[4]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow2.tex',sep=''))
-stargazer(  lm.results[[5]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lm_sum_05_pow3.tex',sep=''))
-stargazer(t(lm.results[[6]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lm_reg_05_pow3.tex',sep=''))
+pp <- '/home/alex/Dropbox/pivigo/report/data/cheese/'
+stargazer(  lmf.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow1.tex',sep=''))
+stargazer(t(lmf.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmf_reg_00_pow1.tex',sep=''))
+stargazer(  lmf.results[[3]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow2.tex',sep=''))
+stargazer(t(lmf.results[[4]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmf_reg_00_pow2.tex',sep=''))
+stargazer(  lmf.results[[5]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow3.tex',sep=''))
+stargazer(t(lmf.results[[6]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmf_reg_00_pow3.tex',sep=''))
+#
+stargazer(  lmr.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmr_sum_00_pow1.tex',sep=''))
+stargazer(t(lmr.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmr_reg_00_pow1.tex',sep=''))
+stargazer(  lmr.results[[3]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmr_sum_00_pow2.tex',sep=''))
+stargazer(t(lmr.results[[4]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmr_reg_00_pow2.tex',sep=''))
+stargazer(  lmr.results[[5]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmr_sum_00_pow3.tex',sep=''))
+stargazer(t(lmr.results[[6]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmr_reg_00_pow3.tex',sep=''))
 }
 ```
+
+
+

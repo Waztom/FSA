@@ -7,22 +7,18 @@ model_linear_reduced <- function(node_data){
                    poly(ratio,maxp) +
                    poly(links_tot,maxp) +
                    poly(links_net,maxp) +
-                   poly(between,maxp) +
-                   poly(triangles,maxp) +
-                   poly(eigen_w,maxp) +
-                   poly(eigen_u,maxp),
-                   data = node_data)
+                   poly(ave_influx_n) +
+                   poly(ave_outflux_n),
+                 data = node_data)
   lm.basic.sum <- summary(lm.basic)
   
   regfit.basic = regsubsets(overall_flux_n ~
                               poly(ratio,maxp) +
                               poly(links_tot,maxp) +
                               poly(links_net,maxp) +
-                              poly(between,maxp) +
-                              poly(triangles,maxp) +
-                              poly(eigen_w,maxp) +
-                              poly(eigen_u,maxp),
-                              node_data,nvmax=maxregvar)
+                              poly(ave_influx_n) +
+                              poly(ave_outflux_n),
+                            node_data,nvmax=maxregvar)
   lm.basic.reg <- summary(regfit.basic)
   
   maxp <- 2
@@ -30,22 +26,18 @@ model_linear_reduced <- function(node_data){
                     poly(ratio,maxp) +
                     poly(links_tot,maxp) +
                     poly(links_net,maxp) +
-                    poly(between,maxp) +
-                    poly(triangles,maxp) +
-                    poly(eigen_w,maxp) +
-                    poly(eigen_u,maxp),
-                    data = node_data)
+                    poly(ave_influx_n) +
+                    poly(ave_outflux_n),
+                  data = node_data)
   lm.square.sum <- summary(lm.square)
   
   regfit.square = regsubsets(overall_flux_n ~
                                poly(ratio,maxp) +
                                poly(links_tot,maxp) +
                                poly(links_net,maxp) +
-                               poly(between,maxp) +
-                               poly(triangles,maxp) +
-                               poly(eigen_w,maxp) +
-                               poly(eigen_u,maxp),
-                               node_data,nvmax=maxregvar)
+                               poly(ave_influx_n) +
+                               poly(ave_outflux_n),
+                             node_data,nvmax=maxregvar)
   lm.square.reg <- reg.summary <- summary(regfit.square)
   
   maxp <- 3
@@ -53,22 +45,18 @@ model_linear_reduced <- function(node_data){
                    poly(ratio,maxp) +
                    poly(links_tot,maxp) +
                    poly(links_net,maxp) +
-                   poly(between,maxp) +
-                   poly(triangles,maxp) +
-                   poly(eigen_w,maxp) +
-                   poly(eigen_u,maxp),
-                   data = node_data)
+                   poly(ave_influx_n) +
+                   poly(ave_outflux_n),
+                 data = node_data)
   lm.cubic.sum <- summary(lm.cubic)
   
   regfit.cubic = regsubsets(overall_flux_n ~
                               poly(ratio,maxp) +
                               poly(links_tot,maxp) +
                               poly(links_net,maxp) +
-                              poly(between,maxp) +
-                              poly(triangles,maxp) +
-                              poly(eigen_w,maxp) +
-                              poly(eigen_u,maxp),
-                              node_data,nvmax=maxregvar)
+                              poly(ave_influx_n) +
+                              poly(ave_outflux_n),
+                            node_data,nvmax=maxregvar)
   lm.cubic.reg <- summary(regfit.cubic)
   
   ## Make a functin for strapping that returns the linear model coefficients
