@@ -34,9 +34,13 @@ library(stargazer)
 
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
-filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
-filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
-dump_files <- TRUE
+#Mate
+#filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
+#Cheese
+#filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
+#Beer
+filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
 
@@ -52,7 +56,7 @@ source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
 ```{r}
-toplim <- 25
+toplim <- 100
 p1 <- ggplot(data = node_data) + geom_point(mapping = aes(
       y=overall_flux_n,
       x=max_influx_n,color=ratio),
@@ -90,13 +94,13 @@ lmr.results <- model_linear_reduced(node_data)
 ```
 
 
-```{r}
-build_network(edge_data,1,50)
-```
+#```{r}
+#build_network(edge_data,1,50)
+#```
 
 ```{r}
 if(dump_files){
-pp <- '/home/alex/Dropbox/pivigo/report/data/cheese/'
+pp <- '/home/alex/Dropbox/pivigo/report/data/beer/'
 stargazer(  lmf.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow1.tex',sep=''))
 stargazer(t(lmf.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmf_reg_00_pow1.tex',sep=''))
 stargazer(  lmf.results[[3]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow2.tex',sep=''))

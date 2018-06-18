@@ -14,8 +14,8 @@ lm.basic <- lm(overall_flux_n ~
                  poly(net_group,maxp) +
                  poly(max_influx_n,maxp) +
                  poly(max_outflux_n,maxp) +
-                 poly(ave_influx_n) +
-                 poly(ave_outflux_n),
+                 poly(ave_influx_n,maxp) +
+                 poly(ave_outflux_n,maxp),
                  data = node_data)
 lm.basic.sum <- summary(lm.basic)
 
@@ -30,8 +30,8 @@ regfit.basic = regsubsets(overall_flux_n ~
                             poly(net_group,maxp) +
                             poly(max_influx_n,maxp) +
                             poly(max_outflux_n,maxp) +
-                            poly(ave_influx_n) +
-                            poly(ave_outflux_n),
+                            poly(ave_influx_n,maxp) +
+                            poly(ave_outflux_n,maxp),
                             node_data,nvmax=maxregvar)
 lm.basic.reg <- summary(regfit.basic)
 
@@ -47,8 +47,8 @@ lm.square <- lm(overall_flux_n ~
                   poly(net_group,maxp) +
                   poly(max_influx_n,maxp) +
                   poly(max_outflux_n,maxp) +
-                  poly(ave_influx_n) +
-                  poly(ave_outflux_n),
+                  poly(ave_influx_n,maxp) +
+                  poly(ave_outflux_n,maxp),
                data = node_data)
 lm.square.sum <- summary(lm.square)
 
@@ -63,8 +63,8 @@ regfit.square = regsubsets(overall_flux_n ~
                              poly(net_group,maxp) +
                              poly(max_influx_n,maxp) +
                              poly(max_outflux_n,maxp) +
-                             poly(ave_influx_n) +
-                             poly(ave_outflux_n),
+                             poly(ave_influx_n,maxp) +
+                             poly(ave_outflux_n,maxp),
                              node_data,nvmax=maxregvar)
 lm.square.reg <- reg.summary <- summary(regfit.square)
 
@@ -80,8 +80,8 @@ lm.cubic <- lm(overall_flux_n ~
                  poly(net_group,maxp) +
                  poly(max_influx_n,maxp) +
                  poly(max_outflux_n,maxp) +
-                 poly(ave_influx_n) +
-                 poly(ave_outflux_n),
+                 poly(ave_influx_n,maxp) +
+                 poly(ave_outflux_n,maxp),
                data = node_data)
 lm.cubic.sum <- summary(lm.cubic)
 
@@ -96,8 +96,8 @@ regfit.cubic = regsubsets(overall_flux_n ~
                             poly(net_group,maxp) +
                             poly(max_influx_n,maxp) +
                             poly(max_outflux_n,maxp) +
-                            poly(ave_influx_n) +
-                            poly(ave_outflux_n),
+                            poly(ave_influx_n,maxp) +
+                            poly(ave_outflux_n,maxp),
                             node_data,nvmax=maxregvar)
 lm.cubic.reg <- summary(regfit.cubic)
 

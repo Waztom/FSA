@@ -7,8 +7,8 @@ model_linear_reduced <- function(node_data){
                    poly(ratio,maxp) +
                    poly(links_tot,maxp) +
                    poly(links_net,maxp) +
-                   poly(ave_influx_n) +
-                   poly(ave_outflux_n),
+                   poly(ave_influx_n,maxp) +
+                   poly(ave_outflux_n,maxp),
                  data = node_data)
   lm.basic.sum <- summary(lm.basic)
   
@@ -16,8 +16,8 @@ model_linear_reduced <- function(node_data){
                               poly(ratio,maxp) +
                               poly(links_tot,maxp) +
                               poly(links_net,maxp) +
-                              poly(ave_influx_n) +
-                              poly(ave_outflux_n),
+                              poly(ave_influx_n,maxp) +
+                              poly(ave_outflux_n,maxp),
                             node_data,nvmax=maxregvar)
   lm.basic.reg <- summary(regfit.basic)
   
@@ -26,8 +26,8 @@ model_linear_reduced <- function(node_data){
                     poly(ratio,maxp) +
                     poly(links_tot,maxp) +
                     poly(links_net,maxp) +
-                    poly(ave_influx_n) +
-                    poly(ave_outflux_n),
+                    poly(ave_influx_n,maxp) +
+                    poly(ave_outflux_n,maxp),
                   data = node_data)
   lm.square.sum <- summary(lm.square)
   
@@ -35,8 +35,8 @@ model_linear_reduced <- function(node_data){
                                poly(ratio,maxp) +
                                poly(links_tot,maxp) +
                                poly(links_net,maxp) +
-                               poly(ave_influx_n) +
-                               poly(ave_outflux_n),
+                               poly(ave_influx_n,maxp) +
+                               poly(ave_outflux_n,maxp),
                              node_data,nvmax=maxregvar)
   lm.square.reg <- reg.summary <- summary(regfit.square)
   
@@ -45,8 +45,8 @@ model_linear_reduced <- function(node_data){
                    poly(ratio,maxp) +
                    poly(links_tot,maxp) +
                    poly(links_net,maxp) +
-                   poly(ave_influx_n) +
-                   poly(ave_outflux_n),
+                   poly(ave_influx_n,maxp) +
+                   poly(ave_outflux_n,maxp),
                  data = node_data)
   lm.cubic.sum <- summary(lm.cubic)
   
@@ -54,8 +54,8 @@ model_linear_reduced <- function(node_data){
                               poly(ratio,maxp) +
                               poly(links_tot,maxp) +
                               poly(links_net,maxp) +
-                              poly(ave_influx_n) +
-                              poly(ave_outflux_n),
+                              poly(ave_influx_n,maxp) +
+                              poly(ave_outflux_n,maxp),
                             node_data,nvmax=maxregvar)
   lm.cubic.reg <- summary(regfit.cubic)
   
