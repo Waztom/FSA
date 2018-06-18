@@ -1,1 +1,1 @@
-python3 COMTRADE_generate_shiny_monthly_tables.py --commodities 040640 --trade_period_start 201401 --trade_period_end 201601 --percentile 0.0
+python3 COMTRADE_generate_shiny_monthly_tables.py --commodities 220300 --trade_period_start 201401 --trade_period_end 201601 --percentile 0.0
