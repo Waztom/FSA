@@ -35,11 +35,11 @@ library(stargazer)
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #Mate
-#filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
+filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
 #Cheese
 #filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
 #Beer
-filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+#filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
