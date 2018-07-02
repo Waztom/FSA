@@ -19,6 +19,7 @@ tmp <- tmp %>%   mutate(overall_flux = total_import + total_export) %>%
 tmp <- tmp %>% filter(quantile(total_export + total_import, threshold) < total_export + total_import)
 
 nodes <- tmp   %>% select(label)
+nodes <- nodes[order(nodes$label),]
 nodes <- nodes %>% rowid_to_column("id")
 
 #Create edges table

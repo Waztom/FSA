@@ -1,4 +1,4 @@
-model_kmeans <- function(node_data, goal_country,maxl){
+model_kmeans_reduced <- function(node_data, goal_country,maxl){
 
   kmeansdata <- node_data %>% select(
     node,
@@ -6,16 +6,16 @@ model_kmeans <- function(node_data, goal_country,maxl){
     overall_flux_n, 
     ratio,
     links_tot,
-    links_net,
-    between,
-    triangles,
-    eigen_w,
-    eigen_u,
-    net_group,
-    max_influx_n,
-    max_outflux_n,
-    ave_influx_n,
-    ave_outflux_n
+    links_net#,
+    #between,
+    #triangles,
+    #eigen_w,
+    #eigen_u,
+    #net_group,
+    #max_influx_n,
+    #max_outflux_n,
+    #ave_influx_n,
+    #ave_outflux_n
   )
   
   kmeansdata <- kmeansdata %>% mutate(countrytime = paste(as.character(node),as.character(period),sep='_')) %>%

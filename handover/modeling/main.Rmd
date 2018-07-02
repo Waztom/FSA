@@ -25,6 +25,7 @@ library(cluster)
 library(fpc)
 library(plotly)
 library(cluster)
+library(mclust)
 library(factoextra)
 library(anomalize)
 library(boot)
@@ -35,11 +36,11 @@ library(stargazer)
 ```{r}
 pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #Mate
-filename <- 'all_data__090300_201401-201602_total_dump_05.RData'
+#filename <- 'all_data__090300_201401-201602_total_dump_00.RData'
 #Cheese
 #filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
 #Beer
-#filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
@@ -53,6 +54,7 @@ source("/home/alex/S2DS/FSA/handover/modeling/build_network.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear_reduced.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans.R")
+source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans_reduced.R")
 source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
@@ -95,9 +97,9 @@ lmr.results <- model_linear_reduced(node_data)
 ```
 
 
-#```{r}
-#build_network(edge_data,1,50)
-#```
+```{r}
+build_network(edge_data,1,20)
+```
 
 ```{r}
 if(dump_files){
@@ -119,57 +121,20 @@ stargazer(t(lmr.results[[6]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, sin
 ```
 
 ```{r}
-#simlist <- model_kmeans(node_data,'Spain',3)
+ans <- model_kmeans(node_data,'United Kingdom',5)
+print(ans[2])
 ```
 
 ```{r}
-kmeansdata <- node_data %>% select(
-    node,
-    overall_flux_n, 
-    ratio,
-    links_tot,
-    links_net,
-    between,
-    triangles,
-    eigen_w,
-    eigen_u,
-    net_group,
-    max_influx_n,
-    max_outflux_n,
-    ave_influx_n,
-    ave_outflux_n
-    )
-
-row.names(kmeansdata) <- kmeansdata$node
-
+ans <- model_kmeans_reduced(node_data,'United Kingdom',5)
+print(ans[2])
 ```
 
-```{r}
-tmp <- kmeansdata %>% filter(overall_flux_n > quantile(overall_flux_n,0.95))
-tmp <- scale(tmp)
-distance <- get_dist(tmp)
-fviz_dist(distance)
-```
-
-```{r}
-kmeansdata <- scale(kmeansdata)
-
-ncmax <- 20
-wss <- (nrow(kmeansdata)-1)*sum(apply(kmeansdata,2,var))
-for (i in 2:ncmax) wss[i] <- sum(kmeans(kmeansdata, centers=i)$withinss)
-plot(1:ncmax, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")
-
-set.seed(42) #Ensure reproducibility
-nc  <- 5    #Pick a cluster number. TODO: pick it automatically
-fit <- kmeans(kmeansdata, nc, iter.max = 25) #K-means
-aggregate(kmeansdata,by=list(fit$cluster),FUN=mean)
-kmeansres <- data.frame(node_data, fit$cluster) %>% rename(cluster = fit.cluster)
-
-clusplot(kmeansdata,fit$cluster,color=TRUE,shade=TRUE,labels=2,lines=0)
-plotcluster(kmeansdata,fit$cluster)
 
 
-```
+
+
+
 
 
 
