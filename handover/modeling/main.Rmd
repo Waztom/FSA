@@ -40,7 +40,9 @@ pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #Cheese
 #filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
 #Beer
-filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+#filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+#Beans
+filename <- 'all_data__071022_201501-201601_total_dump_00.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
@@ -59,7 +61,7 @@ source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 ```
 
 ```{r}
-toplim <- 100
+toplim <- 50
 p1 <- ggplot(data = node_data) + geom_point(mapping = aes(
       y=overall_flux_n,
       x=max_influx_n,color=ratio),
@@ -98,7 +100,7 @@ lmr.results <- model_linear_reduced(node_data)
 
 
 ```{r}
-build_network(edge_data,1,20)
+build_network(edge_data,1,10)
 ```
 
 ```{r}
