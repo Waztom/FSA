@@ -61,6 +61,9 @@ source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
 #
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear_janis.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear_janis_steroids.R")
+#
+source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans_janis.R")
+source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans_janis_steroids.R")
 ```
 
 ```{r}
@@ -139,6 +142,16 @@ print(ans[2])
 
 ```{r}
 ans <- model_kmeans_reduced(node_data,'United Kingdom',5)
+print(ans[2])
+```
+
+```{r}
+ans <- model_kmeans_janis(node_data,'United Kingdom',5)
+print(ans[2])
+```
+
+```{r}
+ans <- model_kmeans_janis_steroids(node_data,'United Kingdom',5)
 print(ans[2])
 ```
 
