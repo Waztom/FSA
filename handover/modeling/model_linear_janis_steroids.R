@@ -1,4 +1,4 @@
-model_linear <- function(node_data){
+model_linear_janis_steroids <- function(node_data){
 
 maxregvar <- 6
   

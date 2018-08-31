@@ -40,9 +40,9 @@ pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #Cheese
 #filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
 #Beer
-#filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
 #Beans
-filename <- 'all_data__071022_201501-201601_total_dump_00.RData'
+#filename <- 'all_data__071022_201501-201601_total_dump_00.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
@@ -58,6 +58,9 @@ source("/home/alex/S2DS/FSA/handover/modeling/model_linear_reduced.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans_reduced.R")
 source("/home/alex/S2DS/FSA/handover/modeling/dump_lm_sum.R")
+#
+source("/home/alex/S2DS/FSA/handover/modeling/model_linear_janis.R")
+source("/home/alex/S2DS/FSA/handover/modeling/model_linear_janis_steroids.R")
 ```
 
 ```{r}
@@ -98,6 +101,13 @@ lmf.results <- model_linear(node_data)
 lmr.results <- model_linear_reduced(node_data)
 ```
 
+```{r}
+lmj.results <- model_linear_janis(node_data)
+```
+
+```{r}
+lmjs.results <- model_linear_janis_steroids(node_data)
+```
 
 ```{r}
 build_network(edge_data,1,10)
@@ -105,7 +115,7 @@ build_network(edge_data,1,10)
 
 ```{r}
 if(dump_files){
-pp <- '/home/alex/Dropbox/pivigo/report/data/beer/'
+pp <- '/home/alex/Dropbox/pivigo/report/data/beans/'
 stargazer(  lmf.results[[1]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow1.tex',sep=''))
 stargazer(t(lmf.results[[2]]$outmat), omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,out=paste(pp,'lmf_reg_00_pow1.tex',sep=''))
 stargazer(  lmf.results[[3]], omit.stat=c("LL","ser","f"), ci=FALSE, single.row=TRUE,        out=paste(pp,'lmf_sum_00_pow2.tex',sep=''))
