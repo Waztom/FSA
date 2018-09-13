@@ -18,8 +18,8 @@ import subprocess
 
 parser = argparse.ArgumentParser(description='Downloads COMTRADE data for a list of commoditites and groups them into a single table.')
 parser.add_argument('--commodities', action="store", dest="com_codes", nargs='+', required=True, help='Commodity codes to download. Either a single value can be given or a space separated list.')
-parser.add_argument('--trade_period_start', action="store", dest="trade_period_start",  default='201001', help='Give the start date of the trade period to download in YYYYMM format.')
-parser.add_argument('--trade_period_end', action="store", dest="trade_period_end",  default='201306', help='Give the end date of the trade period to download in YYYYMM format.')
+parser.add_argument('--trade_period_start', action="store", dest="trade_period_start",  default='201401', help='Give the start date of the trade period to download in YYYYMM format.')
+parser.add_argument('--trade_period_end', action="store", dest="trade_period_end",  default='201612', help='Give the end date of the trade period to download in YYYYMM format.')
 parser.add_argument('--percentile',action="store", dest="percentile", type=float, default=0.5,    
                     help="Percentile at which to stop exploring for partners based on initial trade values incoming UK.")
 parser.add_argument('--commodity_name_pattern', action="store", dest="com_pattern", help='Type in commodity name to search for the code, for example "anilla" to search for Vanilla. \
@@ -35,7 +35,6 @@ args = parser.parse_args()
 percentile=args.percentile
 commodity_codes=args.com_codes #['0905','0905']
 trade_period=[args.trade_period_start, args.trade_period_end] #['201601', '201612']
-print(trade_period)
 
 if int(commodity_codes[0]) == 0:
     # Search for the commodity code based on a pattern
@@ -110,7 +109,7 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
         print('Remaining partners to analyse: '+str(len(partners_to_scan)))
         print(partners_to_scan)
         partner_name=partners_to_scan[0]
-        print(trade_period) 
+        
         new_trade, connection = pysqlib.comtrade_sql_request_all_partners_singlecon( conn = connection, com_codes = commodity_codes, reporter_name = partner_name, start_period = trade_period[0], end_period = trade_period[1])
         if new_trade is None or new_trade.empty:
             print('Error with '+partner_name+' ignoring it for the moment.')

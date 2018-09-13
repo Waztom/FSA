@@ -15,6 +15,14 @@ import time, datetime
 import argparse
 import subprocess
 
+def readcomtradecsv(country):
+        kk = pd.read_csv("/home/alex/S2DS/FSA/handover/data/comtrade_rice_201001_201401.csv")
+        al = [2,6,7,9,12,22,29,31]
+        kk = kk.iloc[:,al]
+        kk.columns = ['period', 'trade_flow_code','trade_flow','reporter','partner','commodity','net_weight_kg','trade_value_usd']
+        kk = kk[kk['reporter'] == country]
+        print('Size: '+str(kk.shape[0]))
+        return kk
 
 parser = argparse.ArgumentParser(description='Downloads COMTRADE data for a list of commoditites and groups them into a single table.')
 parser.add_argument('--commodities', action="store", dest="com_codes", nargs='+', required=True, help='Commodity codes to download. Either a single value can be given or a space separated list.')
@@ -69,8 +77,8 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     
     t0 = time.perf_counter()
     # Download all trade data between UK and Brazil for commodities containing 'Meat of bovine' in description
-    trade , connection= pysqlib.comtrade_sql_request_all_partners_singlecon( conn = None, com_codes = commodity_codes, reporter_name = 'United Kingdom', start_period = trade_period[0], end_period = trade_period[1])
-    
+    #trade , connection= pysqlib.comtrade_sql_request_all_partners_singlecon( conn = None, com_codes = commodity_codes, reporter_name = 'United Kingdom', start_period = trade_period[0], end_period = trade_period[1])
+    trade = readcomtradecsv("United Kingdom")
     if trade.empty:
         print('UK did not report an imports of:')
         print(commodity_description)
@@ -111,7 +119,8 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
         print(partners_to_scan)
         partner_name=partners_to_scan[0]
         print(trade_period) 
-        new_trade, connection = pysqlib.comtrade_sql_request_all_partners_singlecon( conn = connection, com_codes = commodity_codes, reporter_name = partner_name, start_period = trade_period[0], end_period = trade_period[1])
+        #new_trade, connection = pysqlib.comtrade_sql_request_all_partners_singlecon( conn = connection, com_codes = commodity_codes, reporter_name = partner_name, start_period = trade_period[0], end_period = trade_period[1])
+        new_trade = readcomtradecsv(partner_name)
         if new_trade is None or new_trade.empty:
             print('Error with '+partner_name+' ignoring it for the moment.')
             new_trade = pd.DataFrame([], columns=['trade_value_usd'], index = trade_network.index)
@@ -150,7 +159,7 @@ def download_comtrade_data(commodity_codes=['0905','0905'], trade_period=['20160
     t1 = time.perf_counter()
     
     # Closing the SQL connection
-    connection.close()
+    #connection.close()
     
     # Get rid of the "World" is the data
     trade_dump = trade_dump[trade_dump.partner != 'World']

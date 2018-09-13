@@ -1,0 +1,1 @@
+python3 COMTRADE_csv.py --commodities 1006 --trade_period_start 201001 --trade_period_end 201301 --percentile 0.0
