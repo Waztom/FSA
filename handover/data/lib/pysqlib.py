@@ -138,7 +138,7 @@ def correct_country_name(name_to_correct):
         correct_name = correct_name[0]
     return correct_name
 
-def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine', reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine', reporter_name = 'United Kingdom', start_period = '201001', end_period = '201301', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
     SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
     '''
@@ -184,7 +184,7 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine
     
     cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
                 "partner_code = %(partner)s "\
-                "AND period  BETWEEN 201401 AND 201612"\
+                "AND period  BETWEEN 201001 AND 201301"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
                 "AND reporter_code = %(reporter)s", {'partner': partner_code, 'comcodes': com_codes, 'reporter': reporter_code})
 #    print(cur.fetchall())
@@ -199,7 +199,7 @@ def comtrade_sql_request(partner_name = 'Brazil', commodity_code='Meat of bovine
     return trade_data
 
 
-def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_name = 'United Kingdom', start_period = '201001', end_period = '201301', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
     SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
     '''
@@ -236,7 +236,7 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
                 
     
     cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
-                "period  BETWEEN 201401 AND 201612"\
+                "period  BETWEEN 201001 AND 201301"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
                 "AND reporter_code = %(reporter)s", {'comcodes': com_codes, 'reporter': reporter_code})
 #    print(cur.fetchall())
@@ -254,7 +254,7 @@ def comtrade_sql_request_all_partners(com_codes=['070700','070700'], reporter_na
 
     return trade_data
 
-def comtrade_sql_request_all_partners_singlecon(conn = None, com_codes=['070700','070700'], reporter_name = 'United Kingdom', start_period = '201401', end_period = '201612', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
+def comtrade_sql_request_all_partners_singlecon(conn = None, com_codes=['070700','070700'], reporter_name = 'United Kingdom', start_period = '201001', end_period = '201301', requested_columns = ['partner', 'trade_flow_code','netweight_kg', 'trade_value_usd', 'period', 'commodity_codes']):
     '''
     SELECTs the data from the comtrade SQL database and returns it as a pandas DataFrane
     '''
@@ -295,7 +295,7 @@ def comtrade_sql_request_all_partners_singlecon(conn = None, com_codes=['070700'
                 
     
     cur.execute("SELECT partner, trade_flow_code, netweight_kg, trade_value_usd, period, commodity_code FROM comtrade WHERE "\
-                "period  BETWEEN 201401 AND 201612"\
+                "period  BETWEEN 201001 AND 201301"\
                 "AND commodity_code = ANY(%(comcodes)s)"\
                 "AND reporter_code = %(reporter)s", {'comcodes': com_codes, 'reporter': reporter_code})
 #    print(cur.fetchall())
