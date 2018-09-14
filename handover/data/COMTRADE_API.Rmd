@@ -80,8 +80,10 @@ ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas,
 ```
 
 ```{r}
-dff <- mydf %>% select(period,trade_flow_code,trade_flow,reporter,partner,netweight_kg,trade_value_usd,year)
-df  <- rename(dff, net_weight_kg   = netweight_kg) %>% mutate(period_date = as.Date(paste0(as.character(period), '01'), format='%Y%m%d'))
+dff <- mydf %>% select(period,trade_flow_code,trade_flow,reporter,partner,netweight_kg,trade_value_usd,year,commodity,commodity_code)
+df  <- rename(dff, net_weight_kg   = netweight_kg) %>%
+  mutate(period_date = as.Date(paste0(as.character(period), '01'), format='%Y%m%d')) %>%
+  mutate(year_date = as.Date(paste0(as.character(year), '0101'), format='%Y%m%d'))
 cc  <- df[!(df$partner %in% ignore) ,]
 cc  <- df[!(df$reporter %in% ignore) ,]
 ```
@@ -94,32 +96,30 @@ c1 <- cc[complete.cases(cc), ]
 sel_country <- c("Japan")
 ```
 
-
-
 ```{r}
-jap <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow_code == 2) %>% group_by(period_date,reporter) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+res1 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow_code == 2) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
 ```
 
 ```{r}
-ggplot(data=jap, aes(x=period_date,y=tote,color=reporter)) +
+ggplot(data = res1, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
   geom_line() +
-  geom_point(size=2) +
+  geom_point(size=2) + scale_y_log10() +
   scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
   ggtitle("Japan exports") +
-  xlab("Time (Year-Month)") +
+  xlab("Year-Month") +
   ylab("Trade value $US") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 ```{r}
-jap2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow_code == 2) %>% group_by(year,reporter) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+res2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow_code==2) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(trade_value_usd)) %>% ungroup()
 ```
 
 ```{r}
-ggplot(data=jap2, aes(x=as.Date(paste0(as.character(year), '0101'), format='%Y%m%d'),y=tote,fill=reporter)) +
+ggplot(data=res2, aes(x=year_date, y=tote, fill=commodity_code)) +
   geom_bar(stat="identity") +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
-  ggtitle("Japan rice exports") +
+  ggtitle("Japan exports") +
   xlab("Year") +
   ylab("Trade value $US")
 ```
