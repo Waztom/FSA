@@ -31,7 +31,7 @@ source('functions/get_model_nodes.R')
 source('functions/get_trade_attributes_si.R')
 ```
 
-#Prepare network objects as netowork graphs for each month of trade using COMTRADE data for modelling
+#Prepare network objects as network graphs for each month of trade using COMTRADE data for modelling
 ```{r}
 world_data   <- read.csv("data/si_cu.csv", header = TRUE, sep = ",")
 world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)

@@ -1,0 +1,125 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rjson)
+library(tidyverse)
+library(comtradr)
+library(ggplot2)
+```
+
+```{r}
+# Look up commodity descriptions related to "halibut"
+ct_commodity_lookup("turnip",return_code = FALSE,return_char = FALSE,verbose = TRUE)
+```
+
+```{r}
+FSA_token <- "yGa9ysvivTWUUteZVeQUY4rMsCRBcxGTkDbcFbL773EMywrn6cLEDgIq7Wg3vfwZbYkXyhGsblu0wjZjbiwc2EZC0kh/Zp8SmWsXansq3zNEG17gryZAZaRphkp1Mf95Zkjb3aMX/Rr/uAaiKLJbOOwkmv9X3NoA7TCDAA7Go8Y="
+ct_register_token(FSA_token)
+ct_get_remaining_hourly_queries()
+ct_get_reset_time()
+```
+
+```{r}
+year0 <- 2009
+mont0 <- 1
+yeare <- 2016
+monte <- 12
+comco <- c("0706","030613","1006")
+#Shrimp "030613"
+#Rice   "1006"
+
+```
+
+```{r}
+maxm <- 5
+nmon <- (yeare - year0)*12 + monte - mont0 + 1
+pass <- as.integer(ceiling(nmon / maxm))
+lagm <- (pass * maxm)-nmon
+monte <- monte + lagm
+nmon <- (yeare - year0)*12 + monte - mont0 + 1
+```
+
+```{r}
+mydf = data.frame()
+mm <- mont0
+yy <- year0
+for(i in seq(from=1, to=nmon, by=maxm)){
+  mmf <- sprintf("%02d", mm)
+  d0 <- paste(yy,'-',mmf,sep="")
+  #print(d0)
+    mm <- mm + maxm
+  if(mm>12){
+    yy <- yy + 1
+    mm <- mm-12}
+  yx <- yy
+  mx <- mm-1
+  if(mx<1){
+    mx <- mx + 12
+    yx<-yx-1
+    }
+  mxf <- sprintf("%02d", mx)
+  de <- paste(yx,'-',mxf,sep="")
+  print(paste(d0,de))
+tmp <- ct_search("All", "All", trade_direction = c("imports","exports"), freq = c("monthly"),
+start_date = d0, end_date = de, commod_codes = comco,
+max_rec = NULL, type = c("goods"),
+url = "https://comtrade.un.org/api/get?")
+mydf <- rbind(mydf,tmp)
+}
+```
+
+```{r}
+ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
+```
+
+```{r}
+dff <- mydf %>% select(period,trade_flow_code,trade_flow,reporter,partner,netweight_kg,trade_value_usd,year,commodity,commodity_code)
+df  <- rename(dff, net_weight_kg   = netweight_kg) %>%
+  mutate(period_date = as.Date(paste0(as.character(period), '01'), format='%Y%m%d')) %>%
+  mutate(year_date = as.Date(paste0(as.character(year), '0101'), format='%Y%m%d'))
+cc  <- df[!(df$partner %in% ignore) ,]
+cc  <- df[!(df$reporter %in% ignore) ,]
+```
+
+```{r}
+c1 <- cc[complete.cases(cc), ]
+```
+
+```{r}
+sel_country <- c("Japan")
+```
+
+```{r}
+res1 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow_code == 2) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+```
+
+```{r}
+ggplot(data = res1, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
+  geom_line() +
+  geom_point(size=2) + scale_y_log10() +
+  scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
+  ggtitle("Japan exports") +
+  xlab("Year-Month") +
+  ylab("Trade value $US") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+res2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow_code==2) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(trade_value_usd)) %>% ungroup()
+```
+
+```{r}
+ggplot(data=res2, aes(x=year_date, y=tote, fill=commodity_code)) +
+  geom_bar(stat="identity") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  ggtitle("Japan exports") +
+  xlab("Year") +
+  ylab("Trade value $US")
+```

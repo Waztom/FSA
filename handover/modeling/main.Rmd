@@ -40,9 +40,11 @@ pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #Cheese
 #filename <- 'all_data__040640_201401-201601_total_dump_00.RData'
 #Beer
-filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
+#filename <- 'all_data__220300_201401-201601_total_dump_00.RData'
 #Beans
 #filename <- 'all_data__071022_201501-201601_total_dump_00.RData'
+#Rice
+filename <- 'all_data__1006_201001-201301_total_dump_00.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
@@ -94,7 +96,14 @@ p4 <- ggplot(data = node_data) + geom_point(mapping = aes(
       ggtitle('Mate: normalized trade fluxes') + ylab('Overall') + xlab('Average outflux')
 grid.arrange(p1,p2,p3,p4,nrow=2)
 ```
-
+```{r}
+toplim <- 15
+ggplot(data = node_data) + geom_point(mapping = aes(y=ave_influx_n,
+      x=max_influx_n,color=ratio),
+      size=0.75) +
+      scale_colour_gradientn(colours=rainbow(4)) + xlim(0,toplim) + ylim(0,toplim) +
+      ggtitle('Beer: normalized trade fluxes') + ylab('Ave influx') + xlab('Max influx')
+```
 
 ```{r}
 lmf.results <- model_linear(node_data)
@@ -112,8 +121,10 @@ lmj.results <- model_linear_janis(node_data)
 lmjs.results <- model_linear_janis_steroids(node_data)
 ```
 
+###summary(lmf.results[[5]])
+
 ```{r}
-build_network(edge_data,1,10)
+build_network(edge_data,1,15)
 ```
 
 ```{r}
