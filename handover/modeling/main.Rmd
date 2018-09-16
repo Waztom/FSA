@@ -45,6 +45,8 @@ pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #filename <- 'all_data__071022_201501-201601_total_dump_00.RData'
 #Rice
 filename <- 'all_data__1006_201001-201301_total_dump_00.RData'
+#Junk
+#filename <- 'network_012008-122016_28276.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
@@ -124,7 +126,7 @@ lmjs.results <- model_linear_janis_steroids(node_data)
 ###summary(lmf.results[[5]])
 
 ```{r}
-build_network(edge_data,1,15)
+build_network(edge_data,1,85)
 ```
 
 ```{r}

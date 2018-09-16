@@ -1,4 +1,4 @@
-#Use example: Rscript COMTRADE_API.R --year0 2010 --yeare 2010 --month0 3 --monthe 6 --commodity 0706 --reporter Japan
+#Use example: Rscript COMTRADE_API.R --year0 2010 --yeare 2010 --month0 3 --monthe 6 --com1 0706
 library(optparse)
 library(rjson)
 library(tidyverse)
@@ -69,7 +69,8 @@ url = "https://comtrade.un.org/api/get?")
 mydf <- rbind(mydf,tmp)
 }
 
-ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
+#ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
+ignore <- c('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
 
 dff <- mydf %>%
        select(period,trade_flow_code,trade_flow,reporter,partner,netweight_kg,trade_value_usd,year,commodity,commodity_code)

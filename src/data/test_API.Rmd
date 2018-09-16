@@ -60,7 +60,7 @@ get.Comtrade <- function(url="http://comtrade.un.org/api/get?"
                  ,"fmt=",fmt        #Format
                  ,sep = ""
   )
-  
+ print(string) 
   if(fmt == "csv") {
     raw.data<- read.csv(string,header=TRUE)
     return(list(validation=NULL, data=raw.data))
@@ -91,7 +91,7 @@ get.Comtrade <- function(url="http://comtrade.un.org/api/get?"
 ##Note that I used the token provided by Arthur
 ```{r}
 FSA_token <- "yGa9ysvivTWUUteZVeQUY4rMsCRBcxGTkDbcFbL773EMywrn6cLEDgIq7Wg3vfwZbYkXyhGsblu0wjZjbiwc2EZC0kh/Zp8SmWsXansq3zNEG17gryZAZaRphkp1Mf95Zkjb3aMX/Rr/uAaiKLJbOOwkmv9X3NoA7TCDAA7Go8Y="
-s3 <- get.Comtrade(r="826", p="710,724,757,276", ps="201001,201101,201201,201301", freq="M",maxrec=100000,token=FSA_token)
+s3 <- get.Comtrade(r="826",p="36", ps="201001",freq="M",maxrec=100,token=FSA_token)
 ```
 
 #Convert the data downloaded using the API into a dataframe à-la-R
