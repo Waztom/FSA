@@ -14,12 +14,14 @@ make_option(c("-e", "--com1"),      default="1006", type='character', help="Comm
 make_option(c("-f", "--com2"),      default=NA,     type='character', help="Commodity 2"),
 make_option(c("-g", "--com3"),      default=NA,     type='character', help="Commodity 3"),
 make_option(c("-i", "--com4"),      default=NA,     type='character', help="Commodity 4"),
-make_option(c("-j", "--com5"),      default=NA,     type='character', help="Commodity 5")
+make_option(c("-j", "--com5"),      default=NA,     type='character', help="Commodity 5"),
+make_option(c("-k", "--com6"),      default=NA,     type='character', help="Commodity 6"),
+make_option(c("-m", "--com7"),      default=NA,     type='character', help="Commodity 7")
   )
 
 opt = parse_args(OptionParser(option_list=option_list))
 
-uu          <- c(opt$com1,opt$com2,opt$com3,opt$com4,opt$com5)
+uu          <- c(opt$com1,opt$com2,opt$com3,opt$com4,opt$com5,opt$com6,opt$com7)
 commodities <- uu[!is.na(uu)]
 
 year0 <- opt$year0
@@ -28,7 +30,7 @@ yeare <- opt$yeare
 monte <- opt$monthe
 comco <- commodities
 
-outputfile <- paste(sprintf("%02d", mont0),year0,'-',sprintf("%02d", monte),yeare,'_',comco,'.RData',sep="")
+outputfile <- paste(sprintf("%02d", mont0),year0,'-',sprintf("%02d", monte),yeare,'_',paste(comco, collapse = '_'),'.RData',sep="")
 print(outputfile)
 
 FSA_token <- "yGa9ysvivTWUUteZVeQUY4rMsCRBcxGTkDbcFbL773EMywrn6cLEDgIq7Wg3vfwZbYkXyhGsblu0wjZjbiwc2EZC0kh/Zp8SmWsXansq3zNEG17gryZAZaRphkp1Mf95Zkjb3aMX/Rr/uAaiKLJbOOwkmv9X3NoA7TCDAA7Go8Y="
