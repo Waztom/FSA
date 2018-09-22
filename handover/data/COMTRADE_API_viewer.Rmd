@@ -16,17 +16,19 @@ library(dplyr)
 library(lubridate)
 library(igraph)
 library(tidygraph)
+library(gridExtra)
 ```
 
 ```{r}
-filename <- '012009-122014_1511.RData'
+filename <- '012009-122016_070951_070959_071151_071159_071231_200310_200390.RData'
 load(filename)
 ```
 
 ```{r}
 # Look up commodity descriptions related to "halibut"
-ct_commodity_lookup("tuna",return_code = FALSE,return_char = FALSE,verbose = TRUE)
+ct_commodity_lookup("mushrooms",return_code = FALSE,return_char = FALSE,verbose = TRUE)
 ```
+
 
 ```{r}
 c1 <- cc[complete.cases(cc), ]
@@ -39,32 +41,77 @@ sel_trade <- "Exports"
 
 ```{r}
 res1 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+res2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(net_weight_kg)) %>% ungroup()
 ```
 
 ```{r}
-ggplot(data = res1, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
+p1 <- ggplot(data = res1, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
   geom_line() +
   geom_smooth(span=0.5,method="loess",color="blue") +
   geom_point(size=2) +
   #scale_y_log10() +
   scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
-  ggtitle(sel_trade) +
+  ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
   xlab("Year-Month") +
   ylab("Trade value $US") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p2 <- ggplot(data = res2, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
+  geom_line() +
+  geom_smooth(span=0.5,method="loess",color="blue") +
+  geom_point(size=2) +
+  #scale_y_log10() +
+  scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
+  ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
+  xlab("Year-Month") +
+  ylab("Net Weight Kg") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+grid.arrange(p1, p2, ncol=2)
+```
+
+```{r}
+res3 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+res4 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter) %>% summarize(tote = sum(net_weight_kg)) %>% ungroup()
+```
+
+```{r}
+p3 <- ggplot(data = res3, aes(x=period_date,y=tote,shape=reporter)) +
+  geom_line() +
+  geom_smooth(span=0.25,method="loess",color="blue") +
+  geom_point(size=2) +
+  #scale_y_log10() +
+  scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
+  ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
+  xlab("Year-Month") +
+  ylab("Trade value $US") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p4 <- ggplot(data = res4, aes(x=period_date,y=tote,shape=reporter)) +
+  geom_line() +
+  geom_smooth(span=0.25,method="loess",color="blue") +
+  geom_point(size=2) +
+  #scale_y_log10() +
+  scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
+  ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
+  xlab("Year-Month") +
+  ylab("Net Weight Kg") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+grid.arrange(p3,p4,ncol=2)
 ```
 ```{r}
-res2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow==sel_trade) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(trade_value_usd)) %>% ungroup()
+res5 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow==sel_trade) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(trade_value_usd)) %>% ungroup()
+res6 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow==sel_trade) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(net_weight_kg)) %>% ungroup()
 ```
 
 ```{r}
 fy = list()
 j <- 0
-yearlist <- unique(res2$year_date)
+yearlist <- unique(res5$year_date)
 for (i in yearlist){
   print(i)
-  dd <- res2 %>% filter(year_date == i)
+  dd <- res5 %>% filter(year_date == i)
   nm <- length(unique(dd$period_date))
   if(nm == 12){
     j <- j + 1
@@ -73,188 +120,28 @@ for (i in yearlist){
 }
 ```
 ```{r}
-res3 <- res2 %>% filter(year_date %in% fy)
+res5 <- res5 %>% filter(year_date %in% fy)
+res6 <- res6 %>% filter(year_date %in% fy)
 ```
 
 
 
 ```{r}
-ggplot(data=res3, aes(x=year_date, y=tote, fill=commodity_code)) +
+p5 <- ggplot(data=res5, aes(x=year_date, y=tote, fill=commodity_code)) +
   geom_bar(stat="identity") +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
   ggtitle("Japan exports") +
   xlab("Year") +
   ylab("Trade value $US")
+p6 <- ggplot(data=res6, aes(x=year_date, y=tote, fill=commodity_code)) +
+  geom_bar(stat="identity") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  ggtitle("Japan exports") +
+  xlab("Year") +
+  ylab("Net Weight Kg")
+grid.arrange(p5,p6,ncol=2)
 ```
 
-
-```{r}
-ignore <- c('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
-cc  <- cc[!(cc$partner %in% ignore) ,]
-cc  <- cc[!(cc$reporter %in% ignore) ,]
-edge_data <- cc %>% filter(trade_flow == "Imports") %>%
-                    rename(origin = partner) %>%
-                    rename(destin = reporter) %>%
-                    select(-trade_flow,-trade_flow_code,-net_weight_kg,-year_date)
-
-month_list <- sort(unique(edge_data$period))
-```
-
-```{r}
-i <- 1
-j <- 1
-mylist <- list() #create an empty list to store the node data
-numc   <- list() #create an empty list to store the # of countries per period
-
-for (cur_month in month_list){
-  temp           <- edge_data %>% filter(period == cur_month)
-  origin_country <- unique(temp$origin)
-  destin_country <- unique(temp$destin)
-  all_country    <- union(origin_country,destin_country)
-  numc[[j]]      <- length(all_country)
-  j <- j + 1
-  print(j)
-#
-  for (cur_count in all_country) {
-    for_origin <- temp %>% filter(origin==cur_count) %>% summarize(a1 = sum(trade_value_usd),
-                                                                   b1 = n(),
-                                                                   c1 = mean(trade_value_usd),
-                                                                   d1 = max(trade_value_usd))
-    for_destin <- temp %>% filter(destin==cur_count) %>% summarize(a2 = sum(trade_value_usd),
-                                                                   b2 = n(),
-                                                                   c2 = mean(trade_value_usd),
-                                                                   d2 = max(trade_value_usd))
-    vec <- list(10) #preallocate a vector. Shouldn't be a character but this is all I can do in R. Fix it later.
-    #
-    vec[1] <- cur_count
-    vec[2] <- cur_month
-    vec[3] <- for_origin$b1
-    vec[4] <- for_origin$a1
-    vec[5] <- for_origin$c1
-    vec[6] <- for_origin$d1
-    vec[7] <- for_destin$b2
-    vec[8] <- for_destin$a2
-    vec[9] <- for_destin$c2
-    vec[10]<- for_destin$d2
-    mylist[[i]] <- unlist(vec) #put all vectors in the list
-    i <- i + 1
-  }
-}
-
-#
-i <- i - 1
-```
-
-```{r}
-net_flux <- do.call("rbind",mylist)
-net_flux <- data.frame(matrix(unlist(net_flux), nrow=i, byrow=F),stringsAsFactors = FALSE)
-
-net_flux <- net_flux %>% rename(node   = X1)
-net_flux <- net_flux %>% rename(period = X2)
-net_flux <- net_flux %>% transform(X3  = as.integer(X3))  %>% rename( links_out   = X3)
-net_flux <- net_flux %>% transform(X4  = as.numeric(X4))  %>% rename( tot_outflux = X4)
-net_flux <- net_flux %>% transform(X5  = as.numeric(X5))  %>% rename( ave_outflux = X5)
-net_flux <- net_flux %>% transform(X6  = as.numeric(X6))  %>% rename( max_outflux = X6)
-net_flux <- net_flux %>% transform(X7  = as.integer(X7))  %>% rename( links_in    = X7)
-net_flux <- net_flux %>% transform(X8  = as.numeric(X8))  %>% rename( tot_influx  = X8)
-net_flux <- net_flux %>% transform(X9  = as.numeric(X9))  %>% rename( ave_influx  = X9)
-net_flux <- net_flux %>% transform(X10 = as.numeric(X10)) %>% rename( max_influx  = X10)
-
-net_flux <- net_flux %>% mutate(ratio = (tot_influx-tot_outflux)/(tot_influx + tot_outflux))
-```
-
-```{r}
-numc_per_period <- list("period" = month_list, "country_num" = unlist(numc))
-numc_per_period <- as.data.frame(numc_per_period) %>% mutate(period_date = ymd(paste(as.character(period),"01")))
-
-time_history <- sort(unique(edge_data$period))
-
-i <- 1
-dat1 <- integer(1)
-dat2 <- integer(1)
-dat3 <- integer(1)
-dat4 <- numeric(1)
-dat5 <- integer(1)
-dat6 <- character(1)
-dat7 <- character(1)
-dat8 <- numeric(1)
-
-#Strictly positive
-edge_data <- edge_data %>% filter(trade_value_usd > 0)
-```
-
-```{r}
-for (cur_time in time_history){
-  print(cur_time)
-  netdf1        <- edge_data %>% filter(period == cur_time) %>% select(origin,destin,trade_value_usd)
-  sources1      <- netdf1    %>% distinct(origin)           %>% rename(label     = origin)
-  destinations1 <- netdf1    %>% distinct(destin)           %>% rename(label     = destin)
-  per_route1    <- netdf1    %>% group_by(origin,destin)    %>% summarise(weight = sum(trade_value_usd)/1e6) %>% ungroup()
-
-  nodes1 <- full_join(sources1,destinations1,by="label")
-  nodes1 <- nodes1 %>% rowid_to_column("id")
-  edges1 <- per_route1 %>% left_join(nodes1,by=c("origin" = "label")) %>% rename(from = id)
-  edges1 <- edges1     %>% left_join(nodes1,by=c("destin" = "label")) %>% rename(to   = id)
-  edges1 <- select(edges1,from,to,weight)
-  g <- tbl_graph(nodes = nodes1, edges = edges1, directed = TRUE)
-    links_tot  <- degree(g)
-    between    <- betweenness(g)
-    triangles  <- count_triangles(g)
-    eigen_u    <- eigen_centrality(g, weights = NA) #Unweighted eigenvalue
-    eigen_w    <- eigen_centrality(g)
-    undirected_network <- tbl_graph(nodes = nodes1, edges = edges1, directed = FALSE)
-    communities <- edge.betweenness.community(undirected_network)
-    net_groups  <- membership(communities)
-    #
-    all_country <- unique(nodes1$label)
-    for (cur_country in all_country){
-      this_one <- nodes1[nodes1$label==cur_country,1]######
-      dat1[i] <- links_tot[this_one]
-      dat2[i] <- between[this_one]
-      dat3[i] <- triangles[this_one]
-      dat4[i] <- eigen_w$vector[this_one]
-      dat5[i] <- net_groups[this_one]
-      dat6[i] <- cur_country
-      dat7[i] <- cur_time
-      dat8[i] <- eigen_u$vector[this_one]
-      i <- i + 1
-  }
-#
-}
-
-dfs <- list("links_tot" = dat1, "between" = dat2, "triangles" = dat3, "eigen_w" = dat4, "net_group" = dat5, "node" = dat6, "period" = dat7, "eigen_u" = dat8)
-metrics <- as.data.frame(dfs)
-
-node_data <- full_join(net_flux,metrics,by=c("node","period"))
-node_data[is.nan(node_data$ave_influx),]$max_influx   = 0
-node_data[is.nan(node_data$ave_outflux),]$max_outflux = 0
-node_data[is.nan(node_data$ave_influx),]$ave_influx   = 0
-node_data[is.nan(node_data$ave_outflux),]$ave_outflux = 0
-
-node_data <- node_data %>% group_by(period) %>%
-  mutate(tot_influx_n  = tot_influx /mean(tot_influx)) %>%
-  mutate(tot_outflux_n = tot_outflux/mean(tot_outflux)) %>%
-  mutate(ave_influx_n  = ave_influx /mean(ave_influx)) %>%
-  mutate(ave_outflux_n = ave_outflux/mean(ave_outflux)) %>%
-  mutate(max_influx_n  = max_influx /mean(max_influx)) %>%
-  mutate(max_outflux_n = max_outflux/mean(max_outflux)) %>%
-  mutate(period_date   = ymd(paste(as.character(period),"01",sep=""))) %>%
-  mutate(links_net     = links_in - links_out) %>%
-  mutate(overall_flux  = tot_outflux + tot_influx) %>%
-  mutate(overall_flux_n= tot_outflux_n + tot_influx_n) %>%
-  mutate(month         = month(period_date)) %>%
-  ungroup()
-
-#Double check
-node_data <- node_data[complete.cases(node_data),]
-
-data <- list("node_data" = node_data, "edge_data" = edge_data)
-
-rdataname <- c("network", substr(filename, 1, nchar(filename)-8), '.RData')
-
-save(data, file = paste(rdataname, collapse="_"))
-#save(data, file = paste(rdataname, collapse= NULL))
-```
 
 
 
