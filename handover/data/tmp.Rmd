@@ -1,0 +1,92 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rjson)
+library(tidyverse)
+library(comtradr)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(igraph)
+library(tidygraph)
+```
+
+```{r}
+filename <- '012009-122017_030345.RData'
+load(filename)
+```
+
+```{r}
+# Look up commodity descriptions related to "halibut"
+ct_commodity_lookup("tuna",return_code = FALSE,return_char = FALSE,verbose = TRUE)
+```
+
+```{r}
+c1 <- cc[complete.cases(cc), ]
+```
+
+```{r}
+sel_country <- c("Japan")
+sel_trade <- "Exports"
+```
+
+```{r}
+res1 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+```
+
+```{r}
+pp <- ggplot(data = res1, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
+  geom_line() +
+  geom_smooth(span=0.5,method="loess",color="blue") +
+  geom_point(size=2) +
+  #scale_y_log10() +
+  scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
+  ggtitle(sel_trade) +
+  xlab("Year-Month") +
+  ylab("Trade value $US") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+pp
+```
+
+```{r}
+res2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow==sel_trade) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(trade_value_usd)) %>% ungroup()
+```
+
+```{r}
+fy = list()
+j <- 0
+yearlist <- unique(res2$year_date)
+for (i in yearlist){
+  print(i)
+  dd <- res2 %>% filter(year_date == i)
+  nm <- length(unique(dd$period_date))
+  if(nm == 12){
+    j <- j + 1
+    fy[j] <- i
+  }
+}
+```
+```{r}
+res3 <- res2 %>% filter(year_date %in% fy)
+```
+
+
+
+```{r}
+ggplot(data=res3, aes(x=year_date, y=tote, fill=commodity_code)) +
+  geom_bar(stat="identity") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  ggtitle("Japan exports") +
+  xlab("Year") +
+  ylab("Trade value $US")
+```
+
+
