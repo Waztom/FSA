@@ -19,53 +19,28 @@ library(visNetwork)
 library(tidygraph)
 ```
 
-#Get the auxiliary data
-```{r}
-source("get_HMRC_aux_data.R")
-list1 <- get_HMRC_aux_data()
-comcode <- data.frame(Reduce(rbind, list1[1]))
-port    <- data.frame(Reduce(rbind, list1[2]))
-country <- data.frame(Reduce(rbind, list1[3]))
-```
-
-#Find fresh cucumber comcodes - Thank you Alex for making life nice and easy for us! 
-```{r}
-cc_all_cucumber <- comcode[grep('CUCUMBER',  toupper(comcode$description)),]
-```
-
-#Access comtrade database - look for cucumber info for world
-```{r}
-source("get_Comtrade_data_network_graph.R")
-#world_cucumber_data   <- get_Comtrade_data_network_graph(201001,201601,"default","070700")
-```
-
 #Access comtrade database saved as csv file
 ```{r}
-world_cucumber_data_csv   <- read.csv("world_cucumber_data.csv", header = TRUE, sep = ",")
+world_data   <- read.csv("world.csv", header = TRUE, sep = ",")
 ```
 
 ##NB if you are not accessing .csv then need to change world_cucumber_data_csv to world_cucmber_data. No need to change anywhere else. 
 #Prepare data
 ```{r}
-world_cucumber_data_graph <- world_cucumber_data_csv %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+world_data_graph <- world_data %>% filter(trade_flow=="Imports") %>% select(period,reporter,partner,trade_value_usd) %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
 ```
 
-#Select time line in month
-```{r}
-time_start <- "2015-12-01"
-time_end <- "2016-01-01"
-world_cucumber_data_graph <- world_cucumber_data_graph %>% filter(period < time_end & period >= time_start) 
-```
 
-#cut out world and EU-27
+#cut out world, EU-27 and othjer groupings
 ```{r}
-world_cucumber_data_graph_exlworldEU <- world_cucumber_data_graph %>% filter(partner != "World") %>% filter(reporter != "EU-27")
+world_data_graph <- world_data_graph %>% filter(partner != "World") %>% filter(partner != "EU-27")%>% filter(partner != "Other Asia, nes") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Area, nes")
+world_data_graph <- world_data_graph %>% filter(reporter != "World") %>% filter(reporter != "EU-27")%>% filter(reporter != "Other Asia, nes") %>% filter(reporter != "Other Europe, nes") %>% filter(reporter != "Area, nes")
 ```
 
 #Create nodes 
 ```{r}
-imports_from <- world_cucumber_data_graph_exlworldEU %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
-imports_to <- world_cucumber_data_graph_exlworldEU %>% select(partner) %>% rename(label = partner) %>% distinct(label)
+imports_from <- world_data_graph %>% select(reporter) %>% rename(label = reporter) %>% distinct(label)
+imports_to <- world_data_graph %>% select(partner) %>% rename(label = partner) %>% distinct(label)
 
 #Combine to form one list of country nodes
 nodes <- full_join(imports_from,imports_to, by = 'label')
@@ -77,7 +52,7 @@ nodes <- nodes %>% rowid_to_column("id")
 
 #Create edges table 
 ```{r}
-edges <-  world_cucumber_data_graph_exlworldEU %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
+edges <-  world_data_graph %>% left_join(nodes, by = c("reporter" = "label")) %>% rename(to = id) %>% left_join(nodes, by = c("partner"  = "label")) %>% rename(from = id)
           
 edges <- mutate(edges, width = sqrt(trade_value_usd/10000))
 edges <- select(edges, from, to, width)
@@ -88,7 +63,7 @@ edges <- select(edges, from, to, width)
 ```{r}
 visNetwork(nodes, edges) %>% 
   visIgraphLayout(layout = "layout.davidson.harel", randomSeed = 10) %>%
-  visEdges(arrows = "from") %>%
+  visEdges(arrows = "to") %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) 
 ```
 

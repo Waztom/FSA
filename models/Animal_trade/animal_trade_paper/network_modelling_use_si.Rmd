@@ -36,6 +36,10 @@ source('functions/get_trade_attributes_si.R')
 ```{r}
 world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
 
+#Remove other general groupings
+world_data_graph <- world_data_graph %>% filter(partner != "World") %>% filter(partner != "EU-27")%>% filter(partner != "Other Asia, nes") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Area, nes")
+world_data_graph <- world_data_graph %>% filter(reporter != "World") %>% filter(reporter != "EU-27")%>% filter(reporter != "Other Asia, nes") %>% filter(reporter != "Other Europe, nes") %>% filter(reporter != "Area, nes")
+
 period_list               <- list() #List of months
 
 #Need to change for new commodity 
