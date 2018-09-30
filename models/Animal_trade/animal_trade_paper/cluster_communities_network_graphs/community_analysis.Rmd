@@ -32,21 +32,20 @@ library(gridExtra)
 library(linkcomm)
 ```
 
-#Access comtrade database - look for cucumber info for world
-```{r}
-#source("get_Comtrade_data_network_graph.R")
-#world_data   <- get_Comtrade_data_network_graph(201401,201601,"default","070700")
-```
-
 #Access comtrade database saved as csv file
 ```{r}
 world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
+
+#Remove other general groupings
+world_data <- world_data %>% filter(partner != "World") %>% filter(partner != "EU-27")%>% filter(partner != "Other Asia, nes") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Area, nes")
+world_data <- world_data %>% filter(reporter != "World") %>% filter(reporter != "EU-27")%>% filter(reporter != "Other Asia, nes") %>% filter(reporter != "Other Europe, nes") %>% filter(reporter != "Area, nes")
+
 ```
 
 #Monthly link analysis exploration using linkcomm
 ```{r}
 trade.flow    <- "Imports"
-starting_node <- "China"
+starting_node <- "Japan"
 quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
 
 lc_list               <- list() #List of plots
