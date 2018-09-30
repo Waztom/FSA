@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Projects/FSA/models/Animal_trade/animal_trade_paper/cluster_communities_network_graphs")
 ```
 
 #Required libraries
@@ -33,8 +34,7 @@ source('functions/get_trade_attributes_si.R')
 
 #Prepare network objects as network graphs for each month of trade using COMTRADE data for modelling
 ```{r}
-world_data   <- read.csv("data/si_cu.csv", header = TRUE, sep = ",")
-world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)
+world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
 
 period_list               <- list() #List of months
 
@@ -85,6 +85,16 @@ period_summary <- do.call(rbind, Map(data.frame, period=period_list))
 
 #Convert period to date type
 period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+```
+
+#Create network graph
+```{r}
+plot(net)
+```
+
+#Exponential random graph models
+```{r}
 
 #Simple covariate model without temperal component
 model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 + memory(type = "stability"), R = 100, parallel = "snow",  ncpus = 2)

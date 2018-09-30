@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Projects/FSA/models/Animal_trade/animal_trade_paper/cluster_communities_network_graphs")
 ```
 
 ```{r}
@@ -39,13 +40,13 @@ library(linkcomm)
 
 #Access comtrade database saved as csv file
 ```{r}
-world_data   <- read.csv("data/world_cucumber_weight.csv", header = TRUE, sep = ",")
+world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
 ```
 
 #Monthly link analysis exploration using linkcomm
 ```{r}
 trade.flow    <- "Imports"
-starting_node <- "United Kingdom"
+starting_node <- "China"
 quant_select  <- "1:0%, 2:25%, 3:50%, 4:75%, 5:100%" #For trade_threshold value used
 
 lc_list               <- list() #List of plots
