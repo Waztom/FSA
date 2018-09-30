@@ -60,7 +60,7 @@ for (i in world_monthly_data){
   
   #Determine crdue thresholding via quantiles 
   month_quantiles   <- quantile(i$trade_value_usd)
-  trade_threshold   <- month_quantiles[2]
+  trade_threshold   <- month_quantiles[3]
   
   #Starting with starting_node above, get links that are connected to this node
   month_links       <- get_network_links(trade.flow,starting_node,trade_threshold,i)
