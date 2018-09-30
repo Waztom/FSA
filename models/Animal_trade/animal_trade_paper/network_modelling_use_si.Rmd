@@ -96,7 +96,7 @@ period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mu
 ```{r}
 
 #Simple covariate model without temperal component
-model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 + memory(type = "stability"), R = 100, parallel = "snow",  ncpus = 2)
+model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5, R = 100, parallel = "snow",  ncpus = 2)
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 #See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
