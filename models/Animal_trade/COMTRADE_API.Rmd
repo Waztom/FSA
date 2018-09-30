@@ -16,7 +16,7 @@ library(ggplot2)
 
 ```{r}
 # Look up commodity descriptions related to "halibut"
-ct_commodity_lookup("Haliotis",return_code = FALSE,return_char = FALSE,verbose = TRUE)
+ct_commodity_lookup("Rice",return_code = FALSE,return_char = FALSE,verbose = TRUE)
 ```
 
 ```{r}
@@ -73,7 +73,7 @@ url = "https://comtrade.un.org/api/get?")
 mydf <- rbind(mydf,tmp)
 }
 
-write.csv(tmp, "~/Projects/FSA/models/Animal_trade/animal_trade_paper/data/world.csv")
+write.csv(mydf, "~/Projects/FSA/models/Animal_trade/animal_trade_paper/data/world.csv")
 ```
 
 ```{r}
