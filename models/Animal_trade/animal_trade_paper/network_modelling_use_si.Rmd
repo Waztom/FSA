@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "~/Projects/FSA/models/Animal_trade/animal_trade_paper")
+knitr::opts_knit$set(root.dir = "~/Projects/FSA/models/Animal_trade/animal_trade_paper/cluster_communities_network_graphs")
 ```
 
 #Required libraries
@@ -22,8 +22,6 @@ library(gridExtra)
 library(statnet)
 library(xergm)
 library(btergm)
-library(rjson)
-library(comtradr)
 ```
 
 ```{r}
@@ -38,10 +36,9 @@ source('functions/get_trade_attributes_si.R')
 ```{r}
 world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
 
-#Remove grouped areas
-ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
-world_data  <- world_data[!(world_data$partner %in% ignore) ,]
-world_data  <- world_data[!(world_data$reporter %in% ignore) ,]
+#Remove other general groupings
+world_data <- world_data %>% filter(partner != "World") %>% filter(partner != "EU-27")%>% filter(partner != "Other Asia, nes") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Area, nes")
+world_data <- world_data %>% filter(reporter != "World") %>% filter(reporter != "EU-27")%>% filter(reporter != "Other Asia, nes") %>% filter(reporter != "Other Europe, nes") %>% filter(reporter != "Area, nes")
 
 period_list               <- list() #List of months
 
@@ -93,8 +90,13 @@ period_summary <- do.call(rbind, Map(data.frame, period=period_list))
 #Convert period to date type
 period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
 
+```
+
+#Exponential random graph models
+```{r}
+
 #Simple covariate model without temperal component
-model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5 + memory(type = "stability"), R = 100, parallel = "snow",  ncpus = 2)
+model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5, R = 100, parallel = "snow",  ncpus = 2)
 
 #See parameter estimates etc with 95% CI - how do we interpret these values?
 #See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.

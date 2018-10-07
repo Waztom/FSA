@@ -25,6 +25,12 @@ load(filename)
 ```
 
 ```{r}
+ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
+cc  <- cc[!(cc$partner %in% ignore) ,]
+cc  <- cc[!(cc$reporter %in% ignore) ,]
+```
+
+```{r}
 # Look up commodity descriptions related to "halibut"
 ct_commodity_lookup("mushrooms",return_code = FALSE,return_char = FALSE,verbose = TRUE)
 ```
@@ -45,26 +51,32 @@ cc <- cc %>% filter(commodity_code == "870331")
 
 ```{r}
 res1 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(trade_value_usd)) %>% ungroup()
+m1   <- res1 %>% group_by(reporter,commodity_code) %>% summarize(mtote = mean(tote)) %>% ungroup()
+f1 <- inner_join(res1,m1,by=c("commodity_code","reporter")) %>% mutate(atote = tote/mtote)
 res2 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow == sel_trade) %>% group_by(period_date,reporter,commodity_code) %>% summarize(tote = sum(net_weight_kg)) %>% ungroup()
+m2   <- res2 %>% group_by(reporter,commodity_code) %>% summarize(mtote = mean(tote)) %>% ungroup()
+f2 <- inner_join(res2,m2,by=c("commodity_code","reporter")) %>% mutate(atote = tote/mtote)
 ```
 
 ```{r}
+#p1 <- ggplot(data = f1, aes(x=period_date,y=atote,color=commodity_code,shape=reporter)) +
 p1 <- ggplot(data = res1, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
   geom_line() +
-  geom_smooth(span=0.5,method="loess",color="blue") +
+  #geom_smooth(span=0.5,method="loess",color="blue") +
   geom_point(size=2) +
-  #scale_y_log10() +
+  scale_y_log10() +
   scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
   ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
   xlab("Year-Month") +
   ylab("Trade value $US") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-p2 <- ggplot(data = res2, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +
+#p2 <- ggplot(data = f2, aes(x=period_date,y=atote,color=commodity_code,shape=reporter)) +
+p2 <- ggplot(data = res2, aes(x=period_date,y=tote,color=commodity_code,shape=reporter)) +  
   geom_line() +
-  geom_smooth(span=0.5,method="loess",color="blue") +
+  #geom_smooth(span=0.5,method="loess",color="blue") +
   geom_point(size=2) +
-  #scale_y_log10() +
+  scale_y_log10() +
   scale_x_date(date_breaks = "3 month", date_labels = "%Y-%m") +
   ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
   xlab("Year-Month") +
