@@ -20,7 +20,7 @@ library(gridExtra)
 ```
 
 ```{r}
-filename <- '012009-122016_070951_070959_071151_071159_071231_200310_200390.RData'
+filename <- '012008-122017_870331_870332_870333.RData'
 load(filename)
 ```
 
@@ -35,8 +35,12 @@ c1 <- cc[complete.cases(cc), ]
 ```
 
 ```{r}
-sel_country <- c("Japan")
+sel_country <- c("Germany")
 sel_trade <- "Exports"
+```
+
+```{r}
+cc <- cc %>% filter(commodity_code == "870331")
 ```
 
 ```{r}
@@ -130,13 +134,13 @@ res6 <- res6 %>% filter(year_date %in% fy)
 p5 <- ggplot(data=res5, aes(x=year_date, y=tote, fill=commodity_code)) +
   geom_bar(stat="identity") +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
-  ggtitle("Japan exports") +
+  ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
   xlab("Year") +
   ylab("Trade value $US")
 p6 <- ggplot(data=res6, aes(x=year_date, y=tote, fill=commodity_code)) +
   geom_bar(stat="identity") +
   scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
-  ggtitle("Japan exports") +
+  ggtitle(paste(sel_trade,str_sub(filename,15,str_length(filename)-6),sep=" ")) +
   xlab("Year") +
   ylab("Net Weight Kg")
 grid.arrange(p5,p6,ncol=2)

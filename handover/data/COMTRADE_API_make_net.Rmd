@@ -19,7 +19,7 @@ library(tidygraph)
 ```
 
 ```{r}
-filename <- '012008-122016_1201.RData'
+filename <- '012008-122016_030235.RData'
 load(filename)
 ```
 
@@ -250,9 +250,9 @@ node_data <- node_data[complete.cases(node_data),]
 
 data <- list("node_data" = node_data, "edge_data" = edge_data)
 
-rdataname <- c("network", substr(filename, 1, nchar(filename)-8), '.RData')
+rdataname <- c("network_", substr(filename, 1, nchar(filename)-6), '.RData')
 
-save(data, file = paste(rdataname, collapse="_"))
+save(data, file = paste(rdataname, collapse=""))
 #save(data, file = paste(rdataname, collapse= NULL))
 ```
 
