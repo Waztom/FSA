@@ -20,7 +20,7 @@ library(gridExtra)
 ```
 
 ```{r}
-filename <- '012008-122017_870331_870332_870333.RData'
+filename <- '012006-122018_0401_0402.RData'
 load(filename)
 ```
 
@@ -32,7 +32,7 @@ cc  <- cc[!(cc$reporter %in% ignore) ,]
 
 ```{r}
 # Look up commodity descriptions related to "halibut"
-ct_commodity_lookup("mushrooms",return_code = FALSE,return_char = FALSE,verbose = TRUE)
+ct_commodity_lookup("milk",return_code = FALSE,return_char = FALSE,verbose = TRUE)
 ```
 
 
@@ -41,12 +41,12 @@ c1 <- cc[complete.cases(cc), ]
 ```
 
 ```{r}
-sel_country <- c("Germany")
+sel_country <- c("Finland")
 sel_trade <- "Exports"
 ```
 
 ```{r}
-cc <- cc %>% filter(commodity_code == "870331")
+cc <- cc %>% filter(commodity_code == "0401")
 ```
 
 ```{r}

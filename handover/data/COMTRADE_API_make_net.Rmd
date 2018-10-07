@@ -19,7 +19,7 @@ library(tidygraph)
 ```
 
 ```{r}
-filename <- '012008-122016_030235.RData'
+filename <- '012006-122018_0401_0402.RData'
 load(filename)
 ```
 
@@ -31,6 +31,12 @@ ct_commodity_lookup("soy",return_code = FALSE,return_char = FALSE,verbose = TRUE
 ```{r}
 c1 <- cc[complete.cases(cc), ]
 ```
+
+########....WHAT OUT HERE
+```{r}
+c1 <- c1 %>% filter(commodity_code==0401)
+```
+
 
 ```{r}
 sel_country <- c("Japan")
