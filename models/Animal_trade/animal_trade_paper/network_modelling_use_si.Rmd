@@ -1,0 +1,115 @@
+---
+title: "Network model attempt"
+author: "Warren Thompson"
+date: "27/03/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Projects/FSA/models/Animal_trade/animal_trade_paper/cluster_communities_network_graphs")
+```
+
+#Required libraries
+```{r}
+require("RPostgreSQL")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(tidygraph)
+library(rlist)
+library(gridExtra)
+library(statnet)
+library(xergm)
+library(btergm)
+```
+
+```{r}
+source('functions/get_Comtrade_monthly_data_si.R')
+source('functions/get_country_ids_si.R')
+source('functions/get_model_edges.R')
+source('functions/get_model_nodes.R')
+source('functions/get_trade_attributes_si.R')
+```
+
+#Prepare network objects as network graphs for each month of trade using COMTRADE data for modelling
+```{r}
+world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
+
+#Remove other general groupings
+world_data <- world_data %>% filter(partner != "World") %>% filter(partner != "EU-27")%>% filter(partner != "Other Asia, nes") %>% filter(partner != "Other Europe, nes") %>% filter(partner != "Area, nes")
+world_data <- world_data %>% filter(reporter != "World") %>% filter(reporter != "EU-27")%>% filter(reporter != "Other Asia, nes") %>% filter(reporter != "Other Europe, nes") %>% filter(reporter != "Area, nes")
+
+period_list               <- list() #List of months
+
+#Need to change for new commodity 
+cucumber_net_list                  <- list() #Find network objects by index eg. net_list[[24]]
+
+#Get data into months stored in list
+world_monthly_data <- get_Comtrade_monthly_data_si(world_data)
+
+#get unique ID for each country - use for nodes and edges later, prevent renaming of country with different ID each time loop runs
+country_ids <-get_country_ids_si(world_data)
+index = 0
+
+for (i in world_monthly_data){
+  index = index + 1
+  
+  #Get some nett trade attributes 
+  month_trade_attributes  <- get_trade_attributes_si(i)
+  
+  #Get nodes and edges for model
+  nodes_model             <- get_model_nodes(month_data = i, month_trade_attributes,country_ids)
+  nodes_model$nett_trade  <- as.numeric(scale(nodes_model$nett_trade))
+  edges_model             <- get_model_edges(nodes_model,month_data = i)
+  
+  #Edges for network object
+  only_edges             <- edges_model %>% select(from,to)
+  
+  #Create network object
+  net <- network(only_edges, matrix.type = "edgelist", directed = T)
+  
+  #Add edge attributes
+  net <- set.edge.attribute(net,"trade_value",edges_model$trade_value_usd)
+  
+  #Add some node attributes 
+  net <- set.vertex.attribute(net, "nett_trade",nodes_model$nett_trade)
+  
+  #Capture period
+  month               <- unique(i$period)
+
+  #Append features to respective lists
+  period_list   <- list.append(period_list, month)
+  cucumber_net_list      <- list.append(cucumber_net_list, net)
+  
+}
+
+#Combine lists into dataframe
+period_summary <- do.call(rbind, Map(data.frame, period=period_list))
+
+#Convert period to date type
+period_summary <- period_summary %>% mutate(period = paste0(period,"01")) %>% mutate(period = as.Date(period, "%Y%m%d"))
+
+```
+
+#Exponential random graph models
+```{r}
+
+#Simple covariate model without temperal component
+model.1c <- btergm(cucumber_net_list ~ edges + transitiveties + isolates + mutual + odegree1.5 + idegree1.5, R = 100, parallel = "snow",  ncpus = 2)
+
+#See parameter estimates etc with 95% CI - how do we interpret these values?
+#See Section 6 and Desmarais and Cranmer (2012a) for further details on interpretation of ERGMs and TERGMs.
+summary(model.1c, level = 0.95)
+
+#Goodness of fit test
+gof.1c <- gof(model.1c, nsim = 5, statistics = c(esp,dsp,nsp,ideg,odeg,geodesic))
+plot(gof.1c)
+dev.off()
+
+#Save model
+saveRDS(model.1c, "network_model_files/cucumber_network_model_si.rds")
+
+#Save net_list
+saveRDS(cucumber_net_list, "net_list_files/cucumber_net_list.rds")
+```

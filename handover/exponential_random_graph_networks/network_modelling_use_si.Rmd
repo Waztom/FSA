@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Projects/FSA/models/Animal_trade/animal_trade_paper")
 ```
 
 #Required libraries
@@ -21,6 +22,8 @@ library(gridExtra)
 library(statnet)
 library(xergm)
 library(btergm)
+library(rjson)
+library(comtradr)
 ```
 
 ```{r}
@@ -33,8 +36,12 @@ source('functions/get_trade_attributes_si.R')
 
 #Prepare network objects as network graphs for each month of trade using COMTRADE data for modelling
 ```{r}
-world_data   <- read.csv("data/si_cu.csv", header = TRUE, sep = ",")
-world_data   <- world_data %>% rename(reporter=destin) %>% rename(partner=origin)
+world_data   <- read.csv("data/world.csv", header = TRUE, sep = ",")
+
+#Remove grouped areas
+ignore <- list('World', 'EU-27', 'Other Asia, nes', 'Other Europe, nes', 'Areas, nes')
+world_data  <- world_data[!(world_data$partner %in% ignore) ,]
+world_data  <- world_data[!(world_data$reporter %in% ignore) ,]
 
 period_list               <- list() #List of months
 

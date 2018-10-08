@@ -19,13 +19,13 @@ library(tidygraph)
 ```
 
 ```{r}
-filename <- '012009-122017_030345.RData'
+filename <- '012008-122017_870331.RData'
 load(filename)
 ```
 
 ```{r}
 # Look up commodity descriptions related to "halibut"
-ct_commodity_lookup("tuna",return_code = FALSE,return_char = FALSE,verbose = TRUE)
+ct_commodity_lookup("diesel",return_code = FALSE,return_char = FALSE,verbose = TRUE)
 ```
 
 ```{r}
@@ -33,8 +33,8 @@ c1 <- cc[complete.cases(cc), ]
 ```
 
 ```{r}
-sel_country <- c("Japan")
-sel_trade <- "Exports"
+sel_country <- c("France")
+sel_trade <- "Imports"
 ```
 
 ```{r}
