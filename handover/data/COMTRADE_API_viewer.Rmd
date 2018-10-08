@@ -20,7 +20,7 @@ library(gridExtra)
 ```
 
 ```{r}
-filename <- '012009-122016_070951_070959_071151_071159_071231_200310_200390.RData'
+filename <- '012008-122017_2206.RData'
 load(filename)
 ```
 
@@ -41,8 +41,8 @@ c1 <- cc[complete.cases(cc), ]
 ```
 
 ```{r}
-sel_country <- c("Japan")
-sel_trade <- "Exports"
+sel_country <- c("United States of America")
+sel_trade <- "Imports"
 ```
 
 ```{r}
@@ -79,7 +79,7 @@ p2 <- ggplot(data = res2, aes(x=period_date,y=tote,color=commodity_code,shape=re
   ylab("Net Weight Kg") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-grid.arrange(p1, p2, ncol=2)
+grid.arrange(p1, p2, nrow=2)
 ```
 
 ```{r}
@@ -110,8 +110,10 @@ p4 <- ggplot(data = res4, aes(x=period_date,y=tote,shape=reporter)) +
   ylab("Net Weight Kg") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-grid.arrange(p3,p4,ncol=2)
+grid.arrange(p3,p4,nrow=2)
 ```
+
+
 ```{r}
 res5 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow==sel_trade) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(trade_value_usd)) %>% ungroup()
 res6 <- cc %>% filter(reporter %in% sel_country) %>% filter(trade_flow==sel_trade) %>% group_by(period_date,reporter,commodity_code,year_date) %>% summarize(tote=sum(net_weight_kg)) %>% ungroup()

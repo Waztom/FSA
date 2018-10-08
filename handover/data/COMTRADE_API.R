@@ -1,4 +1,4 @@
-#Use example: Rscript COMTRADE_API.R --year0 2010 --yeare 2010 --month0 3 --monthe 6 --com1 0706
+#Use example: Rscript COMTRADE_API.R --year0 2008 --yeare 2017 --month0 1 --monthe 12 --com1 2206
 library(optparse)
 library(rjson)
 library(tidyverse)

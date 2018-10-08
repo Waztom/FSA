@@ -126,7 +126,7 @@ lmjs.results <- model_linear_janis_steroids(node_data)
 ###summary(lmf.results[[5]])
 
 ```{r}
-build_network(edge_data,1,85)
+build_network(edge_data,1,25)
 ```
 
 ```{r}
