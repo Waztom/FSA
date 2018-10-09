@@ -44,6 +44,7 @@ pathname <- '/home/alex/S2DS/FSA/handover/data/'
 #Beans
 #filename <- 'all_data__071022_201501-201601_total_dump_00.RData'
 #Junk
+filename <- 'network_012006-122018_0401_0402.RData'
 dump_files <- FALSE
 route <- paste(pathname,filename,sep='')
 load(route)
@@ -54,6 +55,7 @@ edge_data <- data$edge_data#old "si"
 
 ```{r}
 source("/home/alex/S2DS/FSA/handover/modeling/build_network.R")
+source("/home/alex/S2DS/FSA/handover/modeling/test_network.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_linear_reduced.R")
 source("/home/alex/S2DS/FSA/handover/modeling/model_kmeans.R")
@@ -123,11 +125,7 @@ lmjs.results <- model_linear_janis_steroids(node_data)
 ###summary(lmf.results[[5]])
 
 ```{r}
-<<<<<<< HEAD
-build_network(edge_data,1,25)
-=======
-build_network(edge_data,1,20)
->>>>>>> 5ab409dda5c5afc6ebc72c75f1e9dba11f0c411d
+build_network(edge_data,61,50)
 ```
 
 ```{r}
@@ -170,7 +168,9 @@ print(ans[2])
 ```
 
 
-
+#top_FIN_exports <- cc %>% filter(trade_flow_code == 2) %>% filter(reporter == "Finland") %>%
+#                          group_by(year,partner) %>% summarize(totm = sum(trade_value_usd)) %>%
+#                           top_n(n = 25, wt = totm) %>% mutate(ff=rank(-totm))
 
 
 

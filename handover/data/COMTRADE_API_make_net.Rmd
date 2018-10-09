@@ -34,12 +34,12 @@ c1 <- cc[complete.cases(cc), ]
 
 ########....WHAT OUT HERE
 ```{r}
-c1 <- c1 %>% filter(commodity_code==0401)
+cc <- cc %>% filter(commodity_code=="0401") %>% filter(year %in% c(2012,2013,2014,2015,2016,2017))
 ```
 
 
 ```{r}
-sel_country <- c("Japan")
+sel_country <- c("Finland")
 sel_trade <- "Exports"
 ```
 
